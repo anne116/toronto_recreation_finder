@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Toronto Recreation Finder</title>
+    
+    <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        .filters-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        .filters-panel h3 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #1e293b;
+        }
+        
+        .filter-group {
+            margin-bottom: 16px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #334155;
+        }
+        
+        .filter-group select,
+        .filter-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+            margin-top: 8px;
+        }
+        
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .btn-link {
+            background: transparent;
+            color: #3b82f6;
+            text-decoration: underline;
+            padding: 8px;
+        }
+        
+        #status {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #0c4a6e;
+        }
+        
+        .details-sidebar {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+            z-index: 20;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .details-sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .sidebar-header h2 {
+            margin-bottom: 8px;
+            font-size: 22px;
+        }
+        
+        .sidebar-header .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        .sidebar-header .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .sidebar-content {
+            padding: 20px;
+        }
+        
+        .info-section {
+            margin-bottom: 24px;
+        }
+        
+        .info-section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .info-row {
+            display: flex;
+            margin: 10px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #64748b;
+            min-width: 120px;
+        }
+        
+        .info-value {
+            color: #1e293b;
+            flex: 1;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .dropdown-toggle {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .dropdown-toggle:hover {
+            background: #e2e8f0;
+        }
+        
+        .dropdown-toggle.open {
+            background: #dbeafe;
+        }
+        
+        .dropdown-arrow {
+            transition: transform 0.2s;
+            font-size: 12px;
+        }
+        
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .program-types-container {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 3px solid #3b82f6;
+            margin-bottom: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .program-types-container.open {
+            display: flex;
+        }
+        
+        .program-type-badge {
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .program-type-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .program-type-badge.active {
+            border-color: #1e293b;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #1e293b;
+        }
+        
+        .program-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .program-item {
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .program-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        
+        .program-details {
+            font-size: 13px;
+            color: #64748b;
+        }
+        
+        .external-link {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 20px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .external-link:hover {
+            background: #2563eb;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 5;
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        
+        .legend-item:hover {
+            background: #f1f5f9;
+        }
+        
+        .legend-item input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .legend-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .legend-text {
+            font-size: 13px;
+            color: #475569;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="filters-panel">
+        <h3>Toronto Recreation Finder</h3>
+        
+        <div class="filter-group">
+            <label for="activity-filter">Activity / Program</label>
+            <select id="activity-filter">
+                <option value="">All Activities</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="district-filter">District</label>
+            <select id="district-filter">
+                <option value="">All Districts</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="weekday-filter">Day of Week</label>
+            <select id="weekday-filter">
+                <option value="">Any Day</option>
+                <option value="0">Monday</option>
+                <option value="1">Tuesday</option>
+                <option value="2">Wednesday</option>
+                <option value="3">Thursday</option>
+                <option value="4">Friday</option>
+                <option value="5">Saturday</option>
+                <option value="6">Sunday</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="facility-filter">Facility Type</label>
+            <select id="facility-filter">
+                <option value="">All Types</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <button class="btn btn-primary" onclick="applyFilters()">Search</button>
+            <button class="btn btn-secondary" onclick="resetFilters()">Reset Filters</button>
+        </div>
+        
+        <div class="filter-group">
+            <button class="btn btn-link" onclick="findNearMe()">Find Near Me</button>
+        </div>
+        
+        <div id="status">
+            Loading map...
+        </div>
+    </div>
+    
+    <div class="details-sidebar" id="detailsSidebar">
+        <div class="sidebar-header">
+            <button class="close-btn" onclick="closeSidebar()">×</button>
+            <h2 id="sidebarTitle">Centre Details</h2>
+            <p id="sidebarSubtitle" style="opacity: 0.9; font-size: 14px;"></p>
+        </div>
+        <div class="sidebar-content" id="sidebarContent">
+            <div class="empty-state">Select a centre on the map to view details</div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-title">Map Layers</div>
+        <label class="legend-item">
+            <input type="checkbox" id="toggle-centres" checked onchange="toggleLayer('centres')">
+            <div class="legend-icon" style="background: #3b82f6;"></div>
+            <span class="legend-text">Recreation Centres</span>
+        </label>
+        <label class="legend-item">
+            <input type="checkbox" id="toggle-wards" checked onchange="toggleLayer('wards')">
+            <div class="legend-icon" style="border: 2px solid #1e293b; background: transparent;"></div>
+            <span class="legend-text">Ward Boundaries</span>
+        </label>
+    </div>
+    
+    <div class="loading" id="loading">Loading...</div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let map;
+        let userLocation = null;
+        let currentCentreId = null;
+        let allPrograms = { dropin: [], registered: [] };
+        
+        map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm-tiles': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap contributors'
+                    }
+                },
+                layers: [{
+                    id: 'osm-tiles',
+                    type: 'raster',
+                    source: 'osm-tiles',
+                    minzoom: 0,
+                    maxzoom: 19
+                }]
+            },
+            center: [-79.3832, 43.6532],
+            zoom: 11
+        });
+        
+        map.on('load', async () => {
+            console.log('Map loaded');
+            await Promise.all([
+                loadWards(),
+                loadFilterOptions(),
+                loadCentres()
+            ]);
+            document.getElementById('status').innerHTML = 'Map loaded!<br><small>Click markers for details</small>';
+        });
+        
+        async function loadWards() {
+            try {
+                const response = await fetch(`${API_URL}/api/wards/geojson`);
+                const data = await response.json();
+                
+                map.addSource('wards', { type: 'geojson', data: data });
+                map.addLayer({
+                    id: 'wards-fill',
+                    type: 'fill',
+                    source: 'wards',
+                    paint: { 'fill-color': '#94a3b8', 'fill-opacity': 0.05 }
+                });
+                map.addLayer({
+                    id: 'wards-outline',
+                    type: 'line',
+                    source: 'wards',
+                    paint: { 'line-color': '#1e293b', 'line-width': 2, 'line-opacity': 0.6 }
+                });
+                console.log('Wards loaded');
+            } catch (error) {
+                console.error('Error loading wards:', error);
+            }
+        }
+        
+        async function loadFilterOptions() {
+            try {
+                const [activitiesRes, districtsRes, typesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/activities?limit=100`),
+                    fetch(`${API_URL}/api/districts`),
+                    fetch(`${API_URL}/api/facility-types`)
+                ]);
+                
+                const [activities, districts, types] = await Promise.all([
+                    activitiesRes.json(),
+                    districtsRes.json(),
+                    typesRes.json()
+                ]);
+                
+                const activitySelect = document.getElementById('activity-filter');
+                activitySelect.innerHTML = '<option value="">All Activities</option>';
+                activities.forEach(act => {
+                    const option = document.createElement('option');
+                    option.value = act.activity;
+                    option.textContent = `${act.activity} (${act.count})`;
+                    activitySelect.appendChild(option);
+                });
+                
+                const districtSelect = document.getElementById('district-filter');
+                districtSelect.innerHTML = '<option value="">All Districts</option>';
+                districts.forEach(dist => {
+                    const option = document.createElement('option');
+                    option.value = dist.district;
+                    option.textContent = `${dist.district} (${dist.location_count})`;
+                    districtSelect.appendChild(option);
+                });
+                
+                const typeSelect = document.getElementById('facility-filter');
+                typeSelect.innerHTML = '<option value="">All Types</option>';
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.facility_type;
+                    option.textContent = `${type.facility_type} (${type.count})`;
+                    typeSelect.appendChild(option);
+                });
+                console.log('Filter options loaded');
+            } catch (error) {
+                console.error('Error loading filter options:', error);
+            }
+        }
+        
+        async function loadCentres() {
+            showLoading(true);
+            try {
+                const params = new URLSearchParams();
+                const activity = document.getElementById('activity-filter').value;
+                const district = document.getElementById('district-filter').value;
+                const weekday = document.getElementById('weekday-filter').value;
+                const facilityType = document.getElementById('facility-filter').value;
+                
+                if (activity) params.append('activity', activity);
+                if (district) params.append('district', district);
+                if (weekday) params.append('weekday', weekday);
+                if (facilityType) params.append('facility_type', facilityType);
+                
+                const url = `${API_URL}/api/centres/geojson?${params}`;
+                console.log('Loading centres from:', url);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log('Centres data:', data);
+                
+                if (map.getSource('centres')) {
+                    map.getSource('centres').setData(data);
+                } else {
+                    map.addSource('centres', { type: 'geojson', data: data });
+                    
+                    map.addLayer({
+                        id: 'centres-circle',
+                        type: 'circle',
+                        source: 'centres',
+                        paint: {
+                            'circle-radius': ['interpolate', ['linear'], ['get', 'total_programs'], 0, 8, 10, 12, 50, 16, 100, 20],
+                            'circle-color': '#3b82f6',
+                            'circle-opacity': 0.8,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#ffffff'
+                        }
+                    });
+                    
+                    map.on('click', 'centres-circle', async (e) => {
+                        const feature = e.features[0];
+                        const centreId = feature.properties.id;
+                        await showCentreDetails(centreId);
+                    });
+                    
+                    map.on('mouseenter', 'centres-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+                    map.on('mouseleave', 'centres-circle', () => { map.getCanvas().style.cursor = ''; });
+                }
+                
+                const count = data.features ? data.features.length : 0;
+                if (count > 0 && data.features) {
+                    const bounds = new maplibregl.LngLatBounds();
+                    data.features.forEach(feature => bounds.extend(feature.geometry.coordinates));
+                    map.fitBounds(bounds, { padding: 100, maxZoom: 13 });
+                }
+                
+                document.getElementById('status').innerHTML = `Found ${count} centre${count !== 1 ? 's' : ''}<br><small>Click markers for details</small>`;
+            } catch (error) {
+                console.error('Error loading centres:', error);
+                document.getElementById('status').innerHTML = 'Error loading centres. Check console.';
+            }
+            showLoading(false);
+        }
+        
+        async function showCentreDetails(centreId) {
+            showLoading(true);
+            currentCentreId = centreId;
+            
+            try {
+                const [detailRes, programsRes, programTypesRes, facilitiesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/centres/${centreId}`),
+                    fetch(`${API_URL}/api/centres/${centreId}/programs`),
+                    fetch(`${API_URL}/api/centres/${centreId}/program-types`),
+                    fetch(`${API_URL}/api/centres/${centreId}/facilities`)
+                ]);
+                
+                const [detail, programs, programTypes, facilities] = await Promise.all([
+                    detailRes.json(),
+                    programsRes.json(),
+                    programTypesRes.json(),
+                    facilitiesRes.json()
+                ]);
+                
+                allPrograms = programs;
+                
+                document.getElementById('sidebarTitle').textContent = detail.name;
+                document.getElementById('sidebarSubtitle').textContent = detail.facility_type || 'Recreation Centre';
+                
+                let html = '';
+                
+                html += '<div class="info-section">';
+                html += '<h3>Location Information</h3>';
+                if (detail.address) html += `<div class="info-row"><span class="info-label">Address:</span><span class="info-value">${detail.address}</span></div>`;
+                if (detail.district) html += `<div class="info-row"><span class="info-label">District:</span><span class="info-value">${detail.district}</span></div>`;
+                if (detail.intersection) html += `<div class="info-row"><span class="info-label">Intersection:</span><span class="info-value">${detail.intersection}</span></div>`;
+                if (detail.ttc_information) html += `<div class="info-row"><span class="info-label">TTC:</span><span class="info-value">${detail.ttc_information}</span></div>`;
+                if (detail.phone && detail.phone !== 'None') html += `<div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${detail.phone}</span></div>`;
+                html += '</div>';
+                
+                html += '<div class="info-section"><h3>Accessibility</h3>';
+                html += `<div class="info-value">${detail.accessibility || 'Information not available'}</div></div>`;
+                
+                if (detail.amenities && detail.amenities !== 'None') {
+                    html += '<div class="info-section"><h3>Amenities</h3>';
+                    const amenitiesList = detail.amenities.split(',').map(a => a.trim());
+                    amenitiesList.forEach(amenity => html += `<span class="badge badge-blue">${amenity}</span>`);
+                    html += '</div>';
+                }
+                
+                // Program types section - DROP-IN
+                const dropinCount = programTypes.dropin && programTypes.dropin.titles ? programTypes.dropin.titles.length : 0;
+                
+                if (dropinCount > 0) {
+                    html += '<div class="info-section"><h3>Drop-in Programs</h3>';
+                    html += '<button class="dropdown-toggle" onclick="toggleProgramTypesDropdown(event)"><span>Filter by type ('+  dropinCount +' types)</span><span class="dropdown-arrow">▼</span></button>';
+                    html += '<div class="program-types-container">';
+                    
+                    programTypes.dropin.titles.forEach(title => {
+                        html += `<span class="badge badge-green program-type-badge" onclick="filterProgramsByType('${title.replace(/'/g, "\\'")}', 'dropin', event)">${title}</span>`;
+                    });
+                    
+                    html += '</div>';
+                    
+                    // Drop-in program list
+                    html += '<div class="program-list" id="dropin-list">';
+                    programs.dropin.forEach(prog => {
+                        html += `<div class="program-item" data-program-type="dropin-${prog.course_title.replace(/"/g, '&quot;')}">`;
+                        html += `<div class="program-title">${prog.course_title}</div>`;
+                        html += '<div class="program-details">';
+                        if (prog.day_of_week && prog.start_time) html += `${prog.day_of_week} ${prog.start_time.substring(0,5)} - ${prog.end_time.substring(0,5)}`;
+                        if (prog.age_min || prog.age_max) {
+                            let ageStr = '';
+                            if (prog.age_min && prog.age_max) {
+                                ageStr = `Ages: ${prog.age_min}-${prog.age_max}`;
+                            } else if (prog.age_min) {
+                                ageStr = `Ages: ${prog.age_min}+`;
+                            } else if (prog.age_max) {
+                                ageStr = `Ages: Under ${prog.age_max}`;
+                            }
+                            if (ageStr) html += ` | ${ageStr}`;
+                        }
+                        html += '</div></div>';
+                    });
+                    html += '</div>';
+                    html += '</div>';
+                }
+                
+                // Program types section - REGISTERED
+                const registeredCount = programTypes.registered && programTypes.registered.titles ? programTypes.registered.titles.length : 0;
+                
+                if (registeredCount > 0) {
+                    html += '<div class="info-section"><h3>Registered Programs</h3>';
+                    html += '<button class="dropdown-toggle" onclick="toggleProgramTypesDropdown(event)"><span>Filter by type ('+  registeredCount +' types)</span><span class="dropdown-arrow">▼</span></button>';
+                    html += '<div class="program-types-container">';
+                    
+                    programTypes.registered.titles.forEach(title => {
+                        html += `<span class="badge badge-blue program-type-badge" onclick="filterProgramsByType('${title.replace(/'/g, "\\'")}', 'registered', event)">${title}</span>`;
+                    });
+                    
+                    html += '</div>';
+                    
+                    // Registered program list
+                    html += '<div class="program-list" id="registered-list">';
+                    programs.registered.forEach(prog => {
+                        html += `<div class="program-item" data-program-type="registered-${prog.course_title.replace(/"/g, '&quot;')}">`;
+                        html += `<div class="program-title">${prog.course_title}</div>`;
+                        html += '<div class="program-details">';
+                        if (prog.days_of_week) html += `${prog.days_of_week}`;
+                        if (prog.program_category) html += ` | ${prog.program_category}`;
+                        if (prog.min_age || prog.max_age) {
+                            let ageStr = '';
+                            if (prog.min_age && prog.max_age) {
+                                ageStr = `Ages: ${prog.min_age}-${prog.max_age}`;
+                            } else if (prog.min_age) {
+                                ageStr = `Ages: ${prog.min_age}+`;
+                            } else if (prog.max_age) {
+                                ageStr = `Ages: Under ${prog.max_age}`;
+                            }
+                            if (ageStr) html += ` | ${ageStr}`;
+                        }
+                        html += '</div></div>';
+                    });
+                    html += '</div>';
+                    html += '</div>';
+                }
+                
+                if (dropinCount === 0 && registeredCount === 0) {
+                    html += '<div class="info-section"><div class="info-value">No programs currently available</div></div>';
+                }
+                
+                if (facilities.length > 0) {
+                    html += '<div class="info-section"><h3>Facilities</h3>';
+                    const facilityTypes = {};
+                    facilities.forEach(f => { facilityTypes[f.facility_type] = (facilityTypes[f.facility_type] || 0) + 1; });
+                    Object.entries(facilityTypes).forEach(([type, count]) => html += `<span class="badge badge-blue">${type} (${count})</span>`);
+                    html += '</div>';
+                }
+                
+                if (detail.description && detail.description !== 'None') {
+                    html += '<div class="info-section"><h3>Description</h3>';
+                    html += `<div class="info-value">${detail.description}</div></div>`;
+                }
+                
+                if (detail.url && detail.url !== 'None') {
+                    html += `<a href="${detail.url}" target="_blank" class="external-link">View on Toronto.ca</a>`;
+                }
+                
+                document.getElementById('sidebarContent').innerHTML = html;
+                document.getElementById('detailsSidebar').classList.add('open');
+                
+            } catch (error) {
+                console.error('Error loading centre details:', error);
+                document.getElementById('sidebarContent').innerHTML = '<div class="empty-state">Error loading details. Please try again.</div>';
+            }
+            showLoading(false);
+        }
+        
+        function closeSidebar() {
+            document.getElementById('detailsSidebar').classList.remove('open');
+        }
+        
+        function toggleProgramTypesDropdown(event) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            const container = btn.nextElementSibling;
+            btn.classList.toggle('open');
+            container.classList.toggle('open');
+            btn.querySelector('.dropdown-arrow').classList.toggle('open');
+        }
+        
+        function filterProgramsByType(programType, programTypeCategory, event) {
+            event.stopPropagation();
+            event.currentTarget.classList.toggle('active');
+            
+            // Get active filters per category
+            const activeDropinFilters = Array.from(
+                document.querySelectorAll(`.program-types-container:has(+ .program-list#dropin-list) .program-type-badge.active`)
+            ).map(el => el.textContent.trim());
+            
+            const activeRegisteredFilters = Array.from(
+                document.querySelectorAll(`.program-types-container:has(+ .program-list#registered-list) .program-type-badge.active`)
+            ).map(el => el.textContent.trim());
+            
+            // Filter drop-in programs
+            const dropinList = document.getElementById('dropin-list');
+            if (dropinList) {
+                if (activeDropinFilters.length === 0) {
+                    dropinList.querySelectorAll('.program-item').forEach(item => item.style.display = 'block');
+                } else {
+                    dropinList.querySelectorAll('.program-item').forEach(item => {
+                        const itemType = item.getAttribute('data-program-type').replace('dropin-', '');
+                        const isVisible = activeDropinFilters.some(filter => itemType.includes(filter));
+                        item.style.display = isVisible ? 'block' : 'none';
+                    });
+                }
+            }
+            
+            // Filter registered programs
+            const registeredList = document.getElementById('registered-list');
+            if (registeredList) {
+                if (activeRegisteredFilters.length === 0) {
+                    registeredList.querySelectorAll('.program-item').forEach(item => item.style.display = 'block');
+                } else {
+                    registeredList.querySelectorAll('.program-item').forEach(item => {
+                        const itemType = item.getAttribute('data-program-type').replace('registered-', '');
+                        const isVisible = activeRegisteredFilters.some(filter => itemType.includes(filter));
+                        item.style.display = isVisible ? 'block' : 'none';
+                    });
+                }
+            }
+        }
+        
+        function toggleLayer(layerType) {
+            const checked = document.getElementById(`toggle-${layerType}`).checked;
+            const visibility = checked ? 'visible' : 'none';
+            if (layerType === 'centres') {
+                map.setLayoutProperty('centres-circle', 'visibility', visibility);
+            } else if (layerType === 'wards') {
+                map.setLayoutProperty('wards-fill', 'visibility', visibility);
+                map.setLayoutProperty('wards-outline', 'visibility', visibility);
+            }
+        }
+        
+        async function applyFilters() {
+            closeSidebar();
+            await loadCentres();
+        }
+        
+        async function resetFilters() {
+            document.getElementById('activity-filter').value = '';
+            document.getElementById('district-filter').value = '';
+            document.getElementById('weekday-filter').value = '';
+            document.getElementById('facility-filter').value = '';
+            closeSidebar();
+            await applyFilters();
+        }
+        
+        async function findNearMe() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            showLoading(true);
+            document.getElementById('status').textContent = 'Getting your location...';
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
+                    try {
+                        const response = await fetch(`${API_URL}/api/centres/nearby?lat=${userLocation.lat}&lon=${userLocation.lon}&radius_km=5`);
+                        const centres = await response.json();
+                        
+                        if (map.getSource('user-location')) {
+                            map.getSource('user-location').setData({
+                                type: 'Feature',
+                                geometry: { type: 'Point', coordinates: [userLocation.lon, userLocation.lat] }
+                            });
+                        } else {
+                            map.addSource('user-location', {
+                                type: 'geojson',
+                                data: {
+                                    type: 'Feature',
+                                    geometry: { type: 'Point', coordinates: [userLocation.lon, userLocation.lat] }
+                                }
+                            });
+                            map.addLayer({
+                                id: 'user-location-circle',
+                                type: 'circle',
+                                source: 'user-location',
+                                paint: {
+                                    'circle-radius': 12,
+                                    'circle-color': '#ef4444',
+                                    'circle-stroke-width': 3,
+                                    'circle-stroke-color': '#ffffff'
+                                }
+                            });
+                        }
+                        map.flyTo({ center: [userLocation.lon, userLocation.lat], zoom: 13, duration: 1500 });
+                        document.getElementById('status').innerHTML = `Found ${centres.length} centres within 5km<br><small>Red marker is your location</small>`;
+                    } catch (error) {
+                        console.error('Error finding nearby centres:', error);
+                        alert('Error finding nearby centres');
+                    }
+                    showLoading(false);
+                },
+                (error) => {
+                    showLoading(false);
+                    alert('Unable to get your location: ' + error.message);
+                    document.getElementById('status').textContent = 'Location access denied';
+                }
+            );
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
