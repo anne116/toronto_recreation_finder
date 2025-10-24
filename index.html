@@ -110,8 +110,8 @@
         .details-sidebar {
             position: fixed;
             top: 0;
-            right: -450px;
-            width: 450px;
+            right: -550px;
+            width: 550px;
             height: 100vh;
             background: white;
             box-shadow: -4px 0 12px rgba(0,0,0,0.15);
@@ -122,6 +122,25 @@
         
         .details-sidebar.open {
             right: 0;
+        }
+        
+        .sidebar-resizer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 10px;
+            height: 100%;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 30;
+        }
+        
+        .sidebar-resizer:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-resizer:active {
+            background: #3b82f6;
         }
         
         .sidebar-header {
@@ -253,8 +272,10 @@
             border-radius: 6px;
             border-left: 3px solid #3b82f6;
             margin-bottom: 16px;
-            max-height: 200px;
+            max-height: 100px;
             overflow-y: auto;
+            resize: vertical;
+            min-height: 100px;
         }
         
         .program-types-container.open {
@@ -277,7 +298,7 @@
         }
         
         .program-list {
-            max-height: 400px;
+            max-height: 150px;
             overflow-y: auto;
         }
         
@@ -419,6 +440,17 @@
         </div>
         
         <div class="filter-group">
+            <label for="age-filter">Age</label>
+            <select id="age-filter">
+                <option value="">All Ages</option>
+                <option value="young">Under 12</option>
+                <option value="teen">13-18</option>
+                <option value="adult">19-65</option>
+                <option value="senior">65+</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
             <label for="facility-filter">Facility Type</label>
             <select id="facility-filter">
                 <option value="">All Types</option>
@@ -440,6 +472,7 @@
     </div>
     
     <div class="details-sidebar" id="detailsSidebar">
+        <div class="sidebar-resizer" id="sidebarResizer"></div>
         <div class="sidebar-header">
             <button class="close-btn" onclick="closeSidebar()">×</button>
             <h2 id="sidebarTitle">Centre Details</h2>
@@ -505,6 +538,7 @@
                 loadCentres()
             ]);
             document.getElementById('status').innerHTML = 'Map loaded!<br><small>Click markers for details</small>';
+            initSidebarResizer();
         });
         
         async function loadWards() {
@@ -513,19 +547,30 @@
                 const data = await response.json();
                 
                 map.addSource('wards', { type: 'geojson', data: data });
+                
+                // Add ward layers BEFORE adding centres layer
                 map.addLayer({
                     id: 'wards-fill',
                     type: 'fill',
                     source: 'wards',
-                    paint: { 'fill-color': '#94a3b8', 'fill-opacity': 0.05 }
+                    paint: { 
+                        'fill-color': '#94a3b8', 
+                        'fill-opacity': 0.15 
+                    }
                 });
+                
                 map.addLayer({
                     id: 'wards-outline',
                     type: 'line',
                     source: 'wards',
-                    paint: { 'line-color': '#1e293b', 'line-width': 2, 'line-opacity': 0.6 }
+                    paint: { 
+                        'line-color': '#1e293b', 
+                        'line-width': 2.5, 
+                        'line-opacity': 0.9 
+                    }
                 });
-                console.log('Wards loaded');
+                
+                console.log('Wards loaded successfully');
             } catch (error) {
                 console.error('Error loading wards:', error);
             }
@@ -575,6 +620,28 @@
             } catch (error) {
                 console.error('Error loading filter options:', error);
             }
+        }
+        
+        function filterByAge(programs, ageRange) {
+            if (!ageRange || ageRange === '') return programs;
+            
+            return programs.filter(prog => {
+                let minAge = prog.age_min || prog.min_age;
+                let maxAge = prog.age_max || prog.max_age;
+                
+                switch(ageRange) {
+                    case 'young':
+                        return (!maxAge || maxAge <= 12) || (!minAge || minAge < 12);
+                    case 'teen':
+                        return (!minAge || minAge <= 18) && (!maxAge || maxAge >= 13);
+                    case 'adult':
+                        return (!minAge || minAge <= 65) && (!maxAge || maxAge >= 19 || !maxAge);
+                    case 'senior':
+                        return !minAge || minAge >= 55;
+                    default:
+                        return true;
+                }
+            });
         }
         
         async function loadCentres() {
@@ -645,21 +712,22 @@
             currentCentreId = centreId;
             
             try {
-                const [detailRes, programsRes, programTypesRes, facilitiesRes] = await Promise.all([
+                const [detailRes, programsRes, facilitiesRes] = await Promise.all([
                     fetch(`${API_URL}/api/centres/${centreId}`),
                     fetch(`${API_URL}/api/centres/${centreId}/programs`),
-                    fetch(`${API_URL}/api/centres/${centreId}/program-types`),
                     fetch(`${API_URL}/api/centres/${centreId}/facilities`)
                 ]);
                 
-                const [detail, programs, programTypes, facilities] = await Promise.all([
+                const [detail, programs, facilities] = await Promise.all([
                     detailRes.json(),
                     programsRes.json(),
-                    programTypesRes.json(),
                     facilitiesRes.json()
                 ]);
                 
                 allPrograms = programs;
+                const ageFilter = document.getElementById('age-filter')?.value || '';
+                const filteredDropin = filterByAge(programs.dropin, ageFilter);
+                const filteredRegistered = filterByAge(programs.registered, ageFilter);
                 
                 document.getElementById('sidebarTitle').textContent = detail.name;
                 document.getElementById('sidebarSubtitle').textContent = detail.facility_type || 'Recreation Centre';
@@ -685,24 +753,10 @@
                     html += '</div>';
                 }
                 
-                // Program types section - DROP-IN
-                const dropinCount = programTypes.dropin && programTypes.dropin.titles ? programTypes.dropin.titles.length : 0;
-                
-                if (dropinCount > 0) {
-                    html += '<div class="info-section"><h3>Drop-in Programs</h3>';
-                    html += '<button class="dropdown-toggle" onclick="toggleProgramTypesDropdown(event)"><span>Filter by type ('+  dropinCount +' types)</span><span class="dropdown-arrow">▼</span></button>';
-                    html += '<div class="program-types-container">';
-                    
-                    programTypes.dropin.titles.forEach(title => {
-                        html += `<span class="badge badge-green program-type-badge" onclick="filterProgramsByType('${title.replace(/'/g, "\\'")}', 'dropin', event)">${title}</span>`;
-                    });
-                    
-                    html += '</div>';
-                    
-                    // Drop-in program list
-                    html += '<div class="program-list" id="dropin-list">';
-                    programs.dropin.forEach(prog => {
-                        html += `<div class="program-item" data-program-type="dropin-${prog.course_title.replace(/"/g, '&quot;')}">`;
+                if (filteredDropin.length > 0) {
+                    html += '<div class="info-section"><h3>Drop-in Programs</h3><div class="program-list" id="dropin-list">';
+                    filteredDropin.forEach(prog => {
+                        html += `<div class="program-item">`;
                         html += `<div class="program-title">${prog.course_title}</div>`;
                         html += '<div class="program-details">';
                         if (prog.day_of_week && prog.start_time) html += `${prog.day_of_week} ${prog.start_time.substring(0,5)} - ${prog.end_time.substring(0,5)}`;
@@ -719,28 +773,13 @@
                         }
                         html += '</div></div>';
                     });
-                    html += '</div>';
-                    html += '</div>';
+                    html += '</div></div>';
                 }
                 
-                // Program types section - REGISTERED
-                const registeredCount = programTypes.registered && programTypes.registered.titles ? programTypes.registered.titles.length : 0;
-                
-                if (registeredCount > 0) {
-                    html += '<div class="info-section"><h3>Registered Programs</h3>';
-                    html += '<button class="dropdown-toggle" onclick="toggleProgramTypesDropdown(event)"><span>Filter by type ('+  registeredCount +' types)</span><span class="dropdown-arrow">▼</span></button>';
-                    html += '<div class="program-types-container">';
-                    
-                    programTypes.registered.titles.forEach(title => {
-                        html += `<span class="badge badge-blue program-type-badge" onclick="filterProgramsByType('${title.replace(/'/g, "\\'")}', 'registered', event)">${title}</span>`;
-                    });
-                    
-                    html += '</div>';
-                    
-                    // Registered program list
-                    html += '<div class="program-list" id="registered-list">';
-                    programs.registered.forEach(prog => {
-                        html += `<div class="program-item" data-program-type="registered-${prog.course_title.replace(/"/g, '&quot;')}">`;
+                if (filteredRegistered.length > 0) {
+                    html += '<div class="info-section"><h3>Registered Programs</h3><div class="program-list" id="registered-list">';
+                    filteredRegistered.forEach(prog => {
+                        html += `<div class="program-item">`;
                         html += `<div class="program-title">${prog.course_title}</div>`;
                         html += '<div class="program-details">';
                         if (prog.days_of_week) html += `${prog.days_of_week}`;
@@ -758,12 +797,11 @@
                         }
                         html += '</div></div>';
                     });
-                    html += '</div>';
-                    html += '</div>';
+                    html += '</div></div>';
                 }
                 
-                if (dropinCount === 0 && registeredCount === 0) {
-                    html += '<div class="info-section"><div class="info-value">No programs currently available</div></div>';
+                if (filteredDropin.length === 0 && filteredRegistered.length === 0) {
+                    html += '<div class="info-section"><div class="info-value">No programs match your age filter</div></div>';
                 }
                 
                 if (facilities.length > 0) {
@@ -781,156 +819,169 @@
                 
                 if (detail.url && detail.url !== 'None') {
                     html += `<a href="${detail.url}" target="_blank" class="external-link">View on Toronto.ca</a>`;
+      
+// === finish showCentreDetails: inject HTML and open the sidebar ===
                 }
-                
-                document.getElementById('sidebarContent').innerHTML = html;
-                document.getElementById('detailsSidebar').classList.add('open');
-                
-            } catch (error) {
-                console.error('Error loading centre details:', error);
-                document.getElementById('sidebarContent').innerHTML = '<div class="empty-state">Error loading details. Please try again.</div>';
+
+                // Inject into sidebar and open it
+                const panel = document.getElementById('sidebarContent');
+                panel.innerHTML = html;
+                openSidebar();
+            } catch (err) {
+                console.error('Error loading centre details:', err);
             }
             showLoading(false);
         }
-        
-        function closeSidebar() {
-            document.getElementById('detailsSidebar').classList.remove('open');
-        }
-        
-        function toggleProgramTypesDropdown(event) {
-            event.preventDefault();
-            const btn = event.currentTarget;
-            const container = btn.nextElementSibling;
-            btn.classList.toggle('open');
-            container.classList.toggle('open');
-            btn.querySelector('.dropdown-arrow').classList.toggle('open');
-        }
-        
-        function filterProgramsByType(programType, programTypeCategory, event) {
-            event.stopPropagation();
-            event.currentTarget.classList.toggle('active');
-            
-            // Get active filters per category
-            const activeDropinFilters = Array.from(
-                document.querySelectorAll(`.program-types-container:has(+ .program-list#dropin-list) .program-type-badge.active`)
-            ).map(el => el.textContent.trim());
-            
-            const activeRegisteredFilters = Array.from(
-                document.querySelectorAll(`.program-types-container:has(+ .program-list#registered-list) .program-type-badge.active`)
-            ).map(el => el.textContent.trim());
-            
-            // Filter drop-in programs
-            const dropinList = document.getElementById('dropin-list');
-            if (dropinList) {
-                if (activeDropinFilters.length === 0) {
-                    dropinList.querySelectorAll('.program-item').forEach(item => item.style.display = 'block');
-                } else {
-                    dropinList.querySelectorAll('.program-item').forEach(item => {
-                        const itemType = item.getAttribute('data-program-type').replace('dropin-', '');
-                        const isVisible = activeDropinFilters.some(filter => itemType.includes(filter));
-                        item.style.display = isVisible ? 'block' : 'none';
-                    });
-                }
-            }
-            
-            // Filter registered programs
-            const registeredList = document.getElementById('registered-list');
-            if (registeredList) {
-                if (activeRegisteredFilters.length === 0) {
-                    registeredList.querySelectorAll('.program-item').forEach(item => item.style.display = 'block');
-                } else {
-                    registeredList.querySelectorAll('.program-item').forEach(item => {
-                        const itemType = item.getAttribute('data-program-type').replace('registered-', '');
-                        const isVisible = activeRegisteredFilters.some(filter => itemType.includes(filter));
-                        item.style.display = isVisible ? 'block' : 'none';
-                    });
-                }
-            }
-        }
-        
-        function toggleLayer(layerType) {
-            const checked = document.getElementById(`toggle-${layerType}`).checked;
-            const visibility = checked ? 'visible' : 'none';
-            if (layerType === 'centres') {
-                map.setLayoutProperty('centres-circle', 'visibility', visibility);
-            } else if (layerType === 'wards') {
-                map.setLayoutProperty('wards-fill', 'visibility', visibility);
-                map.setLayoutProperty('wards-outline', 'visibility', visibility);
-            }
-        }
-        
-        async function applyFilters() {
-            closeSidebar();
-            await loadCentres();
-        }
-        
-        async function resetFilters() {
-            document.getElementById('activity-filter').value = '';
-            document.getElementById('district-filter').value = '';
-            document.getElementById('weekday-filter').value = '';
-            document.getElementById('facility-filter').value = '';
-            closeSidebar();
-            await applyFilters();
-        }
-        
-        async function findNearMe() {
-            if (!navigator.geolocation) {
-                alert('Geolocation is not supported by your browser');
-                return;
-            }
-            showLoading(true);
-            document.getElementById('status').textContent = 'Getting your location...';
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
-                    try {
-                        const response = await fetch(`${API_URL}/api/centres/nearby?lat=${userLocation.lat}&lon=${userLocation.lon}&radius_km=5`);
-                        const centres = await response.json();
-                        
-                        if (map.getSource('user-location')) {
-                            map.getSource('user-location').setData({
-                                type: 'Feature',
-                                geometry: { type: 'Point', coordinates: [userLocation.lon, userLocation.lat] }
-                            });
-                        } else {
-                            map.addSource('user-location', {
-                                type: 'geojson',
-                                data: {
-                                    type: 'Feature',
-                                    geometry: { type: 'Point', coordinates: [userLocation.lon, userLocation.lat] }
-                                }
-                            });
-                            map.addLayer({
-                                id: 'user-location-circle',
-                                type: 'circle',
-                                source: 'user-location',
-                                paint: {
-                                    'circle-radius': 12,
-                                    'circle-color': '#ef4444',
-                                    'circle-stroke-width': 3,
-                                    'circle-stroke-color': '#ffffff'
-                                }
-                            });
-                        }
-                        map.flyTo({ center: [userLocation.lon, userLocation.lat], zoom: 13, duration: 1500 });
-                        document.getElementById('status').innerHTML = `Found ${centres.length} centres within 5km<br><small>Red marker is your location</small>`;
-                    } catch (error) {
-                        console.error('Error finding nearby centres:', error);
-                        alert('Error finding nearby centres');
-                    }
-                    showLoading(false);
-                },
-                (error) => {
-                    showLoading(false);
-                    alert('Unable to get your location: ' + error.message);
-                    document.getElementById('status').textContent = 'Location access denied';
-                }
-            );
-        }
-        
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-    </script>
-</body>
-</html>
+
+// ========== UI helpers & event handlers ==========
+function showLoading(show) {
+    const el = document.getElementById('loading');
+    el.style.display = show ? 'block' : 'none';
+}
+
+function openSidebar() {
+    document.getElementById('detailsSidebar').classList.add('open');
+}
+function closeSidebar() {
+    document.getElementById('detailsSidebar').classList.remove('open');
+}
+window.closeSidebar = closeSidebar; // enable HTML onclick
+
+function applyFilters() {
+    loadCentres();
+}
+window.applyFilters = applyFilters;
+
+function resetFilters() {
+    ['activity-filter','district-filter','weekday-filter','age-filter','facility-filter']
+      .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+      });
+    loadCentres();
+    if (currentCentreId) updateProgramsByAge();
+}
+window.resetFilters = resetFilters;
+
+// Re-render program lists in the sidebar when age filter changes
+function updateProgramsByAge() {
+    if (!allPrograms) return;
+    const age = document.getElementById('age-filter')?.value || '';
+
+    const filteredDropin = filterByAge(allPrograms.dropin || [], age);
+    const filteredRegistered = filterByAge(allPrograms.registered || [], age);
+
+    const dropinContainer = document.getElementById('dropin-list');
+    const regContainer = document.getElementById('registered-list');
+
+    if (dropinContainer) {
+        dropinContainer.innerHTML = filteredDropin.map(prog => {
+            const time = (prog.day_of_week && prog.start_time)
+                ? `${prog.day_of_week} ${prog.start_time.substring(0,5)} - ${prog.end_time.substring(0,5)}`
+                : '';
+            let ageStr = '';
+            if (prog.age_min && prog.age_max) ageStr = ` | Ages: ${prog.age_min}-${prog.age_max}`;
+            else if (prog.age_min)           ageStr = ` | Ages: ${prog.age_min}+`;
+            else if (prog.age_max)           ageStr = ` | Ages: Under ${prog.age_max}`;
+            return `
+            <div class="program-item">
+              <div class="program-title">${prog.course_title || ''}</div>
+              <div class="program-details">${time}${ageStr}</div>
+            </div>`;
+        }).join('');
+    }
+
+    if (regContainer) {
+        regContainer.innerHTML = filteredRegistered.map(prog => {
+            const days = prog.days_of_week ? `${prog.days_of_week}` : '';
+            const cat  = prog.program_category ? ` | ${prog.program_category}` : '';
+            let ageStr = '';
+            if (prog.min_age && prog.max_age) ageStr = ` | Ages: ${prog.min_age}-${prog.max_age}`;
+            else if (prog.min_age)            ageStr = ` | Ages: ${prog.min_age}+`;
+            else if (prog.max_age)            ageStr = ` | Ages: Under ${prog.max_age}`;
+            return `
+            <div class="program-item">
+              <div class="program-title">${prog.course_title || ''}</div>
+              <div class="program-details">${days}${cat}${ageStr}</div>
+            </div>`;
+        }).join('');
+    }
+
+    if ((filteredDropin.length === 0) && (filteredRegistered.length === 0)) {
+        const panel = document.getElementById('sidebarContent');
+        const notice = document.createElement('div');
+        notice.className = 'info-section';
+        notice.innerHTML = '<div class="info-value">No programs match your age filter</div>';
+        panel.appendChild(notice);
+    }
+}
+
+// live update when age changes
+document.getElementById('age-filter')?.addEventListener('change', updateProgramsByAge);
+
+// Legend toggles
+function toggleLayer(name) {
+    if (!map) return;
+    if (name === 'centres') {
+        const vis = map.getLayoutProperty('centres-circle', 'visibility') !== 'none' ? 'none' : 'visible';
+        if (map.getLayer('centres-circle')) map.setLayoutProperty('centres-circle', 'visibility', vis);
+    }
+    if (name === 'wards') {
+        const isVisible = map.getLayoutProperty('wards-outline', 'visibility') !== 'none';
+        const vis = isVisible ? 'none' : 'visible';
+        if (map.getLayer('wards-fill'))    map.setLayoutProperty('wards-fill', 'visibility', vis);
+        if (map.getLayer('wards-outline')) map.setLayoutProperty('wards-outline', 'visibility', vis);
+    }
+}
+window.toggleLayer = toggleLayer;
+
+// Find Near Me (geolocate and fly)
+let userMarker = null;
+function findNearMe() {
+    if (!navigator.geolocation) {
+        document.getElementById('status').textContent = 'Geolocation is not supported by this browser.';
+        return;
+    }
+    document.getElementById('status').textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(pos => {
+        userLocation = [pos.coords.longitude, pos.coords.latitude];
+        if (userMarker) userMarker.remove();
+        userMarker = new maplibregl.Marker({ color: '#10b981' })
+            .setLngLat(userLocation).addTo(map);
+        map.flyTo({ center: userLocation, zoom: 13 });
+        document.getElementById('status').textContent = 'Your location is shown (green marker).';
+    }, err => {
+        console.error(err);
+        document.getElementById('status').textContent = 'Unable to retrieve your location.';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+}
+window.findNearMe = findNearMe;
+
+// Resizable sidebar
+function initSidebarResizer() {
+    const sidebar = document.getElementById('detailsSidebar');
+    const resizer = document.getElementById('sidebarResizer');
+    if (!sidebar || !resizer) return;
+
+    let resizing = false;
+
+    const onMove = (e) => {
+        if (!resizing) return;
+        const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+        const newWidth = Math.min(Math.max(window.innerWidth - pageX, 320), 800);
+        sidebar.style.width = `${newWidth}px`;
+    };
+
+    const stop = () => { resizing = false; document.body.style.userSelect = ''; };
+
+    resizer.addEventListener('mousedown', () => { resizing = true; document.body.style.userSelect = 'none'; });
+    resizer.addEventListener('touchstart', () => { resizing = true; document.body.style.userSelect = 'none'; });
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: false });
+
+    window.addEventListener('mouseup', stop);
+    window.addEventListener('mouseleave', stop);
+    window.addEventListener('touchend', stop);
+}
+</script>
