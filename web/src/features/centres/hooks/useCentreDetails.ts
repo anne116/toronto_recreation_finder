@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
+import type {
   AgeFilter, CentreDetail, CentreFacility, CentrePrograms,
   ProgramDropin, ProgramRegistered
 } from '../../../shared/types';

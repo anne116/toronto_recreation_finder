@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityOption, DistrictOption, FacilityTypeOption, AgeFilter } from '../../../shared/types';
+import type { ActivityOption, DistrictOption, FacilityTypeOption, AgeFilter } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api';
 
 type Filters = { activity: string; district: string; weekday: string; age: AgeFilter; facility_type: string };

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import MapView from '../features/map/ui/MapView';
+import MapView from '../features/map/ui/MapView.tsx';
 import Legend from '../features/legend/ui/Legend';
 import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import DetailsSidebar from '../features/centres/ui/DetailsSidebar';
-import { AgeFilter, CentresFeatureCollection, WardFeatureCollection } from '../shared/types';
+import type { AgeFilter, CentresFeatureCollection, WardFeatureCollection } from '../shared/types';
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
 
@@ -15,10 +15,7 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState('Loading map...');
 
-  const { data: centres, loading: centresLoading, refetch } = useCentres({
-    activity: filters.activity, district: filters.district,
-    weekday: filters.weekday, facility_type: filters.facility_type
-  });
+  const { data: centres, loading: centresLoading, refetch } = useCentres(filters);
 
   useEffect(() => {
     (async () => {

@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import maplibregl, { Map } from 'maplibre-gl';
+import { useEffect, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
+import maplibregl from 'maplibre-gl';
+import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
+import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
+
 
 type Props = {
   centres: CentresFeatureCollection | null;
@@ -12,9 +14,10 @@ type Props = {
 };
 
 export default function MapView({ centres, wards, onCentreClick, layersVisible, userLocation }: Props) {
-  const mapRef = useRef<Map | null>(null);
+  const mapRef = useRef<MaplibreMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -34,15 +37,21 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
       },
       center: [-79.3832, 43.6532], zoom: 11
     });
+    map.on('load', () => setMapReady(true));
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      setMapReady(false);
+      map.remove();
+      mapRef.current = null;
+    };
+
   }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !wards) return;
     if (map.getSource('wards')) {
-      (map.getSource('wards') as maplibregl.GeoJSONSource).setData(wards as any);
+      (map.getSource('wards') as GeoJSONSource).setData(wards as any);
     } else {
       map.addSource('wards', { type: 'geojson', data: wards as any });
       map.addLayer({ id: 'wards-fill', type: 'fill', source: 'wards', paint: { 'fill-color': '#94a3b8', 'fill-opacity': 0.15 } });
@@ -56,7 +65,7 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
     const map = mapRef.current;
     if (!map || !centres) return;
     if (map.getSource('centres')) {
-      (map.getSource('centres') as maplibregl.GeoJSONSource).setData(centres as any);
+      (map.getSource('centres') as GeoJSONSource).setData(centres as any);
     } else {
       map.addSource('centres', { type: 'geojson', data: centres as any });
       map.addLayer({

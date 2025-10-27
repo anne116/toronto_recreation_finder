@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CentresFeatureCollection } from '../../../shared/types';
+import type { CentresFeatureCollection } from '../../../shared/types';
 import { getCentres } from '../api/centres.api';
 
 export type CentreFilters = { activity: string; district: string; weekday: string; facility_type: string };
@@ -17,7 +17,9 @@ export function useCentres(filters: CentreFilters) {
     finally { setLoading(false); }
   }, [filters]);
 
-  useEffect(() => { refetch(); }, [refetch]);
+  useEffect(() => {
+    refetch();
+  }, [filters.activity, filters.district, filters.weekday, filters.facility_type]); 
 
   return { data, loading, error, refetch };
 }

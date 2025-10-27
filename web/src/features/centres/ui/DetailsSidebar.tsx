@@ -1,4 +1,4 @@
-import { AgeFilter } from '../../../shared/types';
+import type { AgeFilter } from '../../../shared/types';
 import { useCentreDetails } from '../hooks/useCentreDetails';
 
 type Props = { centreId: string | number | null; age: AgeFilter; onClose: () => void };
