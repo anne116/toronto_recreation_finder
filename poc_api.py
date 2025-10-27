@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 from typing import Optional, List
 import uvicorn
 
@@ -496,31 +496,38 @@ async def get_nearby_centres(
             return cur.fetchall()
 
 @app.get("/api/wards/geojson")
-async def get_wards_geojson():
-    """Get Toronto ward boundaries as GeoJSON."""
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT jsonb_build_object(
-                    'type', 'FeatureCollection',
-                    'features', jsonb_agg(
-                        jsonb_build_object(
-                            'type', 'Feature',
-                            'geometry', ST_AsGeoJSON(geom)::jsonb,
-                            'properties', jsonb_build_object(
-                                'area_id', area_id,
-                                'name', area_name,
-                                'code', area_short_code,
-                                'description', area_desc
-                            )
-                        )
-                    )
-                ) as geojson
-                FROM wards
-                ORDER BY area_short_code;
-            """)
-            result = cur.fetchone()
-            return result['geojson'] if result else {"type": "FeatureCollection", "features": []}
+def get_wards_geojson():
+    sql = """
+        SELECT (
+          json_build_object(
+            'type','FeatureCollection',
+            'features', COALESCE(json_agg(
+              json_build_object(
+                'type','Feature',
+                'geometry', ST_AsGeoJSON(geom)::json,
+                'properties', json_build_object(
+                  'id', id,
+                  'area_id', area_id,
+                  'area_name', area_name,
+                  'area_short_code', area_short_code
+                )
+              )
+            ), '[]'::json)
+          )
+        )::text AS fc
+        FROM public.wards;
+    """
+    try:
+        with get_db() as conn, conn.cursor(row_factory=tuple_row) as cur:
+            cur.execute(sql)
+            fc_text = (cur.fetchone() or [None])[0] or '{"type":"FeatureCollection","features":[]}'
+        return Response(content=fc_text, media_type="application/json")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to build wards GeoJSON")
+
+
+
+
 
 # ============================================
 # STATISTICS & ANALYTICS ENDPOINTS
@@ -590,6 +597,17 @@ async def health_check():
             "error": str(e)
         }
 
+
+@app.get("/api/_health/wards")
+def health_wards():
+    with get_db() as conn, conn.cursor(row_factory=tuple_row) as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM public.wards;")
+        n = cur.fetchone()[0]  # tuple row -> index 0 works
+    return {"ok": True, "rows": int(n)}
+
+
+
+
 @app.get("/test/spatial")
 async def test_spatial_query():
     """Test PostGIS spatial queries - find centres near downtown Toronto."""
@@ -637,4 +655,4 @@ if __name__ == "__main__":
     print("📚 Docs: http://localhost:8000/docs")
     print("🧪 Test: http://localhost:8000/test/spatial")
     print("📊 Stats: http://localhost:8000/api/stats/summary")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("poc_api:app", host="0.0.0.0", port=8000, reload=True)
