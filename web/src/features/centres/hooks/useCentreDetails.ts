@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type {
   AgeFilter, CentreDetail, CentreFacility, CentrePrograms,
-  ProgramDropin, ProgramRegistered
+  DropInProgram, ProgramRegistered
 } from '../../../shared/types';
 import { getCentreDetail, getCentreFacilities, getCentrePrograms } from '../api/centres.api';
 
-function filterByAge<T extends ProgramDropin|ProgramRegistered>(programs: T[], age: AgeFilter) {
+function filterByAge<T extends DropInProgram|ProgramRegistered>(programs: T[], age: AgeFilter) {
   if (!age) return programs;
   return programs.filter(p => {
     const minAge = (p as any).age_min ?? (p as any).min_age;

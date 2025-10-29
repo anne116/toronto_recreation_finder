@@ -32,15 +32,22 @@ export interface WardFeatureCollection {
     amenities?: string; description?: string; facility_type?: string; url?: string;
   }
   
-  export interface ProgramDropin {
-    course_title: string; day_of_week?: string; start_time?: string; end_time?: string;
-    age_min?: number; age_max?: number;
+  export interface DropInProgram {
+    id: string | number;
+    centre_id?: string | number;
+    course_title: string;
+    activity?: string | null;      
+    day_of_week?: string | null;   
+    start_time?: string | null; 
+    end_time?: string | null; 
+    age_min?: number | null;   
+    age_max?: number | null;
   }
   export interface ProgramRegistered {
     course_title: string; days_of_week?: string; program_category?: string;
     min_age?: number; max_age?: number;
   }
-  export interface CentrePrograms { dropin: ProgramDropin[]; registered: ProgramRegistered[] }
+  export interface CentrePrograms { dropin: DropInProgram[]; registered: ProgramRegistered[] }
   export interface CentreFacility { facility_type: string }
   
   export type AgeFilter = '' | 'young' | 'teen' | 'adult' | 'senior';
