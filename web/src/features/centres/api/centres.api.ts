@@ -4,6 +4,8 @@ import type {
   WardFeatureCollection, CentresFeatureCollection,
   CentreDetail, CentrePrograms, CentreFacility
 } from '../../../shared/types/index.ts';
+import { mapRegisteredCsvRow } from '../../../shared/lib/registered.adapter';
+import type { RegisteredCsvRow, RegisteredProgram } from '../../../shared/types';
 
 export const getWards = () => get<WardFeatureCollection>('/api/wards/geojson');
 
@@ -27,3 +29,26 @@ export function getCentres(params: {
 export const getCentreDetail     = (id: string|number) => get<CentreDetail>(`/api/centres/${id}`);
 export const getCentrePrograms   = (id: string|number) => get<CentrePrograms>(`/api/centres/${id}/programs`);
 export const getCentreFacilities = (id: string|number) => get<CentreFacility[]>(`/api/centres/${id}/facilities`);
+
+
+export async function getCentreRegisteredPrograms(
+  id: string | number
+): Promise<RegisteredProgram[]> {
+  // 1) Try a dedicated endpoint if it exists
+  try {
+    const res = await get<any>(`/api/centres/${id}/registered`);
+    const rows: RegisteredCsvRow[] = Array.isArray(res)
+      ? res
+      : (res.rows ?? res.programs ?? res.registered ?? []);
+    if (rows?.length) return rows.map(mapRegisteredCsvRow);
+  } catch {
+    // ignore and fall through
+  }
+
+  // 2) Fallback: pull from /programs payload
+  const payload = await get<any>(`/api/centres/${id}/programs`);
+  const rows: RegisteredCsvRow[] = Array.isArray(payload)
+    ? payload
+    : (payload.registered ?? payload.rows ?? payload.programs ?? []);
+  return (rows ?? []).map(mapRegisteredCsvRow);
+}

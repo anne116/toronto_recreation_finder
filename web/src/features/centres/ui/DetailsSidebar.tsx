@@ -1,10 +1,16 @@
 import { useMemo, useState } from "react";
-import type { AgeFilter, CentrePrograms, DropInProgram } from '../../../shared/types';
+import type { AgeFilter, DropInProgram } from '../../../shared/types';
 import { useCentreDetails } from '../hooks/useCentreDetails';
 
 import DropinControls from "./DropinControls";
 import DropinList from "./DropinList";
 import { filterBySportAndSchedule, type ScheduleKey } from "../../../shared/lib/dropin.derive";
+
+import RegisteredControls from "./RegisteredControls";
+import RegisteredList from "./RegisteredList";
+import { filterPrograms, type CategoryTag } from "../../../shared/lib/registered.derive";
+import type { RegisteredProgram } from "../../../shared/types";
+
 type Props = { centreId: string | number | null; age: AgeFilter; onClose: () => void };
 
 export default function DetailsSidebar({ centreId, age, onClose }: Props) {
@@ -13,6 +19,9 @@ export default function DetailsSidebar({ centreId, age, onClose }: Props) {
   // NEW: local UI state for this mini-SPA
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleKey | null>(null);
+
+  const [regSelectedCategory, setRegSelectedCategory] = useState<CategoryTag | null>(null);
+  const [regSelectedSection, setRegSelectedSection] = useState<string | null>(null);
 
   const dropin: DropInProgram[] = programs?.dropin ?? [];
 
@@ -25,6 +34,18 @@ export default function DetailsSidebar({ centreId, age, onClose }: Props) {
   function handleSelectSport(s: string | null) {
     setSelectedSport(s);
     setSelectedSchedule(null); // clear schedule when sport changes
+  }
+
+  const registered: RegisteredProgram[] = programs?.registered ?? [];
+
+  const registeredFiltered = useMemo(
+    () => filterPrograms(registered, regSelectedCategory, regSelectedSection),
+    [registered, regSelectedCategory, regSelectedSection]
+  );
+
+  function handleSelectRegCategory(c: CategoryTag) {
+    setRegSelectedCategory(c);
+    setRegSelectedSection(null); // clear section when category changes
   }
 
 
@@ -117,31 +138,17 @@ export default function DetailsSidebar({ centreId, age, onClose }: Props) {
             )}
 
             {/* Registered programs (unchanged) */}
-            {programs.registered.length > 0 && (
-              <div className="info-section">
-                <h3>Registered Programs</h3>
-                <div className="program-list" id="registered-list">
-                  {programs.registered.map((p, i) => (
-                    <div className="program-item" key={i}>
-                      <div className="program-title">{p.course_title}</div>
-                      <div className="program-details">
-                        {p.days_of_week || ""}
-                        {p.program_category ? ` | ${p.program_category}` : ""}
-                        {(p.min_age || p.max_age) && (
-                          <>
-                            {" | Ages: "}
-                            {p.min_age && p.max_age
-                              ? `${p.min_age}-${p.max_age}`
-                              : p.min_age
-                              ? `${p.min_age}+`
-                              : `Under ${p.max_age}`}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {registered.length > 0 && (
+              <>
+                <RegisteredControls
+                  programs={registered}
+                  selectedCategory={regSelectedCategory}
+                  onSelectCategory={handleSelectRegCategory}
+                  selectedSection={regSelectedSection}
+                  onSelectSection={setRegSelectedSection}
+                />
+                <RegisteredList programs={registeredFiltered} />
+              </>
             )}
 
             {/* Empty-state if nothing to show */}
