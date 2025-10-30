@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { AgeFilter, DropInProgram } from '../../../shared/types';
 import { useCentreDetails } from '../hooks/useCentreDetails';
 
@@ -15,17 +15,48 @@ type Props = { centreId: string | number | null; age: AgeFilter; onClose: () => 
 
 export default function DetailsSidebar({ centreId, age, onClose }: Props) {
   const { detail, programs, facilities, loading } = useCentreDetails(centreId, age);
+  
+  const [sidebarWidth, setSidebarWidth] = useState<number>(550);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // NEW: local UI state for this mini-SPA
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault();
+
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    setIsDragging(true);
+  
+    function onMove(ev: MouseEvent) {
+      const viewportWidth = window.innerWidth;
+      const mouseX = ev.clientX;
+      const newWidth = viewportWidth - mouseX;
+
+      const clamped = Math.min(
+        Math.min(900, viewportWidth * 0.8),
+        Math.max(280, newWidth)
+      );
+      setSidebarWidth(clamped);
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = prevUserSelect;
+      document.body.style.cursor = "";
+      setIsDragging(false);
+    }
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleKey | null>(null);
-
   const [regSelectedCategory, setRegSelectedCategory] = useState<CategoryTag | null>(null);
   const [regSelectedSection, setRegSelectedSection] = useState<string | null>(null);
 
   const dropin: DropInProgram[] = programs?.dropin ?? [];
 
-  // Apply sport + schedule
   const dropinFiltered = useMemo(
     () => filterBySportAndSchedule(dropin, selectedSport, selectedSchedule),
     [dropin, selectedSport, selectedSchedule]
@@ -51,8 +82,17 @@ export default function DetailsSidebar({ centreId, age, onClose }: Props) {
 
 
   return (
-    <div className={`details-sidebar ${centreId ? "open" : ""}`} id="detailsSidebar">
-      <div className="sidebar-resizer" />
+    <div 
+      className={`details-sidebar ${centreId ? "open" : ""} ${isDragging ? "dragging" : ""}`}
+      id="detailsSidebar"
+      style={{width: sidebarWidth}}
+    >
+      <div 
+        className="sidebar-resizer"
+        onMouseDown={startDrag}
+        title="Drag to resize"
+        style={{ right: sidebarWidth - 10 }}
+      />
       <div className="sidebar-header">
         <button className="close-btn" onClick={onClose}>×</button>
         <h2 id="sidebarTitle">{detail?.name ?? "Centre Details"}</h2>

@@ -107,29 +107,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     z-index: 20;
     transition: right 0.3s ease;
     overflow-y: auto;
+    pointer-events: auto;
 }
 
 .details-sidebar.open {
     right: 0;
 }
+.details-sidebar.dragging {
+    transition: none !important;
+}
 
 .sidebar-resizer {
-    position: absolute;
-    left: 0;
+    position: fixed;
+    left: auto;
     top: 0;
     width: 10px;
     height: 100%;
     cursor: col-resize;
     background: transparent;
-    z-index: 30;
+    z-index: 9999;
+    pointer-events: all;
+}
+.sidebar-resizer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: transparent;
+    transition: background 0.2s;
 }
 
 .sidebar-resizer:hover {
-    background: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+}
+.sidebar-resizer:hover::before {
+    background: rgba(59, 130, 246, 0.5);
 }
 
 .sidebar-resizer:active {
+    background: rgba(59, 130, 246, 0.2);
+}
+.sidebar-resizer:active::before {
     background: #3b82f6;
+    width: 3px;
 }
 
 .sidebar-header {
@@ -139,6 +161,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     position: sticky;
     top: 0;
     z-index: 1;
+    pointer-events: auto;
 }
 
 .sidebar-header h2 {
@@ -166,6 +189,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
 .sidebar-content {
     padding: 20px;
+    position: relative;
+    z-index: 0;  /* Lower than resizer */
 }
 
 .info-section {
