@@ -2,7 +2,8 @@ import { get } from '../../../shared/lib/http';
 import type {
   ActivityOption, DistrictOption, FacilityTypeOption,
   WardFeatureCollection, CentresFeatureCollection,
-  CentreDetail, CentrePrograms, CentreFacility
+  CentreDetail, CentrePrograms, CentreFacility,
+  DropInProgram
 } from '../../../shared/types/index.ts';
 import { mapRegisteredCsvRow } from '../../../shared/lib/registered.adapter';
 import type { RegisteredCsvRow, RegisteredProgram } from '../../../shared/types';
@@ -51,4 +52,78 @@ export async function getCentreRegisteredPrograms(
     ? payload
     : (payload.registered ?? payload.rows ?? payload.programs ?? []);
   return (rows ?? []).map(mapRegisteredCsvRow);
+}
+
+
+
+
+export interface AggregatedSearchParams {
+  activity?: string;
+  age?: string;  // 'young' | 'teen' | 'adult' | 'senior'
+  weekday?: string;
+  district?: string;
+  program_type?: 'dropin' | 'registered';
+}
+
+export interface AggregatedProgramResult extends DropInProgram {
+  // Additional fields from JOIN with locations
+  location_name?: string;
+  asset_name?: string;
+  address?: string;
+  district?: string;
+  lon?: number;
+  lat?: number;
+}
+
+export interface AggregatedSearchResponse {
+  program_type: 'dropin' | 'registered';
+  total: number;
+  filters: {
+    activity?: string;
+    age?: string;
+    weekday?: number;
+    district?: string;
+  };
+  programs: AggregatedProgramResult[];
+}
+
+/**
+ * Search for programs across ALL centres.
+ * This returns programs from multiple centres that match the criteria.
+ * 
+ * Use this for the weekly calendar grid that shows all available sessions.
+ */
+export async function searchProgramsAggregated(
+  params: AggregatedSearchParams
+): Promise<AggregatedSearchResponse> {
+  const qs = new URLSearchParams();
+  
+  if (params.activity) qs.append('activity', params.activity);
+  if (params.age) qs.append('age', params.age);
+  if (params.weekday) qs.append('weekday', params.weekday);
+  if (params.district) qs.append('district', params.district);
+  if (params.program_type) qs.append('program_type', params.program_type);
+  
+  return get<AggregatedSearchResponse>(`/api/programs/search?${qs.toString()}`);
+}
+
+/**
+ * Get quick stats about search results.
+ * Useful for showing "Found X programs at Y centres" messages.
+ */
+export async function getProgramSearchStats(
+  params: Omit<AggregatedSearchParams, 'program_type'>
+) {
+  const qs = new URLSearchParams();
+  
+  if (params.activity) qs.append('activity', params.activity);
+  if (params.age) qs.append('age', params.age);
+  if (params.weekday) qs.append('weekday', params.weekday);
+  if (params.district) qs.append('district', params.district);
+  
+  return get<{
+    dropin: { programs: number; centres: number };
+    registered: { programs: number; centres: number };
+    total: { programs: number; centres: number };
+  }>(`/api/programs/search/stats?${qs.toString()}`);
 }
