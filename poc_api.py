@@ -4,6 +4,7 @@ import psycopg
 from psycopg.rows import dict_row, tuple_row
 from typing import Optional, List
 import uvicorn
+from enum import Enum
 
 app = FastAPI(
     title="Toronto Recreation Finder API",
@@ -652,193 +653,122 @@ async def root():
 # ============================================
 # NEW ENDPOINT: AGGREGATED PROGRAM SEARCH
 # ============================================
+class AgeBucket(str, Enum):
+    young = "young"    # <=12
+    teen = "teen"      # 13–18
+    adult = "adult"    # 19–65 (inclusive enough for City data quirks)
+    senior = "senior"  # 55+
 
+class TimeOfDay(str, Enum):
+    morning = "morning"     # 06:00–11:59
+    afternoon = "afternoon" # 12:00–16:59
+    evening = "evening"     # 17:00–22:00
+    weekend = "weekend"     # Sat/Sun any time
 @app.get("/api/programs/search")
 async def search_programs_aggregated(
-    activity: Optional[str] = None,
-    age: Optional[str] = None,
-    weekday: Optional[int] = Query(None, ge=0, le=6, description="0=Monday, 6=Sunday"),
-    district: Optional[str] = None,
-    program_type: Optional[str] = Query("dropin", description="'dropin' or 'registered'"),
-    limit: int = Query(200, ge=1, le=500)
+    # TEXT filters
+    activity: Optional[str] = Query(None, description="partial match against course_title"),
+    district: Optional[str] = Query(None),
+    # ENUM filters (FastAPI validates these but passes them as strings!)
+    age: Optional[AgeBucket] = Query(None),
+    time_of_day: Optional[TimeOfDay] = Query(None),
+    # Numeric filters
+    weekday: Optional[int] = Query(None, ge=0, le=6),
+    limit: int = Query(2000, ge=1, le=5000)
 ):
     """
-    Search for programs across ALL centres with filters.
-    Returns aggregated results for weekly calendar grid.
-    
-    Use this when you want to see all matching programs across Toronto,
-    not just programs at a specific centre.
-    
-    - **activity**: Sport/program name (e.g., "Table Tennis", "Basketball")
-    - **age**: Age filter ("young", "teen", "adult", "senior")
-    - **weekday**: Day of week (0=Monday, 6=Sunday)
-    - **district**: Filter by district
-    - **program_type**: "dropin" or "registered"
-    - **limit**: Maximum results
+    Return DROP-IN programs that match the filters.
+    Flat rows with attached centre (location) info.
     """
     with get_db() as conn:
-        with conn.cursor() as cur:
-            
-            if program_type == "dropin":
-                # Query drop-in programs
-                query = """
-                    SELECT 
-                        pd.id,
-                        pd.course_id,
-                        pd.course_title,
-                        pd.section,
-                        pd.day_of_week,
-                        pd.start_time::text,
-                        pd.end_time::text,
-                        pd.age_min,
-                        pd.age_max,
-                        pd.location_id,
-                        l.location_name,
-                        l.asset_name,
-                        l.address,
-                        l.district,
-                        ST_X(l.geom) as lon,
-                        ST_Y(l.geom) as lat,
-                        pd.weekday,
-                        pd.date_range,
-                        pd.first_date::text,
-                        pd.last_date::text
-                    FROM programs_dropin pd
-                    JOIN locations l ON pd.location_id = l.location_id
-                    WHERE 1=1
-                """
-                params = {}
-                
-                # Activity filter
-                if activity:
-                    query += " AND pd.course_title ILIKE %(activity)s"
-                    params['activity'] = f"%{activity}%"
-                
-                # Age filter (map frontend age strings to age ranges)
-                if age:
-                    if age == "young":  # Under 12
-                        query += " AND (pd.age_max <= 12 OR pd.age_min < 12 OR pd.age_max IS NULL)"
-                    elif age == "teen":  # 13-18
-                        query += " AND (pd.age_min <= 18 OR pd.age_min IS NULL) AND (pd.age_max >= 13 OR pd.age_max IS NULL)"
-                    elif age == "adult":  # 19-65
-                        query += " AND (pd.age_min <= 65 OR pd.age_min IS NULL) AND (pd.age_max >= 19 OR pd.age_max IS NULL)"
-                    elif age == "senior":  # 65+
-                        query += " AND (pd.age_min >= 55 OR pd.age_min IS NULL)"
-                
-                # Weekday filter
-                if weekday is not None:
-                    query += " AND pd.weekday = %(weekday)s"
-                    params['weekday'] = weekday
-                
-                # District filter
-                if district:
-                    query += " AND l.district = %(district)s"
-                    params['district'] = district
-                
-                # Order by day of week, then time
-                query += """
-                    ORDER BY 
-                        pd.weekday,
-                        pd.start_time,
-                        l.location_name
-                    LIMIT %(limit)s;
-                """
-                params['limit'] = limit
-                
-                cur.execute(query, params)
-                results = cur.fetchall()
-                
-                return {
-                    "program_type": "dropin",
-                    "total": len(results),
-                    "filters": {
-                        "activity": activity,
-                        "age": age,
-                        "weekday": weekday,
-                        "district": district
-                    },
-                    "programs": results
-                }
-            
-            elif program_type == "registered":
-                # Query registered programs
-                query = """
-                    SELECT 
-                        pr.id,
-                        pr.course_id,
-                        pr.course_title,
-                        pr.activity_title,
-                        pr.section,
-                        pr.days_of_week,
-                        pr.from_to,
-                        pr.start_hour,
-                        pr.start_minute,
-                        pr.end_hour,
-                        pr.end_minute,
-                        pr.min_age,
-                        pr.max_age,
-                        pr.location_id,
-                        l.location_name,
-                        l.asset_name,
-                        l.address,
-                        l.district,
-                        ST_X(l.geom) as lon,
-                        ST_Y(l.geom) as lat,
-                        pr.program_category,
-                        pr.registration_date::text,
-                        pr.status_info,
-                        pr.activity_url
-                    FROM programs_registered pr
-                    JOIN locations l ON pr.location_id = l.location_id
-                    WHERE 1=1
-                """
-                params = {}
-                
-                # Activity filter
-                if activity:
-                    query += " AND (pr.course_title ILIKE %(activity)s OR pr.activity_title ILIKE %(activity)s)"
-                    params['activity'] = f"%{activity}%"
-                
-                # Age filter
-                if age:
-                    if age == "young":
-                        query += " AND (pr.max_age <= 12 OR pr.min_age < 12 OR pr.max_age IS NULL)"
-                    elif age == "teen":
-                        query += " AND (pr.min_age <= 18 OR pr.min_age IS NULL) AND (pr.max_age >= 13 OR pr.max_age IS NULL)"
-                    elif age == "adult":
-                        query += " AND (pr.min_age <= 65 OR pr.min_age IS NULL) AND (pr.max_age >= 19 OR pr.max_age IS NULL)"
-                    elif age == "senior":
-                        query += " AND (pr.min_age >= 55 OR pr.min_age IS NULL)"
-                
-                # District filter
-                if district:
-                    query += " AND l.district = %(district)s"
-                    params['district'] = district
-                
-                query += """
-                    ORDER BY 
-                        pr.course_title,
-                        l.location_name
-                    LIMIT %(limit)s;
-                """
-                params['limit'] = limit
-                
-                cur.execute(query, params)
-                results = cur.fetchall()
-                
-                return {
-                    "program_type": "registered",
-                    "total": len(results),
-                    "filters": {
-                        "activity": activity,
-                        "age": age,
-                        "district": district
-                    },
-                    "programs": results
-                }
-            
-            else:
-                raise HTTPException(status_code=400, detail="program_type must be 'dropin' or 'registered'")
+        with conn.cursor(row_factory=dict_row) as cur:
+
+            sql = """
+            WITH filtered AS (
+                SELECT
+                    pd.id,
+                    pd.location_id,
+                    pd.course_title,
+                    pd.weekday,
+                    pd.day_of_week,
+                    pd.start_time,
+                    pd.end_time,
+                    pd.age_min,
+                    pd.age_max,
+                    l.location_name,
+                    l.asset_name,
+                    l.address,
+                    l.district,
+                    l.facility_type,
+                    l.accessibility,
+                    l.phone,
+                    l.url,
+                    ST_X(l.geom) AS lon,
+                    ST_Y(l.geom) AS lat
+                FROM programs_dropin pd
+                JOIN locations l ON l.location_id = pd.location_id
+                WHERE pd.course_title IS NOT NULL
+            """
+
+            params = {}
+
+            if activity:
+                sql += " AND pd.course_title ILIKE %(activity)s"
+                params["activity"] = f"%{activity}%"
+
+            if district:
+                sql += " AND l.district = %(district)s"
+                params["district"] = district
+
+            if weekday is not None:
+                sql += " AND pd.weekday = %(weekday)s"
+                params["weekday"] = weekday
+
+            # Age buckets - compare against string values
+            if age == "young" or age == AgeBucket.young:
+                sql += " AND (pd.age_max <= 12 OR pd.age_min < 12 OR pd.age_max IS NULL)"
+            elif age == "teen" or age == AgeBucket.teen:
+                sql += " AND ((pd.age_min IS NULL OR pd.age_min <= 18) AND (pd.age_max IS NULL OR pd.age_max >= 13))"
+            elif age == "adult" or age == AgeBucket.adult:
+                sql += " AND ((pd.age_min IS NULL OR pd.age_min <= 65) AND (pd.age_max IS NULL OR pd.age_max >= 19))"
+            elif age == "senior" or age == AgeBucket.senior:
+                sql += " AND (pd.age_min >= 55 OR pd.age_min IS NULL)"
+
+            # Time of day buckets
+            if time_of_day == "weekend" or time_of_day == TimeOfDay.weekend:
+                sql += " AND pd.weekday IN (5, 6)"
+            elif time_of_day == "morning" or time_of_day == TimeOfDay.morning:
+                sql += " AND pd.start_time >= TIME '06:00' AND pd.start_time < TIME '12:00'"
+            elif time_of_day == "afternoon" or time_of_day == TimeOfDay.afternoon:
+                sql += " AND pd.start_time >= TIME '12:00' AND pd.start_time < TIME '17:00'"
+            elif time_of_day == "evening" or time_of_day == TimeOfDay.evening:
+                sql += " AND pd.start_time >= TIME '17:00' AND pd.start_time <= TIME '22:00'"
+
+            sql += """
+            )
+            SELECT *
+            FROM filtered
+            ORDER BY weekday, start_time NULLS LAST, location_name
+            LIMIT %(limit)s
+            """
+            params["limit"] = limit
+
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
+            # ✅ FIXED: Return strings directly (no .value needed)
+            return {
+                "program_type": "dropin",
+                "count": len(rows),  # Changed to "count" to match your frontend
+                "filters": {
+                    "activity": activity,
+                    "age": age,  # ← Just return as-is (it's already a string)
+                    "weekday": weekday,
+                    "district": district,
+                    "time_of_day": time_of_day,  # ← Just return as-is
+                },
+                "programs": rows
+            }
 
 
 # ============================================

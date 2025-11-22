@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from "react";
 import type { AgeFilter, DropInProgram } from '../../../shared/types';
 import { useCentreDetails } from '../hooks/useCentreDetails';
 import { searchProgramsAggregated } from '../api/centres.api';
-import type { AggregatedProgramResult } from '../api/centres.api';
 
 import CompactHeader from "./CompactHeader.tsx";
 import HeroSection from "./HeroSection.tsx";
@@ -19,7 +18,7 @@ import type { RegisteredProgram } from "../../../shared/types";
 
 type ActiveFilters = {
   activity: string;
-  age: AgeFilter;
+  age?: AgeFilter;
   weekday: string;
   district: string;
   facility_type: string;
@@ -27,11 +26,37 @@ type ActiveFilters = {
 
 type Props = { 
   centreId: string | number | null; 
-  age: AgeFilter; 
+  age?: AgeFilter;
   onClose: () => void;
-  activeFilters?: ActiveFilters;  // NEW: Pass search filters from parent
-  onLocationClick?: (locationId: string | number) => void;  // NEW: Handle clicks in grid
+  activeFilters?: ActiveFilters;
+  onLocationClick?: (locationId: string | number) => void;
 };
+
+const DAY_INDEX: Record<string, number> = {
+  Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6,
+};
+const DAY_NAME = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function toWeekdayNumber(w?: string | number) {
+  if (w === undefined || w === null || w === "") return undefined;
+  if (typeof w === "number") return w;
+  if (/^[0-6]$/.test(w)) return Number(w);
+  return DAY_INDEX[w];
+}
+
+function toApiAge(a?: string): "young" | "teen" | "adult" | "senior" | undefined {
+  if (!a) return undefined;
+  const v = a.toLowerCase();
+  return v === "young" || v === "teen" || v === "adult" || v === "senior" ? (v as any) : undefined;
+}
+
+function normalizeProgram(p: any): DropInProgram {
+  return {
+    ...p,
+    course_title: p.course_title ?? "",
+    day_of_week: p.day_of_week ?? (typeof p.weekday === "number" ? DAY_NAME[p.weekday] : ""),
+  } as DropInProgram;
+}
 
 export default function DetailsSidebar({ 
   centreId, 
@@ -40,43 +65,57 @@ export default function DetailsSidebar({
   activeFilters,
   onLocationClick 
 }: Props) {
-  
   const { detail, programs, facilities, loading } = useCentreDetails(centreId, age);
-  
+
   const [sidebarWidth, setSidebarWidth] = useState<number>(550);
   const [isDragging, setIsDragging] = useState(false);
 
-  const [aggregatedPrograms, setAggregatedPrograms] = useState<AggregatedProgramResult[]>([]);
+  const [aggregatedPrograms, setAggregatedPrograms] = useState<DropInProgram[]>([]);
   const [loadingAggregated, setLoadingAggregated] = useState(false);
-  
+
   useEffect(() => {
     if (!activeFilters?.activity) {
       setAggregatedPrograms([]);
       return;
     }
-    
+    const abortController = new AbortController();
+
     (async () => {
       setLoadingAggregated(true);
       try {
         const response = await searchProgramsAggregated({
           activity: activeFilters.activity,
-          age: activeFilters.age,
-          weekday: activeFilters.weekday,
+          age: toApiAge(activeFilters.age as any),
+          weekday: toWeekdayNumber(activeFilters.weekday),
           district: activeFilters.district,
-          program_type: 'dropin',  // Focus on drop-in for now
+          signal: abortController.signal,
+          limit: 2000,
         });
-        
-        setAggregatedPrograms(response.programs);
+
+        if (!abortController.signal.aborted) {
+          const raw = response?.programs ?? [];
+          const cleaned = (raw as any[])
+            .filter(Boolean)
+            .map(normalizeProgram);
+          setAggregatedPrograms(cleaned);
+        }
       } catch (error) {
-        console.error('Failed to fetch aggregated programs:', error);
-        setAggregatedPrograms([]);
+        if (!abortController.signal.aborted) {
+          console.error("Failed to fetch aggregated programs:", error);
+          setAggregatedPrograms([]);
+        }
       } finally {
-        setLoadingAggregated(false);
+        if (!abortController.signal.aborted) setLoadingAggregated(false);
       }
     })();
-    
-  }, [activeFilters?.activity, activeFilters?.age, activeFilters?.weekday, activeFilters?.district]);
- 
+
+    return () => abortController.abort();
+  }, [
+    activeFilters?.activity,
+    activeFilters?.age,
+    activeFilters?.weekday,
+    activeFilters?.district
+  ]);
 
   function startDrag(e: React.MouseEvent) {
     e.preventDefault();
@@ -113,7 +152,6 @@ export default function DetailsSidebar({
   const [regSelectedSection, setRegSelectedSection] = useState<string | null>(null);
 
   const dropin: DropInProgram[] = programs?.dropin ?? [];
-
   const dropinFiltered = useMemo(
     () => filterBySportAndSchedule(dropin, selectedSport, selectedSchedule),
     [dropin, selectedSport, selectedSchedule]
@@ -125,7 +163,6 @@ export default function DetailsSidebar({
   }
 
   const registered: RegisteredProgram[] = programs?.registered ?? [];
-
   const registeredFiltered = useMemo(
     () => filterPrograms(registered, regSelectedCategory, regSelectedSection),
     [registered, regSelectedCategory, regSelectedSection]
@@ -137,7 +174,6 @@ export default function DetailsSidebar({
   }
 
   const showHeroSection = !!(activeFilters?.activity && aggregatedPrograms.length > 0);
-
 
   return (
     <div 
@@ -153,10 +189,16 @@ export default function DetailsSidebar({
       />
       <div className="sidebar-header">
         <button className="close-btn" onClick={onClose}>×</button>
-        <h2 id="sidebarTitle">{detail?.name ?? "Centre Details"}</h2>
-        <p id="sidebarSubtitle" style={{ opacity: 0.9, fontSize: 14 }}>
-          {detail?.facility_type || (centreId ? "Recreation Centre" : "")}
-        </p>
+        <h2 id="sidebarTitle">
+          {detail && (
+            <CompactHeader 
+              name={detail.name}
+              address={detail.address}
+              phone={detail.phone}
+              district={detail.district}
+            />
+          )}
+        </h2>
       </div>
 
       <div className="sidebar-content" id="sidebarContent">
@@ -169,21 +211,11 @@ export default function DetailsSidebar({
 
         {detail && programs && (
           <>
-
-            <CompactHeader 
-              name={detail.name}
-              address={detail.address}
-              phone={detail.phone}
-              district={detail.district}
-            />
-
-
             {showHeroSection && (
               <div style={{ margin: '16px 0' }}>
                 <HeroSection
-                  title={`${activeFilters.activity} Schedule`}
+                  title={`${activeFilters!.activity} Schedule`}
                   subtitle={`${aggregatedPrograms.length} sessions across Toronto`}
-                  icon="🏓"
                 >
                   {loadingAggregated ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
@@ -192,7 +224,7 @@ export default function DetailsSidebar({
                   ) : (
                     <WeeklyScheduleGrid 
                       programs={aggregatedPrograms}
-                      sport={activeFilters.activity}
+                      sport={activeFilters!.activity}
                       onLocationClick={onLocationClick}
                     />
                   )}
@@ -200,7 +232,6 @@ export default function DetailsSidebar({
               </div>
             )}
 
-            
             {dropin.length > 0 && (
               <CollapsibleSection 
                 title="Other Drop-in Programs" 
@@ -254,20 +285,14 @@ export default function DetailsSidebar({
               </CollapsibleSection>
             )}
 
-            <CollapsibleSection 
-              title="Accessibility" 
-              defaultOpen={false}
-            >
+            <CollapsibleSection title="Accessibility" defaultOpen={false}>
               <div className="info-value">
                 {detail.accessibility || "Information not available"}
               </div>
             </CollapsibleSection>
 
             {detail.amenities && detail.amenities !== "None" && (
-              <CollapsibleSection 
-                title="Amenities" 
-                defaultOpen={false}
-              >
+              <CollapsibleSection title="Amenities" defaultOpen={false}>
                 {detail.amenities
                   .split(",")
                   .map((a) => a.trim())

@@ -9,20 +9,20 @@ type Props = {
     return (
       <div style={{ 
         padding: '16px 20px',
-        borderBottom: '1px solid #e2e8f0',
-        background: '#f8fafc'
+        borderBottom: '1px solid #0a5df7',
+        background: '#0a5df7'
       }}>
         <h2 style={{ 
-          fontSize: '18px', 
+          fontSize: '20px', 
           fontWeight: 700, 
-          color: '#1e293b',
+          color: '#e2e8f0',
           marginBottom: '8px'
         }}>
           {name}
         </h2>
         <div style={{ 
-          fontSize: '13px', 
-          color: '#64748b',
+          fontSize: '14px', 
+          color: '#e2e8f0',
           display: 'flex',
           flexWrap: 'wrap',
           gap: '12px'
