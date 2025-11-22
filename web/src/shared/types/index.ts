@@ -37,7 +37,8 @@ export interface DropInProgram {
   centre_id?: string | number;
   course_title: string;
   activity?: string | null;      
-  day_of_week?: string | null;   
+  day_of_week?: string | null;  
+  weekday?: number; 
   start_time?: string | null; 
   end_time?: string | null; 
   age_min?: number | null;   
@@ -50,7 +51,7 @@ export interface ProgramRegistered {
 export interface CentrePrograms { dropin: DropInProgram[]; registered: ProgramRegistered[] }
 export interface CentreFacility { facility_type: string }
 
-export type AgeFilter = '' | 'young' | 'teen' | 'adult' | 'senior';
+export type AgeFilter = 'young' | 'teen' | 'adult' | 'senior';
 
 // New, richer shape for the registered SPA; extends the old one additively
 export interface RegisteredProgram extends ProgramRegistered {

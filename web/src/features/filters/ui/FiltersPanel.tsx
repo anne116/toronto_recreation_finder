@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { ActivityOption, DistrictOption, FacilityTypeOption, AgeFilter } from '../../../shared/types/index.ts';
-import { getFilterOptions } from '../../centres/api/centres.api';
+import { getFilterOptions } from '../../centres/api/centres.api.ts';
 
-type Filters = { activity: string; district: string; weekday: string; age: AgeFilter; facility_type: string };
+type Filters = { activity: string; district: string; weekday: string; age?: AgeFilter; facility_type: string };
 
 type Props = {
   value: Filters;
@@ -10,7 +10,7 @@ type Props = {
   onSearch: () => void;
   onReset: () => void;
   onNearMe: () => void;
-  status: string;
+  status?: string;
 };
 
 export default function FiltersPanel({ value, onChange, onSearch, onReset, onNearMe, status }: Props) {
@@ -63,12 +63,18 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
 
       <div className="filter-group">
         <label>Age</label>
-        <select value={value.age} onChange={e => update({ age: e.target.value as AgeFilter })}>
-          <option value="">All Ages</option>
-          <option value="young">Under 12</option>
-          <option value="teen">13-18</option>
-          <option value="adult">19-65</option>
-          <option value="senior">65+</option>
+        <select
+          value={value.age ?? ''}
+          onChange={(e) => {
+            const v = e.target.value as '' | AgeFilter;
+            onChange({ ...value, age: v === '' ? undefined : v });
+          }}
+        >
+          <option value="">All ages</option>
+          <option value="young">Young (≤12)</option>
+          <option value="teen">Teen (13–18)</option>
+          <option value="adult">Adult (19–65)</option>
+          <option value="senior">Senior (55+)</option>
         </select>
       </div>
 

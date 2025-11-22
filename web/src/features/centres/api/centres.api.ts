@@ -1,54 +1,153 @@
-import { get } from '../../../shared/lib/http';
+// src/features/centres/api/centres.api.ts
+import { get } from "../../../shared/lib/http";
+
 import type {
-  ActivityOption, DistrictOption, FacilityTypeOption,
-  WardFeatureCollection, CentresFeatureCollection,
-  CentreDetail, CentrePrograms, CentreFacility
-} from '../../../shared/types/index.ts';
-import { mapRegisteredCsvRow } from '../../../shared/lib/registered.adapter';
-import type { RegisteredCsvRow, RegisteredProgram } from '../../../shared/types';
+  CentresFeatureCollection,
+  WardFeatureCollection,
+  CentreDetail,
+  CentrePrograms,
+  CentreFacility,
+} from "../../../shared/types";
 
-export const getWards = () => get<WardFeatureCollection>('/api/wards/geojson');
-
-export async function getFilterOptions() {
-  const [activities, districts, facilityTypes] = await Promise.all([
-    get<ActivityOption[]>('/api/activities?limit=100'),
-    get<DistrictOption[]>('/api/districts'),
-    get<FacilityTypeOption[]>('/api/facility-types'),
-  ]);
-  return { activities, districts, facilityTypes };
+/* ============== Small helpers ============== */
+function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
+  if (val === undefined || val === null) return;
+  if (typeof val === "number") qs.append(key, String(val));        // preserves 0 (Monday)
+  else if (typeof val === "string" && val !== "") qs.append(key, val);
 }
 
-export function getCentres(params: {
-  activity?: string; district?: string; weekday?: string; facility_type?: string;
+/* ============== Search APIs ============== */
+
+export type SearchProgramsParams = {
+  activity: string;
+  age?: "young" | "teen" | "adult" | "senior";
+  weekday?: number; // 0..6
+  district?: string;
+  time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
+  limit?: number;
+  signal?: AbortSignal;
+};
+
+export type SearchProgramsResponse = {
+  program_type: "dropin";
+  count: number;
+  filters: {
+    activity?: string;
+    age?: string;
+    weekday?: number;
+    district?: string;
+  };
+  programs: any[];
+};
+
+export async function searchProgramsAggregated(
+  params: SearchProgramsParams
+): Promise<SearchProgramsResponse> {
+  const qs = new URLSearchParams();
+  appendIfPresent(qs, "activity", params.activity);
+  appendIfPresent(qs, "age", params.age);
+  appendIfPresent(qs, "district", params.district);
+  appendIfPresent(qs, "time_of_day", params.time_of_day);
+  appendIfPresent(qs, "limit", params.limit);
+  appendIfPresent(qs, "weekday", params.weekday);
+  return get<SearchProgramsResponse>(`/api/programs/search?${qs.toString()}`);
+}
+
+export async function searchProgramsSearchStats(params: {
+  activity?: string;
+  age?: "young" | "teen" | "adult" | "senior";
+  weekday?: number;
+  district?: string;
+  time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
 }) {
   const qs = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => v && qs.append(k, v));
+  appendIfPresent(qs, "activity", params.activity);
+  appendIfPresent(qs, "age", params.age);
+  appendIfPresent(qs, "district", params.district);
+  appendIfPresent(qs, "time_of_day", params.time_of_day);
+  appendIfPresent(qs, "weekday", params.weekday);
+  
+  return get(`/api/programs/search/stats?${qs.toString()}`);
+}
+
+/* ============== Map layer data ============== */
+
+export async function getCentres(
+  params: { 
+    activity?: string; 
+    district?: string; 
+    facility_type?: string; 
+    weekday?: number 
+  }
+): Promise<CentresFeatureCollection> {
+  const qs = new URLSearchParams();
+  appendIfPresent(qs, "activity", params.activity);
+  appendIfPresent(qs, "district", params.district);
+  appendIfPresent(qs, "facility_type", params.facility_type);
+  appendIfPresent(qs, "weekday", params.weekday);
+  
   return get<CentresFeatureCollection>(`/api/centres/geojson?${qs.toString()}`);
 }
 
-export const getCentreDetail     = (id: string|number) => get<CentreDetail>(`/api/centres/${id}`);
-export const getCentrePrograms   = (id: string|number) => get<CentrePrograms>(`/api/centres/${id}/programs`);
-export const getCentreFacilities = (id: string|number) => get<CentreFacility[]>(`/api/centres/${id}/facilities`);
+export async function getWards(): Promise<WardFeatureCollection> {
+  return get<WardFeatureCollection>(`/api/wards/geojson`);
+}
 
+/* ============== Per-centre ============== */
 
-export async function getCentreRegisteredPrograms(
-  id: string | number
-): Promise<RegisteredProgram[]> {
-  // 1) Try a dedicated endpoint if it exists
-  try {
-    const res = await get<any>(`/api/centres/${id}/registered`);
-    const rows: RegisteredCsvRow[] = Array.isArray(res)
-      ? res
-      : (res.rows ?? res.programs ?? res.registered ?? []);
-    if (rows?.length) return rows.map(mapRegisteredCsvRow);
-  } catch {
-    // ignore and fall through
-  }
+export async function getCentreDetail(
+  centreId: string | number
+): Promise<CentreDetail> {
+  return get<CentreDetail>(`/api/centres/${centreId}`);
+}
 
-  // 2) Fallback: pull from /programs payload
-  const payload = await get<any>(`/api/centres/${id}/programs`);
-  const rows: RegisteredCsvRow[] = Array.isArray(payload)
-    ? payload
-    : (payload.registered ?? payload.rows ?? payload.programs ?? []);
-  return (rows ?? []).map(mapRegisteredCsvRow);
+export async function getCentrePrograms(
+  centreId: string | number,
+  opts?: { age?: "young" | "teen" | "adult" | "senior" }
+): Promise<CentrePrograms> {
+  const qs = new URLSearchParams();
+  appendIfPresent(qs, "age", opts?.age);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  
+  return get<CentrePrograms>(`/api/centres/${centreId}/programs${suffix}`);
+}
+
+export async function getCentreFacilities(
+  centreId: string | number
+): Promise<CentreFacility[]> {
+  return get<CentreFacility[]>(`/api/centres/${centreId}/facilities`);
+}
+
+/* ============== Filter dropdowns ============== */
+
+export type ActivityOption = { 
+  activity: string; 
+  count: number; 
+  locations?: number 
+};
+
+export type DistrictOption = { 
+  district: string; 
+  location_count: number 
+};
+
+export type FacilityTypeOption = { 
+  facility_type: string; 
+  count: number 
+};
+
+export type FilterOptionsResponse = {
+  activities: ActivityOption[];
+  districts: DistrictOption[];
+  facilityTypes: FacilityTypeOption[];
+};
+
+export async function getFilterOptions(): Promise<FilterOptionsResponse> {
+  const [activities, districts, facilityTypes] = await Promise.all([
+    get<ActivityOption[]>(`/api/activities?program_type=dropin&limit=200`),
+    get<DistrictOption[]>(`/api/districts`),
+    get<FacilityTypeOption[]>(`/api/facility-types`),
+  ]);
+  
+  return { activities, districts, facilityTypes };
 }

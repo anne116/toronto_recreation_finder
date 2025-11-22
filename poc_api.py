@@ -4,6 +4,7 @@ import psycopg
 from psycopg.rows import dict_row, tuple_row
 from typing import Optional, List
 import uvicorn
+from enum import Enum
 
 app = FastAPI(
     title="Toronto Recreation Finder API",
@@ -648,6 +649,191 @@ async def root():
             "stats": "/api/stats/summary"
         }
     }
+
+# ============================================
+# NEW ENDPOINT: AGGREGATED PROGRAM SEARCH
+# ============================================
+class AgeBucket(str, Enum):
+    young = "young"    # <=12
+    teen = "teen"      # 13–18
+    adult = "adult"    # 19–65 (inclusive enough for City data quirks)
+    senior = "senior"  # 55+
+
+class TimeOfDay(str, Enum):
+    morning = "morning"     # 06:00–11:59
+    afternoon = "afternoon" # 12:00–16:59
+    evening = "evening"     # 17:00–22:00
+    weekend = "weekend"     # Sat/Sun any time
+@app.get("/api/programs/search")
+async def search_programs_aggregated(
+    # TEXT filters
+    activity: Optional[str] = Query(None, description="partial match against course_title"),
+    district: Optional[str] = Query(None),
+    # ENUM filters (FastAPI validates these but passes them as strings!)
+    age: Optional[AgeBucket] = Query(None),
+    time_of_day: Optional[TimeOfDay] = Query(None),
+    # Numeric filters
+    weekday: Optional[int] = Query(None, ge=0, le=6),
+    limit: int = Query(2000, ge=1, le=5000)
+):
+    """
+    Return DROP-IN programs that match the filters.
+    Flat rows with attached centre (location) info.
+    """
+    with get_db() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+
+            sql = """
+            WITH filtered AS (
+                SELECT
+                    pd.id,
+                    pd.location_id,
+                    pd.course_title,
+                    pd.weekday,
+                    pd.day_of_week,
+                    pd.start_time,
+                    pd.end_time,
+                    pd.age_min,
+                    pd.age_max,
+                    l.location_name,
+                    l.asset_name,
+                    l.address,
+                    l.district,
+                    l.facility_type,
+                    l.accessibility,
+                    l.phone,
+                    l.url,
+                    ST_X(l.geom) AS lon,
+                    ST_Y(l.geom) AS lat
+                FROM programs_dropin pd
+                JOIN locations l ON l.location_id = pd.location_id
+                WHERE pd.course_title IS NOT NULL
+            """
+
+            params = {}
+
+            if activity:
+                sql += " AND pd.course_title ILIKE %(activity)s"
+                params["activity"] = f"%{activity}%"
+
+            if district:
+                sql += " AND l.district = %(district)s"
+                params["district"] = district
+
+            if weekday is not None:
+                sql += " AND pd.weekday = %(weekday)s"
+                params["weekday"] = weekday
+
+            # Age buckets - compare against string values
+            if age == "young" or age == AgeBucket.young:
+                sql += " AND (pd.age_max <= 12 OR pd.age_min < 12 OR pd.age_max IS NULL)"
+            elif age == "teen" or age == AgeBucket.teen:
+                sql += " AND ((pd.age_min IS NULL OR pd.age_min <= 18) AND (pd.age_max IS NULL OR pd.age_max >= 13))"
+            elif age == "adult" or age == AgeBucket.adult:
+                sql += " AND ((pd.age_min IS NULL OR pd.age_min <= 65) AND (pd.age_max IS NULL OR pd.age_max >= 19))"
+            elif age == "senior" or age == AgeBucket.senior:
+                sql += " AND (pd.age_min >= 55 OR pd.age_min IS NULL)"
+
+            # Time of day buckets
+            if time_of_day == "weekend" or time_of_day == TimeOfDay.weekend:
+                sql += " AND pd.weekday IN (5, 6)"
+            elif time_of_day == "morning" or time_of_day == TimeOfDay.morning:
+                sql += " AND pd.start_time >= TIME '06:00' AND pd.start_time < TIME '12:00'"
+            elif time_of_day == "afternoon" or time_of_day == TimeOfDay.afternoon:
+                sql += " AND pd.start_time >= TIME '12:00' AND pd.start_time < TIME '17:00'"
+            elif time_of_day == "evening" or time_of_day == TimeOfDay.evening:
+                sql += " AND pd.start_time >= TIME '17:00' AND pd.start_time <= TIME '22:00'"
+
+            sql += """
+            )
+            SELECT *
+            FROM filtered
+            ORDER BY weekday, start_time NULLS LAST, location_name
+            LIMIT %(limit)s
+            """
+            params["limit"] = limit
+
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
+            # ✅ FIXED: Return strings directly (no .value needed)
+            return {
+                "program_type": "dropin",
+                "count": len(rows),  # Changed to "count" to match your frontend
+                "filters": {
+                    "activity": activity,
+                    "age": age,  # ← Just return as-is (it's already a string)
+                    "weekday": weekday,
+                    "district": district,
+                    "time_of_day": time_of_day,  # ← Just return as-is
+                },
+                "programs": rows
+            }
+
+
+# ============================================
+# HELPER ENDPOINT: Quick Stats for Search
+# ============================================
+
+@app.get("/api/programs/search/stats")
+async def get_program_search_stats(
+    activity: Optional[str] = None,
+    age: Optional[str] = None,
+    weekday: Optional[int] = None,
+    district: Optional[str] = None
+):
+    """
+    Get quick stats about programs matching search criteria.
+    Useful for showing "Found 25 programs at 12 centres" type messages.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            query = """
+                SELECT 
+                    COUNT(DISTINCT pd.id) as dropin_count,
+                    COUNT(DISTINCT pd.location_id) as dropin_centres,
+                    COUNT(DISTINCT pr.id) as registered_count,
+                    COUNT(DISTINCT pr.location_id) as registered_centres
+                FROM programs_dropin pd
+                FULL OUTER JOIN programs_registered pr ON 1=1
+                LEFT JOIN locations l ON pd.location_id = l.location_id OR pr.location_id = l.location_id
+                WHERE 1=1
+            """
+            params = {}
+            
+            if activity:
+                query += """ AND (
+                    pd.course_title ILIKE %(activity)s 
+                    OR pr.course_title ILIKE %(activity)s 
+                    OR pr.activity_title ILIKE %(activity)s
+                )"""
+                params['activity'] = f"%{activity}%"
+            
+            if weekday is not None:
+                query += " AND pd.weekday = %(weekday)s"
+                params['weekday'] = weekday
+            
+            if district:
+                query += " AND l.district = %(district)s"
+                params['district'] = district
+            
+            cur.execute(query, params)
+            stats = cur.fetchone()
+            
+            return {
+                "dropin": {
+                    "programs": stats['dropin_count'],
+                    "centres": stats['dropin_centres']
+                },
+                "registered": {
+                    "programs": stats['registered_count'],
+                    "centres": stats['registered_centres']
+                },
+                "total": {
+                    "programs": stats['dropin_count'] + stats['registered_count'],
+                    "centres": max(stats['dropin_centres'], stats['registered_centres'])
+                }
+            }
 
 if __name__ == "__main__":
     print("🚀 Starting Toronto Recreation Finder API")

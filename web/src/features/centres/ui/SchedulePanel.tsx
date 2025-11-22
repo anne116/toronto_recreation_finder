@@ -1,0 +1,183 @@
+import { useEffect, useMemo, useState } from "react";
+import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
+import { searchProgramsAggregated } from "../api/centres.api";
+import type { DropInProgram } from "../../../shared/types";
+
+
+type Props = {
+  activity?: string;
+  age?: "young" | "teen" | "adult" | "senior";
+  weekday?: string | number;
+  district?: string;
+  time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
+  onLocationClick: (locationId: string | number) => void;
+  isVisible: boolean;
+  className?: string;
+};
+
+const DAY_NAME = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_INDEX: Record<string, number> = {
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4,
+  Saturday: 5,
+  Sunday: 6,
+};
+
+function toWeekdayNumber(w?: string | number): number | undefined {
+  if (w === undefined || w === null) return undefined;
+  if (typeof w === "number") return w;
+  return DAY_INDEX[w] ?? undefined;
+}
+
+function normalizeProgram(p: any): DropInProgram {
+    return {
+      ...p,
+      course_title: p.course_title ?? "",
+      day_of_week: p.day_of_week ?? (typeof p.weekday === "number" ? DAY_NAME[p.weekday] : ""),
+    } as DropInProgram;
+  }
+
+export default function SchedulePanel({
+  activity,
+  age,
+  weekday,
+  district,
+  time_of_day,
+  onLocationClick,
+  isVisible,
+}: Props) {
+  const [programs, setPrograms] = useState<DropInProgram[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const normalizedWeekday = useMemo(() => toWeekdayNumber(weekday), [weekday]);
+
+  useEffect(() => {
+    if (!isVisible || !activity) {
+      setPrograms([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const resp = await searchProgramsAggregated({
+          activity,
+          age,
+          district,
+          time_of_day,
+          weekday: normalizedWeekday,
+          limit: 2000,
+          signal: abortController.signal,
+        });
+
+        if (!abortController.signal.aborted) {
+          const raw = resp?.programs ?? [];
+          const cleaned = raw
+            .filter((p: any) => p && p.course_title != null)
+            .map(normalizeProgram);
+          setPrograms(cleaned);
+        }
+      } catch (e: any) {
+        if (!abortController.signal.aborted) {
+          console.error("Failed to load schedule:", e);
+          setError("Failed to load schedule. Please try again.");
+          setPrograms([]);
+        }
+      } finally {
+        if (!abortController.signal.aborted) setLoading(false);
+      }
+    })();
+
+    return () => abortController.abort();
+  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      style={{
+        width: '100%',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'white',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        padding: '20px',
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        color: 'white',
+        flexShrink: 0,
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: 700,
+          margin: 0,
+          marginBottom: '4px',
+        }}>
+          {activity ? `${activity} Schedule` : 'Schedule'}
+        </h3>
+        <p style={{
+          fontSize: '13px',
+          margin: 0,
+          opacity: 0.9,
+        }}>
+          {loading 
+            ? 'Loading...' 
+            : activity 
+              ? `${programs.length} sessions across Toronto`
+              : 'Select an activity to view schedules'
+          }
+        </p>
+      </div>
+  
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: '16px',
+      }}>
+        {!activity && (
+          <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            Select an activity to view available drop-in sessions
+          </div>
+        )}
+  
+        {activity && loading && (
+          <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            Loading schedules…
+          </div>
+        )}
+  
+        {activity && !loading && error && (
+          <div className="text-sm text-red-600" style={{ padding: '20px', background: '#fee2e2', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
+  
+        {activity && !loading && !error && programs.length === 0 && (
+          <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            No sessions found for your search criteria
+          </div>
+        )}
+  
+        {activity && !loading && !error && programs.length > 0 && (
+          <WeeklyScheduleGrid
+            programs={programs}
+            onLocationClick={onLocationClick}
+          />
+        )}
+      </div>
+    </div>
+  );  
+}
