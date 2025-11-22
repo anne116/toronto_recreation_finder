@@ -49,7 +49,7 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !wards) return;
+    if (!map || !mapReady || !wards) return;
     if (map.getSource('wards')) {
       (map.getSource('wards') as GeoJSONSource).setData(wards as any);
     } else {
@@ -59,11 +59,11 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
     }
     map.setLayoutProperty('wards-fill', 'visibility', layersVisible.wards ? 'visible' : 'none');
     map.setLayoutProperty('wards-outline', 'visibility', layersVisible.wards ? 'visible' : 'none');
-  }, [wards, layersVisible.wards]);
+  }, [wards, layersVisible.wards, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !centres) return;
+    if (!map || !mapReady || !centres) return;
     if (map.getSource('centres')) {
       (map.getSource('centres') as GeoJSONSource).setData(centres as any);
     } else {
@@ -90,17 +90,17 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
       centres.features.forEach(f => b.extend(f.geometry.coordinates as [number, number]));
       map.fitBounds(b, { padding: 100, maxZoom: 13 });
     }
-  }, [centres, layersVisible.centres, onCentreClick]);
+  }, [centres, layersVisible.centres, onCentreClick, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady ) return;
     if (userMarkerRef.current) { userMarkerRef.current.remove(); userMarkerRef.current = null; }
     if (userLocation) {
       userMarkerRef.current = new maplibregl.Marker({ color: '#10b981' }).setLngLat(userLocation).addTo(map);
       map.flyTo({ center: userLocation, zoom: 13 });
     }
-  }, [userLocation]);
+  }, [userLocation, mapReady]);
 
   return <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />;
 }

@@ -10,7 +10,12 @@ type CentresFilters = {
   facility_type?: string;
 };
 
-export function useCentres(filters: CentresFilters) {
+type UseCentresOptions = {
+  enabled?: boolean;
+};
+
+export function useCentres(filters: CentresFilters, options: UseCentresOptions = {}) {
+  const { enabled = true } = options;
   const [data, setData] = useState<CentresFeatureCollection | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -18,10 +23,14 @@ export function useCentres(filters: CentresFilters) {
   useEffect(() => {
     // Don't fetch if no filters set (optional optimization)
     // Remove this if you want to load all centres on initial load
-    // if (!filters.activity && !filters.district && !filters.weekday && !filters.facility_type) {
-    //   setData(null);
-    //   return;
-    // }
+    if (!enabled) {
+      return;
+    }
+
+    if (!filters.activity && !filters.district && !filters.weekday && !filters.facility_type) {
+      setData(null);
+      return;
+    }
 
     const abortController = new AbortController();
 
@@ -59,7 +68,7 @@ export function useCentres(filters: CentresFilters) {
     })();
 
     return () => abortController.abort();
-  }, [filters.activity, filters.district, filters.weekday, filters.facility_type]);
+  }, [enabled, filters.activity, filters.district, filters.weekday, filters.facility_type]);
 
   return { data, loading, error };
 }

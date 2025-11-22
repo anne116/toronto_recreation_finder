@@ -111,22 +111,11 @@ export default function App() {
     district: filters.district,
     weekday: filters.weekday,
     facility_type: filters.facility_type,
-  });
+  },
+  { enabled: hasSearched }
+);
   
-  // ==========================================
-  // DATA FETCHING: Wards (map boundaries)
-  // ==========================================
-  
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       const wardsData = await getWards();
-  //       setWards(wardsData);
-  //     } catch (error) {
-  //       console.error('Failed to load wards:', error);
-  //     }
-  //   })();
-  // }, []);
+
   useEffect(() => {
     let mounted = true;  // ✅ Use mounted flag instead
     
@@ -405,7 +394,7 @@ export default function App() {
       {/* ==========================================
           LOADING INDICATOR (Optional)
           ========================================== */}
-      {centresLoading && (
+      {hasSearched && centresLoading && (
         <div style={{
           position: 'fixed',
           top: '50%',
