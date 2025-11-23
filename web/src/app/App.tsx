@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
 import type { WardFeatureCollection, AgeFilter } from '../shared/types';
-
 import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import MapView from '../features/map/ui/MapView';
-import DetailsSidebar from '../features/centres/ui/DetailsSidebar';
-import SchedulePanel from '../features/centres/ui/SchedulePanel';  // ← NEW!
+import SchedulePanel from '../features/centres/ui/SchedulePanel';
+import ResizablePanel from '../shared/ui/ResizablePanel';
 
 export default function App() {
   
@@ -169,13 +168,17 @@ export default function App() {
       
 
       {showSchedulePanel && (
-        <div style={{
-          width: '400px',
-          flexShrink: 0,
-          height: '100vh',
-          overflow: 'hidden',
-          zIndex: 10,
-        }}>
+        <ResizablePanel
+          title={
+            filters.activity
+              ? `You're looking for: ${filters.activity}`
+              : ""
+          }
+          initialWidth={400}
+          minWidth={300}
+          maxWidth={640}
+          onClose={() => setShowSchedulePanel(false)}
+        >
           <SchedulePanel
             activity={filters.activity}
             age={filters.age}
@@ -184,7 +187,7 @@ export default function App() {
             isVisible={showSchedulePanel}
             onLocationClick={handleCentreClick}
           />
-        </div>
+        </ResizablePanel>
       )}
       
 
@@ -226,21 +229,6 @@ export default function App() {
           </div>
         </div>
       )}
-      
-
-      <DetailsSidebar
-        centreId={selectedCentre}
-        age={filters.age}
-        onClose={handleCloseSidebar}
-        activeFilters={{
-          activity: filters.activity,
-          age: filters.age as any,
-          weekday: filters.weekday,
-          district: filters.district,
-          facility_type: filters.facility_type,
-        }}
-        onLocationClick={handleCentreClick}
-      />
 
       
       <div className="legend">
