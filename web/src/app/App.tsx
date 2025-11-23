@@ -1,51 +1,14 @@
-// src/app/App.tsx
-
 import { useState, useEffect } from 'react';
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
 import type { WardFeatureCollection, AgeFilter } from '../shared/types';
 
-// Import UI components
 import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import MapView from '../features/map/ui/MapView';
 import DetailsSidebar from '../features/centres/ui/DetailsSidebar';
 import SchedulePanel from '../features/centres/ui/SchedulePanel';  // ← NEW!
 
-/**
- * ==========================================
- * PROFESSIONAL ARCHITECTURE OVERVIEW
- * ==========================================
- * 
- * LAYOUT STRUCTURE:
- * 
- * ┌─────────────────────────────────────────────────────┐
- * │  FiltersPanel (left, fixed)                         │
- * │  - User selects filters                             │
- * │  - Clicks Search                                    │
- * └─────────────────────────────────────────────────────┘
- * 
- * ┌───────────────┬──────────────────┬─────────────────┐
- * │  (Filters)    │  SchedulePanel   │  MapView        │
- * │               │  (conditional)   │  (main)         │
- * │               │  - Shows when    │  - Shows        │
- * │               │    activity      │    filtered     │
- * │               │    filter active │    centres      │
- * └───────────────┴──────────────────┴─────────────────┘
- * 
- * DetailsSidebar (slides in from right when centre clicked)
- * 
- * DATA FLOW:
- * 1. User sets filters → FiltersPanel
- * 2. User clicks Search → Fetch centres → MapView
- * 3. If activity filter → Show SchedulePanel
- * 4. User clicks bubble/grid → Open DetailsSidebar
- */
-
 export default function App() {
-  
-  // ==========================================
-  // STATE: FILTERS
-  // ==========================================
   
   type Filters = {
     activity: string;
@@ -62,50 +25,18 @@ export default function App() {
     age: undefined,
     facility_type: '',
   });
-  
-  // ==========================================
-  // STATE: MAP & UI
-  // ==========================================
-  
+
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
   const [selectedCentre, setSelectedCentre] = useState<string | number | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState<string>('Ready to search');
-  
-  // ==========================================
-  // STATE: SCHEDULE PANEL VISIBILITY
-  // ==========================================
-  
-  /**
-   * PROFESSIONAL PATTERN: Explicit visibility control
-   * 
-   * WHY?
-   * - SchedulePanel only shows when user has searched with activity
-   * - Need to hide when filters reset
-   * - Clear, explicit state management
-   */
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
-  
-  // NEW: Track if user has searched
   const [hasSearched, setHasSearched] = useState(false);
-  
-  // ==========================================
-  // STATE: LAYER VISIBILITY (Map controls)
-  // ==========================================
-  
   const [layersVisible, setLayersVisible] = useState({
     centres: true,
     wards: true,
   });
-  
-  // ==========================================
-  // DATA FETCHING: Centres
-  // ==========================================
-  
-  /**
-   * useCentres hook fetches centres based on filters
-   * Updates automatically when filters change
-   */
+
   const { data: centres, loading: centresLoading } = useCentres({
     activity: filters.activity,
     district: filters.district,
@@ -117,12 +48,12 @@ export default function App() {
   
 
   useEffect(() => {
-    let mounted = true;  // ✅ Use mounted flag instead
+    let mounted = true;
     
     (async () => {
       try {
         const wardsData = await getWards();
-        if (mounted) {  // ✅ Only update if still mounted
+        if (mounted) {
           setWards(wardsData);
         }
       } catch (error) {
@@ -133,25 +64,13 @@ export default function App() {
     })();
     
     return () => {
-      mounted = false;  // ✅ Cleanup
+      mounted = false;
     };
   }, []);
-  
-  // ==========================================
-  // HANDLER: Search Button
-  // ==========================================
-  
-  /**
-   * PROFESSIONAL PATTERN: Explicit search action
-   * 
-   * User clicks "Search" button:
-   * 1. Fetch centres (handled by useCentres hook)
-   * 2. Show schedule panel if activity filter is set
-   * 3. Update status message
-   */
+
   function handleSearch() {
     setStatus('Searching...');
-    setHasSearched(true);  // Mark that user has searched
+    setHasSearched(true);
     
     if (filters.activity) {
       setShowSchedulePanel(true);
@@ -162,10 +81,7 @@ export default function App() {
     }
   }
   
-  // ==========================================
-  // HANDLER: Reset Filters
-  // ==========================================
-  
+
   function handleReset() {
     setFilters({
       activity: '',
@@ -176,13 +92,9 @@ export default function App() {
     });
     setShowSchedulePanel(false);
     setSelectedCentre(null);
-    setHasSearched(false);  // Reset search state
+    setHasSearched(false);
     setStatus('Filters reset');
   }
-  
-  // ==========================================
-  // HANDLER: Find Near Me
-  // ==========================================
   
   function handleNearMe() {
     if (!navigator.geolocation) {
@@ -208,39 +120,19 @@ export default function App() {
     );
   }
   
-  // ==========================================
-  // HANDLER: Centre Click (from map or grid)
-  // ==========================================
-  
-  /**
-   * PROFESSIONAL PATTERN: Single source of truth
-   * 
-   * Both map bubbles AND schedule grid locations
-   * call this same handler.
-   * 
-   * WHY?
-   * - Consistent behavior
-   * - Single place to add logging, analytics, etc.
-   * - Easy to modify later
-   */
+
   function handleCentreClick(centreId: string | number) {
     setSelectedCentre(centreId);
     setStatus(`Viewing centre details`);
   }
   
-  // ==========================================
-  // HANDLER: Close Sidebar
-  // ==========================================
-  
+
   function handleCloseSidebar() {
     setSelectedCentre(null);
     setStatus(showSchedulePanel ? `Showing ${filters.activity} programs` : 'Ready to search');
   }
   
-  // ==========================================
-  // HANDLER: Toggle Map Layers
-  // ==========================================
-  
+ 
   function toggleLayer(layer: 'centres' | 'wards') {
     setLayersVisible(prev => ({
       ...prev,
@@ -248,10 +140,7 @@ export default function App() {
     }));
   }
   
-  // ==========================================
-  // RENDER
-  // ==========================================
-  
+
   return (
     <div style={{ 
       display: 'flex',
@@ -261,9 +150,6 @@ export default function App() {
       position: 'relative',
     }}>
       
-      {/* ==========================================
-          FILTERS PANEL (Left, always visible)
-          ========================================== */}
       <div style={{
         width: '320px',
         flexShrink: 0,
@@ -281,9 +167,7 @@ export default function App() {
         />
       </div>
       
-      {/* ==========================================
-          SCHEDULE PANEL (Middle, conditional)
-          ========================================== */}
+
       {showSchedulePanel && (
         <div style={{
           width: '400px',
@@ -303,9 +187,7 @@ export default function App() {
         </div>
       )}
       
-      {/* ==========================================
-          MAP VIEW (Right, fills remaining space)
-          ========================================== */}
+
       {hasSearched ? (
         <div style={{
           flex: 1,
@@ -345,9 +227,6 @@ export default function App() {
         </div>
       )}
       
-      {/* ==========================================
-          DETAILS SIDEBAR (Right side, slides in)
-          ========================================== */}
 
       <DetailsSidebar
         centreId={selectedCentre}
@@ -356,7 +235,7 @@ export default function App() {
         activeFilters={{
           activity: filters.activity,
           age: filters.age as any,
-          weekday: filters.weekday,       // can be "", "0".."6", or "Monday".."Sunday"
+          weekday: filters.weekday,
           district: filters.district,
           facility_type: filters.facility_type,
         }}
@@ -364,9 +243,6 @@ export default function App() {
       />
 
       
-      {/* ==========================================
-          LEGEND (Bottom right, layer toggles)
-          ========================================== */}
       <div className="legend">
         <div className="legend-title">Map Layers</div>
         
@@ -391,9 +267,7 @@ export default function App() {
         </label>
       </div>
       
-      {/* ==========================================
-          LOADING INDICATOR (Optional)
-          ========================================== */}
+
       {hasSearched && centresLoading && (
         <div style={{
           position: 'fixed',
@@ -412,88 +286,3 @@ export default function App() {
     </div>
   );
 }
-
-/**
- * ==========================================
- * PROFESSIONAL EXPLANATION
- * ==========================================
- * 
- * 1. STATE ORGANIZATION
- *    - Filters: User input
- *    - UI State: What's visible (panel, sidebar)
- *    - Data: Centres, wards
- *    - User interaction: Selected centre, location
- * 
- *    PRINCIPLE: Group related state together
- * 
- * 2. HANDLER NAMING CONVENTION
- *    - handle[Action]: handleSearch, handleReset
- *    - on[Event]: Passed to children as props
- *    - toggle[Thing]: Boolean state changes
- * 
- *    PRINCIPLE: Clear, consistent naming
- * 
- * 3. COMPONENT COMPOSITION
- *    - Each component has single responsibility
- *    - Props flow down (data)
- *    - Events flow up (callbacks)
- * 
- *    PRINCIPLE: Unidirectional data flow
- * 
- * 4. CONDITIONAL RENDERING
- *    - SchedulePanel: isVisible prop
- *    - DetailsSidebar: Opens when centreId set
- *    - Loading: Shows when fetching
- * 
- *    PRINCIPLE: Declarative UI
- * 
- * 5. SIDE EFFECTS
- *    - useEffect for initial data load (wards)
- *    - useCentres hook manages centre fetching
- *    - Geolocation in event handler
- * 
- *    PRINCIPLE: Separate side effects from render
- * 
- * ==========================================
- * COMMON PATTERNS USED
- * ==========================================
- * 
- * 1. LIFTING STATE UP
- *    - App.tsx holds selectedCentre
- *    - Both Map and SchedulePanel can change it
- *    - Single source of truth
- * 
- * 2. CALLBACK PROPS
- *    - onCentreClick, onLocationClick
- *    - Children notify parent of events
- *    - Parent decides what to do
- * 
- * 3. CONTROLLED COMPONENTS
- *    - FiltersPanel: value + onChange
- *    - App controls filter state
- *    - Standard React pattern
- * 
- * 4. COMPOSITION OVER INHERITANCE
- *    - Build UI from small components
- *    - Each component reusable
- *    - No deep inheritance hierarchies
- * 
- * ==========================================
- * TESTING THIS COMPONENT
- * ==========================================
- * 
- * 1. Unit Tests (if you add them):
- *    - Mock child components
- *    - Test state changes
- *    - Test handler functions
- * 
- * 2. Integration Tests:
- *    - Render full component
- *    - Simulate user clicks
- *    - Verify correct behavior
- * 
- * 3. Manual Testing (what you do now):
- *    - Click through each user flow
- *    - Verify visual appearance
- *    - Check console for errors
- */

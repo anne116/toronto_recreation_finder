@@ -319,11 +319,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
 
 .program-list {
-    max-height: 150px;
+    max-height: 260px;
     overflow-y: auto;
 }
 
 .program-item {
+    max-height: 100px;
     padding: 12px;
     background: #f8fafc;
     border-radius: 8px;

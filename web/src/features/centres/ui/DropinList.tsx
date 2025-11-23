@@ -2,7 +2,7 @@ import type { DropInProgram } from "../../../shared/types";
 
 type Props = { programs: DropInProgram[] };
 
-// Helpers
+
 function safeTime(hhmmss?: string | null) {
   return hhmmss ? hhmmss.slice(0, 5) : null;
 }
@@ -16,7 +16,6 @@ function timeLabel(p: DropInProgram) {
   return day || "";
 }
 
-/** Build a robust unique key: course + location/facility + day + time + age range */
 function scheduleKey(p: DropInProgram) {
   const idLike =
     (p as any).course_id ??
@@ -33,10 +32,9 @@ function scheduleKey(p: DropInProgram) {
   const st = p.start_time ?? "";
   const et = p.end_time ?? "";
 
-  // Include age range to distinguish entries that only differ by age eligibility
   const ageMin = p.age_min ?? "";
   const ageMax = p.age_max ?? "";
-  const agePart = `${ageMin || ""}-${ageMax || ""}`; // e.g., "18-65", "13-", "-12", "-"
+  const agePart = `${ageMin || ""}-${ageMax || ""}`;
 
   return `${idLike}__loc${location}__fac${facility}__${day}__${st}__${et}__age${agePart}`.replace(
     /\s+/g,
@@ -44,7 +42,6 @@ function scheduleKey(p: DropInProgram) {
   );
 }
 
-/** Dedupe by scheduleKey; collapse exact duplicates */
 function dedupePrograms(programs: DropInProgram[]) {
   const seen = new Map<string, DropInProgram>();
 
@@ -57,8 +54,6 @@ function dedupePrograms(programs: DropInProgram[]) {
       // If you want to keep duplicates anyway, append a counter here instead.
     }
   }
-
-  // Return array with the computed stable key
   return Array.from(seen.entries()).map(([key, p]) => ({ key, p }));
 }
 
@@ -75,15 +70,18 @@ export default function DropinList({ programs }: Props) {
 
   return (
     <div className="info-section">
-      <h3>Drop-in Programs</h3>
+      <h3>Results: </h3>
       <div className="program-list" id="dropin-list">
         {items.map(({ key, p }, i) => (
           <div className="program-item" key={key || `row-${i}`}>
-            <div className="program-title">
+            <div className="program-details" >
               {(p as any).course_title ?? (p as any).activity}
-            </div>
-            <div className="program-details">
-              {timeLabel(p)}
+              {timeLabel(p) && (
+                <>
+                  {" – "}
+                  {timeLabel(p)}
+                </>
+              )}
               {(p.age_min || p.age_max) && (
                 <>
                   {" "}
