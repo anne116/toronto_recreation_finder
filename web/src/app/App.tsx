@@ -24,9 +24,7 @@ export default function App() {
     age: undefined,
     facility_type: '',
   });
-
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
-  const [selectedCentre, setSelectedCentre] = useState<string | number | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState<string>('Ready to search');
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
@@ -35,14 +33,17 @@ export default function App() {
     centres: true,
     wards: true,
   });
+  const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
+
+  const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
 
   const { data: centres, loading: centresLoading } = useCentres({
-    activity: filters.activity,
-    district: filters.district,
-    weekday: filters.weekday,
-    facility_type: filters.facility_type,
+    activity: activeFilters?.activity ?? '',
+    district: activeFilters?.district ?? '',
+    weekday: activeFilters?.weekday ?? '',
+    facility_type: activeFilters?.facility_type ?? '',
   },
-  { enabled: hasSearched }
+  { enabled: !!activeFilters }
 );
   
 
@@ -70,6 +71,8 @@ export default function App() {
   function handleSearch() {
     setStatus('Searching...');
     setHasSearched(true);
+    setSelectedLocationId(null);
+    setActiveFilters(filters);
     
     if (filters.activity) {
       setShowSchedulePanel(true);
@@ -90,9 +93,10 @@ export default function App() {
       facility_type: '',
     });
     setShowSchedulePanel(false);
-    setSelectedCentre(null);
+    setSelectedLocationId(null);
     setHasSearched(false);
     setStatus('Filters reset');
+    setActiveFilters(null);
   }
   
   function handleNearMe() {
@@ -118,19 +122,12 @@ export default function App() {
       }
     );
   }
-  
 
-  function handleCentreClick(centreId: string | number) {
-    setSelectedCentre(centreId);
-    setStatus(`Viewing centre details`);
-  }
-  
 
-  function handleCloseSidebar() {
-    setSelectedCentre(null);
-    setStatus(showSchedulePanel ? `Showing ${filters.activity} programs` : 'Ready to search');
+  function handleLocationClick(locationId: string | number) {
+    setSelectedLocationId(locationId);
+    setStatus('Viewing centre details');
   }
-  
  
   function toggleLayer(layer: 'centres' | 'wards') {
     setLayersVisible(prev => ({
@@ -170,9 +167,9 @@ export default function App() {
       {showSchedulePanel && (
         <ResizablePanel
           title={
-            filters.activity
-              ? `You're looking for: ${filters.activity}`
-              : ""
+            activeFilters?.activity
+              ? `${activeFilters.activity} Schedule`
+              : "Schedule"
           }
           initialWidth={400}
           minWidth={300}
@@ -180,12 +177,12 @@ export default function App() {
           onClose={() => setShowSchedulePanel(false)}
         >
           <SchedulePanel
-            activity={filters.activity}
-            age={filters.age}
-            weekday={filters.weekday}
-            district={filters.district}
+            activity={activeFilters?.activity ?? ''}
+            age={activeFilters?.age}
+            weekday={activeFilters?.weekday ?? ''}
+            district={activeFilters?.district ?? ''}
             isVisible={showSchedulePanel}
-            onLocationClick={handleCentreClick}
+            onLocationClick={handleLocationClick}
           />
         </ResizablePanel>
       )}
@@ -200,9 +197,10 @@ export default function App() {
           <MapView
             centres={centres}
             wards={wards}
-            onCentreClick={handleCentreClick}
+            onCentreClick={handleLocationClick}
             layersVisible={layersVisible}
             userLocation={userLocation}
+            selectedLocationId={selectedLocationId}
           />
         </div>
       ) : (
@@ -230,30 +228,31 @@ export default function App() {
         </div>
       )}
 
-      
-      <div className="legend">
-        <div className="legend-title">Map Layers</div>
-        
-        <label className="legend-item">
-          <input
-            type="checkbox"
-            checked={layersVisible.centres}
-            onChange={() => toggleLayer('centres')}
-          />
-          <div className="legend-icon" style={{ background: '#3b82f6' }} />
-          <span className="legend-text">Recreation Centres</span>
-        </label>
-        
-        <label className="legend-item">
-          <input
-            type="checkbox"
-            checked={layersVisible.wards}
-            onChange={() => toggleLayer('wards')}
-          />
-          <div className="legend-icon" style={{ background: '#94a3b8' }} />
-          <span className="legend-text">Ward Boundaries</span>
-        </label>
-      </div>
+      {hasSearched && (
+        <div className="legend">
+          <div className="legend-title">Map Layers</div>
+          
+          <label className="legend-item">
+            <input
+              type="checkbox"
+              checked={layersVisible.centres}
+              onChange={() => toggleLayer('centres')}
+            />
+            <div className="legend-icon" style={{ background: '#3b82f6' }} />
+            <span className="legend-text">Recreation Centres</span>
+          </label>
+          
+          <label className="legend-item">
+            <input
+              type="checkbox"
+              checked={layersVisible.wards}
+              onChange={() => toggleLayer('wards')}
+            />
+            <div className="legend-icon--line"/>
+            <span className="legend-text">Ward Boundaries</span>
+          </label>
+        </div>
+      )}
       
 
       {hasSearched && centresLoading && (

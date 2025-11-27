@@ -21,7 +21,13 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
   useEffect(() => {
     (async () => {
       const { activities, districts, facilityTypes } = await getFilterOptions();
-      setActivities(activities); setDistricts(districts); setTypes(facilityTypes);
+
+      const sortedActivities = [...activities].sort((a, b) =>
+        a.activity.localeCompare(b.activity)
+      );
+      setActivities(sortedActivities); 
+      setDistricts(districts); 
+      setTypes(facilityTypes);
     })();
   }, []);
 
@@ -35,7 +41,11 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
         <label>Activity / Program</label>
         <select value={value.activity} onChange={e => update({ activity: e.target.value })}>
           <option value="">All Activities</option>
-          {activities.map(a => <option key={a.activity} value={a.activity}>{a.activity} ({a.count})</option>)}
+          {activities.map(a => 
+            <option key={a.activity} value={a.activity}>
+              {/* {a.activity} ({a.count}) */}
+              {a.activity}
+            </option>)}
         </select>
       </div>
 
@@ -43,7 +53,10 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
         <label>District</label>
         <select value={value.district} onChange={e => update({ district: e.target.value })}>
           <option value="">All Districts</option>
-          {districts.map(d => <option key={d.district} value={d.district}>{d.district} ({d.location_count})</option>)}
+          {districts.map(d => <option key={d.district} value={d.district}>
+            {/* {d.district} ({d.location_count}) */}
+            {d.district}
+            </option>)}
         </select>
       </div>
 
@@ -82,7 +95,10 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
         <label>Facility Type</label>
         <select value={value.facility_type} onChange={e => update({ facility_type: e.target.value })}>
           <option value="">All Types</option>
-          {types.map(t => <option key={t.facility_type} value={t.facility_type}>{t.facility_type} ({t.count})</option>)}
+          {types.map(t => <option key={t.facility_type} value={t.facility_type}>
+            {/* {t.facility_type} ({t.count}) */}
+            {t.facility_type}
+            </option>)}
         </select>
       </div>
 

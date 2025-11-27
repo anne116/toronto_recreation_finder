@@ -79,9 +79,9 @@ export default function ResizablePanel({
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    padding: "8px 12px",
-                    borderBottom: "1px solid #e2e8f0",
-                    background: "#f8fafc",
+                    padding: "12px 16px",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                    color: "#ffffff",
                     cursor: isDragging ? "col-resize" : "default",
                 }}
             >
@@ -90,8 +90,7 @@ export default function ResizablePanel({
                     style={{
                         flex: 1,
                         fontWeight: 600,
-                        fontSize: 14,
-                        color: "#0f172a",
+                        fontSize: 16,
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -107,7 +106,7 @@ export default function ResizablePanel({
                         cursor: "pointer",
                         fontSize: 18,
                         lineHeight: 1,
-                        color: "#94a3b8",
+                        color: "#ffffff",
                         marginLeft: 8,
                     }}
                     aria-label="Close panel"
@@ -136,7 +135,7 @@ export default function ResizablePanel({
                     zIndex: 20,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "conter",
+                    justifyContent: "center",
                 }}
             >
                 <span

@@ -114,33 +114,6 @@ export default function SchedulePanel({
         overflow: 'hidden',
       }}
     >
-      <div style={{
-        padding: '20px',
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        color: 'white',
-        flexShrink: 0,
-      }}>
-        <h3 style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          margin: 0,
-          marginBottom: '4px',
-        }}>
-          {activity ? `${activity} Schedule` : 'Schedule'}
-        </h3>
-        <p style={{
-          fontSize: '13px',
-          margin: 0,
-          opacity: 0.9,
-        }}>
-          {loading 
-            ? 'Loading...' 
-            : activity 
-              ? `${programs.length} sessions across Toronto`
-              : 'Select an activity to view schedules'
-          }
-        </p>
-      </div>
   
       <div style={{
         flex: 1,

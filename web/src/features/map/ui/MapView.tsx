@@ -3,7 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
 import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
-
+import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 
 type Props = {
   centres: CentresFeatureCollection | null;
@@ -11,12 +11,22 @@ type Props = {
   onCentreClick: (id: string | number) => void;
   layersVisible: { centres: boolean; wards: boolean };
   userLocation?: [number, number] | null;
+  selectedLocationId?: string | number | null;
 };
 
-export default function MapView({ centres, wards, onCentreClick, layersVisible, userLocation }: Props) {
+export default function MapView({ 
+  centres, 
+  wards, 
+  onCentreClick, 
+  layersVisible, 
+  userLocation, 
+  selectedLocationId, 
+}: Props) {
+  const { detail } = useCentreDetails(selectedLocationId ?? null, undefined)
   const mapRef = useRef<MaplibreMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const selectedPopupRef = useRef<maplibregl.Popup | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -41,6 +51,10 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
     mapRef.current = map;
     return () => {
       setMapReady(false);
+      if (selectedPopupRef.current) {
+        selectedPopupRef.current.remove();
+        selectedPopupRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
     };
@@ -69,11 +83,16 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
     } else {
       map.addSource('centres', { type: 'geojson', data: centres as any });
       map.addLayer({
-        id: 'centres-circle', type: 'circle', source: 'centres',
+        id: 'centres-circle', 
+        type: 'circle', 
+        source: 'centres',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['get', 'total_programs'], 0, 8, 10, 12, 50, 16, 100, 20],
-          'circle-color': '#3b82f6', 'circle-opacity': 0.8, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff'
-        }
+          'circle-radius': 7,
+          'circle-color': '#3b82f6',
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
       });
       map.on('click', 'centres-circle', (e) => {
         const feature = e.features?.[0];
@@ -90,11 +109,109 @@ export default function MapView({ centres, wards, onCentreClick, layersVisible, 
       centres.features.forEach(f => b.extend(f.geometry.coordinates as [number, number]));
       map.fitBounds(b, { padding: 100, maxZoom: 13 });
     }
-  }, [centres, layersVisible.centres, onCentreClick, mapReady]);
+  }, [centres, layersVisible.centres, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady ) return;
+    if (!map || !mapReady) return;
+
+    if (!map.getLayer('centres-circle')) return;
+
+    if (!selectedLocationId) {
+      map.setPaintProperty('centres-circle', 'circle-color', '#3b82f6');
+      if (selectedPopupRef.current) {
+        selectedPopupRef.current.remove();
+        selectedPopupRef.current = null;
+      }
+      return;
+    }
+
+    const selectedIdStr = String(selectedLocationId);
+    map.setPaintProperty('centres-circle', 'circle-color', [
+      'case',
+      ['==', ['to-string', ['get', 'id']], selectedIdStr],
+      '#ff000d',
+      '#3b82f6',
+    ]);
+
+    if (!centres || !centres.features?.length) return;
+
+    const selectedFeature = centres.features.find((f: any) => {
+      const props = f.properties || {};
+      const id = 
+        props.id ??
+        props.location_id ??
+        props.LocationID;
+      return id != null && String(id) === selectedIdStr;
+    });
+
+    if (!selectedFeature) return;
+
+    const coords = selectedFeature.geometry.coordinates as [number, number];
+
+
+    map.flyTo({
+      center: coords,
+      zoom: 14,
+      essential: true,
+    });
+
+    if (selectedPopupRef.current) {
+      selectedPopupRef.current.remove();
+      selectedPopupRef.current = null;
+    }
+
+    const name = detail?.name ?? 'Recreation Centre';
+    const district = detail?.district ?? '';
+    const address = detail?.address ?? '';
+    const phone = detail?.phone ?? '';
+    const url = detail?.url && detail.url !== "None" ? detail.url : undefined;
+    const popupHtml = `
+      <div style="font-size: 13px; line-height: 1.4;">
+        <div style="font-weight: 600; margin-bottom: 4px;">
+          ${name}
+        </div>
+        ${district ? `<div>District: ${district}</div>` : '' }
+        ${address ? `<div>Address: ${address}</div>` : '' }
+        ${phone ? `<div>Phone: ${phone}</div>` : ''}
+        ${url ? `<div>Visit their <a href="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      offset: 16,
+    })
+      .setLngLat(coords)
+      .setHTML(popupHtml)
+      .addTo(map);
+
+      const popupEl = popup.getElement();
+      const closeBtn = popupEl.querySelector(
+        '.maplibregl-popup-close-button'
+      ) as HTMLElement | null;
+
+      if (closeBtn && centres?.features?.length) {
+        closeBtn.addEventListener(
+          'click',
+          () => {
+            const b = new maplibregl.LngLatBounds();
+            centres.features.forEach(f => {
+              b.extend(f.geometry.coordinates as [number, number]);
+            });
+            map.fitBounds(b, { padding: 100, maxZoom: 13 });
+          },
+          { once: true }
+        );
+      }
+
+    selectedPopupRef.current = popup;
+  }, [selectedLocationId, mapReady, centres, detail]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
     if (userMarkerRef.current) { userMarkerRef.current.remove(); userMarkerRef.current = null; }
     if (userLocation) {
       userMarkerRef.current = new maplibregl.Marker({ color: '#10b981' }).setLngLat(userLocation).addTo(map);

@@ -24,9 +24,7 @@ DB_URL = "postgresql://poc:poc123@localhost:5432/poc_db"
 def get_db():
     return psycopg.connect(DB_URL, row_factory=dict_row)
 
-# ============================================
-# LOCATION/CENTRE ENDPOINTS
-# ============================================
+
 
 @app.get("/api/centres")
 async def get_centres(
@@ -246,7 +244,6 @@ async def get_centre_programs(
         with conn.cursor() as cur:
             programs = {"dropin": [], "registered": []}
             
-            # Get drop-in programs
             if program_type is None or program_type == "dropin":
                 cur.execute("""
                     SELECT 
@@ -267,7 +264,6 @@ async def get_centre_programs(
                 """, (location_id,))
                 programs["dropin"] = cur.fetchall()
             
-            # Get registered programs
             if program_type is None or program_type == "registered":
                 cur.execute("""
                     SELECT 
@@ -342,14 +338,12 @@ async def get_centre_facilities(location_id: str):
             
             return cur.fetchall()
 
-# ============================================
-# SEARCH & FILTER ENDPOINTS
-# ============================================
+
 
 @app.get("/api/activities")
 async def get_activities(
     program_type: Optional[str] = Query(None, description="'dropin' or 'registered'"),
-    limit: int = Query(50, ge=1, le=200)
+    limit: int = Query(50, ge=1, le=2000)
 ):
     """
     Get list of unique activities/programs.
@@ -444,9 +438,6 @@ async def get_facility_types():
             """)
             return cur.fetchall()
 
-# ============================================
-# SPATIAL/MAP ENDPOINTS
-# ============================================
 
 @app.get("/api/centres/nearby")
 async def get_nearby_centres(
@@ -528,12 +519,6 @@ def get_wards_geojson():
 
 
 
-
-
-# ============================================
-# STATISTICS & ANALYTICS ENDPOINTS
-# ============================================
-
 @app.get("/api/stats/summary")
 async def get_summary_stats():
     """Get overall database statistics."""
@@ -574,9 +559,6 @@ async def get_stats_by_district():
             """)
             return cur.fetchall()
 
-# ============================================
-# HEALTH & TESTING ENDPOINTS
-# ============================================
 
 @app.get("/health")
 async def health_check():
@@ -650,29 +632,24 @@ async def root():
         }
     }
 
-# ============================================
-# NEW ENDPOINT: AGGREGATED PROGRAM SEARCH
-# ============================================
+
 class AgeBucket(str, Enum):
-    young = "young"    # <=12
-    teen = "teen"      # 13–18
-    adult = "adult"    # 19–65 (inclusive enough for City data quirks)
-    senior = "senior"  # 55+
+    young = "young"
+    teen = "teen"
+    adult = "adult"
+    senior = "senior"
 
 class TimeOfDay(str, Enum):
-    morning = "morning"     # 06:00–11:59
-    afternoon = "afternoon" # 12:00–16:59
-    evening = "evening"     # 17:00–22:00
-    weekend = "weekend"     # Sat/Sun any time
+    morning = "morning"
+    afternoon = "afternoon"
+    evening = "evening"
+    weekend = "weekend"
 @app.get("/api/programs/search")
 async def search_programs_aggregated(
-    # TEXT filters
     activity: Optional[str] = Query(None, description="partial match against course_title"),
     district: Optional[str] = Query(None),
-    # ENUM filters (FastAPI validates these but passes them as strings!)
     age: Optional[AgeBucket] = Query(None),
     time_of_day: Optional[TimeOfDay] = Query(None),
-    # Numeric filters
     weekday: Optional[int] = Query(None, ge=0, le=6),
     limit: int = Query(2000, ge=1, le=5000)
 ):
@@ -724,7 +701,6 @@ async def search_programs_aggregated(
                 sql += " AND pd.weekday = %(weekday)s"
                 params["weekday"] = weekday
 
-            # Age buckets - compare against string values
             if age == "young" or age == AgeBucket.young:
                 sql += " AND (pd.age_max <= 12 OR pd.age_min < 12 OR pd.age_max IS NULL)"
             elif age == "teen" or age == AgeBucket.teen:
@@ -734,7 +710,6 @@ async def search_programs_aggregated(
             elif age == "senior" or age == AgeBucket.senior:
                 sql += " AND (pd.age_min >= 55 OR pd.age_min IS NULL)"
 
-            # Time of day buckets
             if time_of_day == "weekend" or time_of_day == TimeOfDay.weekend:
                 sql += " AND pd.weekday IN (5, 6)"
             elif time_of_day == "morning" or time_of_day == TimeOfDay.morning:
@@ -756,24 +731,20 @@ async def search_programs_aggregated(
             cur.execute(sql, params)
             rows = cur.fetchall()
 
-            # ✅ FIXED: Return strings directly (no .value needed)
             return {
                 "program_type": "dropin",
-                "count": len(rows),  # Changed to "count" to match your frontend
+                "count": len(rows),
                 "filters": {
                     "activity": activity,
-                    "age": age,  # ← Just return as-is (it's already a string)
+                    "age": age,
                     "weekday": weekday,
                     "district": district,
-                    "time_of_day": time_of_day,  # ← Just return as-is
+                    "time_of_day": time_of_day,
                 },
                 "programs": rows
             }
 
 
-# ============================================
-# HELPER ENDPOINT: Quick Stats for Search
-# ============================================
 
 @app.get("/api/programs/search/stats")
 async def get_program_search_stats(
@@ -836,9 +807,4 @@ async def get_program_search_stats(
             }
 
 if __name__ == "__main__":
-    print("🚀 Starting Toronto Recreation Finder API")
-    print("🌐 Server: http://localhost:8000")
-    print("📚 Docs: http://localhost:8000/docs")
-    print("🧪 Test: http://localhost:8000/test/spatial")
-    print("📊 Stats: http://localhost:8000/api/stats/summary")
     uvicorn.run("poc_api:app", host="0.0.0.0", port=8000, reload=True)
