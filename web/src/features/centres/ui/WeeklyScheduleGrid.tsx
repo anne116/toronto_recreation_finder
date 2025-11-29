@@ -1,15 +1,16 @@
 import type { DropInProgram } from '../../../shared/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Props = {
   programs: DropInProgram[];
   sport?: string;
   onLocationClick?: (locationId: string | number) => void;
+  initialWeekday?: number;
 };
 
 function formatTime(time?: string | null): string {
   if (!time) return '';
-  return time.slice(0, 5); // "18:00:00" → "18:00"
+  return time.slice(0, 5);
 }
 
 function formatAgeRange(min?: number | null, max?: number | null): string {
@@ -62,7 +63,12 @@ function groupByDay(programs: DropInProgram[]) {
   return grouped;
 }
 
-export default function WeeklyScheduleGrid({ programs, sport, onLocationClick }: Props) {
+export default function WeeklyScheduleGrid({ 
+  programs, 
+  sport, 
+  onLocationClick,
+  initialWeekday 
+}: Props) {
   const grouped = groupByDay(programs);
   const dayConfigs = [
     { key: 'Monday', label: 'Mon' },
@@ -74,6 +80,17 @@ export default function WeeklyScheduleGrid({ programs, sport, onLocationClick }:
     { key: 'Sunday', label: 'Sun' },
   ];
   const [selectedDay, setSelectedDay] = useState<string>('Monday');
+
+  useEffect(() => {
+    if (
+      typeof initialWeekday === 'number' &&
+      initialWeekday >= 0 &&
+      initialWeekday < dayConfigs.length
+    ) {
+      const dayKey = dayConfigs[initialWeekday].key;
+      setSelectedDay(dayKey);
+    }
+  }, [initialWeekday, dayConfigs.length]);
   
   if (programs.length === 0) {
     return (

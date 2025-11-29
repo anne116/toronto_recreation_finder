@@ -179,7 +179,7 @@ export default function App() {
           <SchedulePanel
             activity={activeFilters?.activity ?? ''}
             age={activeFilters?.age}
-            weekday={activeFilters?.weekday ?? ''}
+            weekday={activeFilters?.weekday}
             district={activeFilters?.district ?? ''}
             isVisible={showSchedulePanel}
             onLocationClick={handleLocationClick}
@@ -188,34 +188,36 @@ export default function App() {
       )}
       
 
-      {hasSearched ? (
-        <div style={{
-          flex: 1,
-          height: '100vh',
-          position: 'relative',
-        }}>
-          <MapView
-            centres={centres}
-            wards={wards}
-            onCentreClick={handleLocationClick}
-            layersVisible={layersVisible}
-            userLocation={userLocation}
-            selectedLocationId={selectedLocationId}
-          />
-        </div>
-      ) : (
-        <div style={{
-          flex: 1,
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f8fafc',
-          color: '#64748b',
-          fontSize: '18px',
-          textAlign: 'center',
-          padding: '40px',
-        }}>
+
+      <div style={{
+        flex: 1,
+        height: '100vh',
+        position: 'relative',
+      }}>
+        <MapView
+          centres={centres}
+          wards={wards}
+          onCentreClick={handleLocationClick}
+          layersVisible={layersVisible}
+          userLocation={userLocation}
+          selectedLocationId={selectedLocationId}
+        />
+      </div>
+      {!hasSearched && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(248, 250, 252, 0.8',
+            color: '#64748b',
+            fontSize: '18px',
+            textAlign: 'center',
+            padding: '40px',
+          }}
+        >
           <div>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗺️</div>
             <div style={{ fontWeight: 600, marginBottom: '8px' }}>

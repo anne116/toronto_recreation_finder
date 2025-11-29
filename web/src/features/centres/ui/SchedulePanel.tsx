@@ -29,6 +29,10 @@ const DAY_INDEX: Record<string, number> = {
 function toWeekdayNumber(w?: string | number): number | undefined {
   if (w === undefined || w === null) return undefined;
   if (typeof w === "number") return w;
+  const asNumber = Number(w);
+  if (!Number.isNaN(asNumber)) {
+    return asNumber;
+  }
   return DAY_INDEX[w] ?? undefined;
 }
 
@@ -54,7 +58,6 @@ export default function SchedulePanel({
   const [error, setError] = useState<string | null>(null);
 
   const normalizedWeekday = useMemo(() => toWeekdayNumber(weekday), [weekday]);
-
   useEffect(() => {
     if (!isVisible || !activity) {
       setPrograms([]);
@@ -75,11 +78,16 @@ export default function SchedulePanel({
           age,
           district,
           time_of_day,
-          weekday: normalizedWeekday,
           limit: 2000,
           signal: abortController.signal,
         });
-
+        console.log('[SchedulePanel] searchProgramsAggregated with:', {
+          activity,
+          age,
+          district,
+          time_of_day,
+          weekday: normalizedWeekday,
+        });
         if (!abortController.signal.aborted) {
           const raw = resp?.programs ?? [];
           const cleaned = raw
@@ -99,7 +107,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible]);
+  }, [activity, age, district, time_of_day, isVisible]);
 
   if (!isVisible) return null;
 
@@ -148,6 +156,7 @@ export default function SchedulePanel({
           <WeeklyScheduleGrid
             programs={programs}
             onLocationClick={onLocationClick}
+            initialWeekday={normalizedWeekday}
           />
         )}
       </div>

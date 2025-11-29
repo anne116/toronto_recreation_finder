@@ -77,10 +77,15 @@ export default function MapView({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || !centres) return;
-    if (map.getSource('centres')) {
-      (map.getSource('centres') as GeoJSONSource).setData(centres as any);
-    } else {
+    if (!map || !mapReady ) return;
+
+    const source = map.getSource('centres') as GeoJSONSource | undefined;
+
+    if (!source && !centres) {
+      return;
+    }
+
+    if (!source && centres) {
       map.addSource('centres', { type: 'geojson', data: centres as any });
       map.addLayer({
         id: 'centres-circle', 
@@ -99,17 +104,40 @@ export default function MapView({
         const id = feature?.properties?.id;
         if (id != null) onCentreClick(id);
       });
-      map.on('mouseenter', 'centres-circle', () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', 'centres-circle', () => map.getCanvas().style.cursor = '');
+      map.on('mouseenter', 'centres-circle', () => {
+        map.getCanvas().style.cursor = 'pointer'
+      });
+      map.on('mouseleave', 'centres-circle', () => {
+        map.getCanvas().style.cursor = ''
+      });
+    } else if (source) {
+      const data = 
+      centres &&
+      centres.type === 'FeatureCollection' &&
+      Array.isArray(centres.features)
+        ? centres
+        : ({ type: 'FeatureCollection', features: []} as any);
+      source.setData(data);
     }
-    map.setLayoutProperty('centres-circle', 'visibility', layersVisible.centres ? 'visible' : 'none');
 
-    if (centres.features?.length) {
+    const hasData = !!centres && !!centres.features?.length;
+    if (map.getLayer('centres-circle')) {
+      map.setLayoutProperty(
+        'centres-circle',
+        'visibility',
+        layersVisible.centres && hasData ? 'visible' : 'none'
+      );
+    }
+
+    if (hasData) {
       const b = new maplibregl.LngLatBounds();
-      centres.features.forEach(f => b.extend(f.geometry.coordinates as [number, number]));
+      centres!.features.forEach((f) => {
+        b.extend(f.geometry.coordinates as [number, number]);
+      });
       map.fitBounds(b, { padding: 100, maxZoom: 13 });
     }
-  }, [centres, layersVisible.centres, mapReady]);
+
+  }, [centres, layersVisible.centres, mapReady, onCentreClick]);
 
   useEffect(() => {
     const map = mapRef.current;
