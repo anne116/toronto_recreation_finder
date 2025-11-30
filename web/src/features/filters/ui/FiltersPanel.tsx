@@ -9,11 +9,10 @@ type Props = {
   onChange: (v: Filters) => void;
   onSearch: () => void;
   onReset: () => void;
-  // onNearMe: () => void;
   status?: string;
 };
 
-export default function FiltersPanel({ value, onChange, onSearch, onReset, onNearMe, status }: Props) {
+export default function FiltersPanel({ value, onChange, onSearch, onReset, status }: Props) {
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [districts, setDistricts]   = useState<DistrictOption[]>([]);
 
@@ -95,10 +94,6 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
         <button className="btn btn-primary" onClick={onSearch}>Search</button>
         <button className="btn btn-secondary" onClick={onReset}>Reset Filters</button>
       </div>
-
-      {/* <div className="filter-group">
-        <button className="btn btn-link" onClick={onNearMe}>Find Near Me</button>
-      </div> */}
 
       <div id="status">{status}</div>
     </div>
