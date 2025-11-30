@@ -29,6 +29,10 @@ const DAY_INDEX: Record<string, number> = {
 function toWeekdayNumber(w?: string | number): number | undefined {
   if (w === undefined || w === null) return undefined;
   if (typeof w === "number") return w;
+  const asNumber = Number(w);
+  if (!Number.isNaN(asNumber)) {
+    return asNumber;
+  }
   return DAY_INDEX[w] ?? undefined;
 }
 
@@ -54,7 +58,6 @@ export default function SchedulePanel({
   const [error, setError] = useState<string | null>(null);
 
   const normalizedWeekday = useMemo(() => toWeekdayNumber(weekday), [weekday]);
-
   useEffect(() => {
     if (!isVisible || !activity) {
       setPrograms([]);
@@ -75,7 +78,6 @@ export default function SchedulePanel({
           age,
           district,
           time_of_day,
-          weekday: normalizedWeekday,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -99,7 +101,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible]);
+  }, [activity, age, district, time_of_day, isVisible]);
 
   if (!isVisible) return null;
 
@@ -114,33 +116,6 @@ export default function SchedulePanel({
         overflow: 'hidden',
       }}
     >
-      <div style={{
-        padding: '20px',
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        color: 'white',
-        flexShrink: 0,
-      }}>
-        <h3 style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          margin: 0,
-          marginBottom: '4px',
-        }}>
-          {activity ? `${activity} Schedule` : 'Schedule'}
-        </h3>
-        <p style={{
-          fontSize: '13px',
-          margin: 0,
-          opacity: 0.9,
-        }}>
-          {loading 
-            ? 'Loading...' 
-            : activity 
-              ? `${programs.length} sessions across Toronto`
-              : 'Select an activity to view schedules'
-          }
-        </p>
-      </div>
   
       <div style={{
         flex: 1,
@@ -175,6 +150,7 @@ export default function SchedulePanel({
           <WeeklyScheduleGrid
             programs={programs}
             onLocationClick={onLocationClick}
+            initialWeekday={normalizedWeekday}
           />
         )}
       </div>

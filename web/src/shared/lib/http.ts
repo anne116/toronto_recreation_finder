@@ -1,11 +1,8 @@
-// shared/lib/http.ts
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_URL}${path}`;
   
-  console.log('🌐 Fetching:', url);  // ✅ DEBUG: See what URL is being called
   
   const res = await fetch(url, options);
   
