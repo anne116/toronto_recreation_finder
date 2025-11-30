@@ -24,7 +24,6 @@ export default function App() {
     age: undefined,
   });
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState<string>('Ready to search');
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -95,30 +94,6 @@ export default function App() {
     setStatus('Filters reset');
     setActiveFilters(null);
   }
-  
-  function handleNearMe() {
-    if (!navigator.geolocation) {
-      setStatus('Geolocation not supported by your browser');
-      return;
-    }
-    
-    setStatus('Getting your location...');
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords: [number, number] = [
-          position.coords.longitude,
-          position.coords.latitude,
-        ];
-        setUserLocation(coords);
-        setStatus('Showing centres near you');
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setStatus('Could not get your location');
-      }
-    );
-  }
 
 
   function handleLocationClick(locationId: string | number) {
@@ -155,7 +130,6 @@ export default function App() {
           onChange={setFilters}
           onSearch={handleSearch}
           onReset={handleReset}
-          onNearMe={handleNearMe}
           status={status}
         />
       </div>
@@ -196,7 +170,6 @@ export default function App() {
           wards={wards}
           onCentreClick={handleLocationClick}
           layersVisible={layersVisible}
-          userLocation={userLocation}
           selectedLocationId={selectedLocationId}
         />
       </div>
@@ -208,7 +181,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(248, 250, 252, 0.8',
+            background: 'rgba(248, 250, 252, 0.8)',
             color: '#64748b',
             fontSize: '18px',
             textAlign: 'center',

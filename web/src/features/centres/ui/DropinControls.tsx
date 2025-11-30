@@ -12,7 +12,7 @@ type Props = {
 
 
 export default function DropinControls({
-  programs, selectedSport, onSelectSport, selectedSchedule, onSelectSchedule
+  programs, selectedSport, onSelectSport
 }: Props) {
   const sports = useMemo(() => getSports(programs), [programs]);
   return (
