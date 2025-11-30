@@ -1,4 +1,3 @@
-// src/features/centres/api/centres.api.ts
 import { get } from "../../../shared/lib/http";
 
 import type {
@@ -9,19 +8,17 @@ import type {
   CentreFacility,
 } from "../../../shared/types";
 
-/* ============== Small helpers ============== */
 function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
   if (val === undefined || val === null) return;
   if (typeof val === "number") qs.append(key, String(val));        // preserves 0 (Monday)
   else if (typeof val === "string" && val !== "") qs.append(key, val);
 }
 
-/* ============== Search APIs ============== */
 
 export type SearchProgramsParams = {
   activity: string;
   age?: "young" | "teen" | "adult" | "senior";
-  weekday?: number; // 0..6
+  weekday?: number;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   limit?: number;
@@ -70,7 +67,6 @@ export async function searchProgramsSearchStats(params: {
   return get(`/api/programs/search/stats?${qs.toString()}`);
 }
 
-/* ============== Map layer data ============== */
 
 export async function getCentres(
   params: { 
@@ -93,12 +89,12 @@ export async function getWards(): Promise<WardFeatureCollection> {
   return get<WardFeatureCollection>(`/api/wards/geojson`);
 }
 
-/* ============== Per-centre ============== */
 
 export async function getCentreDetail(
-  centreId: string | number
+  centreId: string | number,
+  init?: RequestInit
 ): Promise<CentreDetail> {
-  return get<CentreDetail>(`/api/centres/${centreId}`);
+  return get<CentreDetail>(`/api/centres/${centreId}`, init);
 }
 
 export async function getCentrePrograms(
@@ -113,12 +109,12 @@ export async function getCentrePrograms(
 }
 
 export async function getCentreFacilities(
-  centreId: string | number
+  centreId: string | number,
+  init?: RequestInit
 ): Promise<CentreFacility[]> {
-  return get<CentreFacility[]>(`/api/centres/${centreId}/facilities`);
+  return get<CentreFacility[]>(`/api/centres/${centreId}/facilities`, init);
 }
 
-/* ============== Filter dropdowns ============== */
 
 export type ActivityOption = { 
   activity: string; 

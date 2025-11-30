@@ -68,9 +68,9 @@ export function useCentreDetails(id: string | number | null, age?: AgeFilter) {
         setError(null);
 
         const [d, p, f] = await Promise.all([
-          getCentreDetail(id, ac.signal as any),
+          getCentreDetail(id),
           getCentrePrograms(id, ac.signal as any),
-          getCentreFacilities(id, ac.signal as any),
+          getCentreFacilities(id),
         ]);
 
         if (!ac.signal.aborted) {
