@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { ActivityOption, DistrictOption, FacilityTypeOption, AgeFilter } from '../../../shared/types/index.ts';
+import type { ActivityOption, DistrictOption, AgeFilter } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 
-type Filters = { activity: string; district: string; weekday: string; age?: AgeFilter; facility_type: string };
+type Filters = { activity: string; district: string; weekday: string; age?: AgeFilter };
 
 type Props = {
   value: Filters;
@@ -16,18 +16,16 @@ type Props = {
 export default function FiltersPanel({ value, onChange, onSearch, onReset, onNearMe, status }: Props) {
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [districts, setDistricts]   = useState<DistrictOption[]>([]);
-  const [types, setTypes]           = useState<FacilityTypeOption[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { activities, districts, facilityTypes } = await getFilterOptions();
+      const { activities, districts } = await getFilterOptions();
 
       const sortedActivities = [...activities].sort((a, b) =>
         a.activity.localeCompare(b.activity)
       );
       setActivities(sortedActivities); 
       setDistricts(districts); 
-      setTypes(facilityTypes);
     })();
   }, []);
 
@@ -91,25 +89,16 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, onNea
         </select>
       </div>
 
-      <div className="filter-group">
-        <label>Facility Type</label>
-        <select value={value.facility_type} onChange={e => update({ facility_type: e.target.value })}>
-          <option value="">All Types</option>
-          {types.map(t => <option key={t.facility_type} value={t.facility_type}>
-            {/* {t.facility_type} ({t.count}) */}
-            {t.facility_type}
-            </option>)}
-        </select>
-      </div>
+
 
       <div className="filter-group">
         <button className="btn btn-primary" onClick={onSearch}>Search</button>
         <button className="btn btn-secondary" onClick={onReset}>Reset Filters</button>
       </div>
 
-      <div className="filter-group">
+      {/* <div className="filter-group">
         <button className="btn btn-link" onClick={onNearMe}>Find Near Me</button>
-      </div>
+      </div> */}
 
       <div id="status">{status}</div>
     </div>

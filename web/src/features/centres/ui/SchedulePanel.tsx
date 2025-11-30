@@ -81,13 +81,7 @@ export default function SchedulePanel({
           limit: 2000,
           signal: abortController.signal,
         });
-        console.log('[SchedulePanel] searchProgramsAggregated with:', {
-          activity,
-          age,
-          district,
-          time_of_day,
-          weekday: normalizedWeekday,
-        });
+
         if (!abortController.signal.aborted) {
           const raw = resp?.programs ?? [];
           const cleaned = raw

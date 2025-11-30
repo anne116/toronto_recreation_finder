@@ -14,7 +14,7 @@ export default function App() {
     district: string;
     weekday: string;
     age?: AgeFilter;
-    facility_type: string;
+    
   };
   
   const [filters, setFilters] = useState<Filters>({
@@ -22,7 +22,6 @@ export default function App() {
     district: '',
     weekday: '',
     age: undefined,
-    facility_type: '',
   });
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -41,7 +40,6 @@ export default function App() {
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? '',
-    facility_type: activeFilters?.facility_type ?? '',
   },
   { enabled: !!activeFilters }
 );
@@ -90,7 +88,6 @@ export default function App() {
       district: '',
       weekday: '',
       age: undefined,
-      facility_type: '',
     });
     setShowSchedulePanel(false);
     setSelectedLocationId(null);

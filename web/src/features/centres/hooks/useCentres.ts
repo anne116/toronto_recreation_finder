@@ -1,4 +1,3 @@
-// src/features/centres/hooks/useCentres.ts
 import { useEffect, useState } from 'react';
 import { getCentres } from '../api/centres.api';
 import type { CentresFeatureCollection } from '../../../shared/types';
@@ -7,7 +6,6 @@ type CentresFilters = {
   activity?: string;
   district?: string;
   weekday?: string;
-  facility_type?: string;
 };
 
 type UseCentresOptions = {
@@ -21,13 +19,11 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Don't fetch if no filters set (optional optimization)
-    // Remove this if you want to load all centres on initial load
     if (!enabled) {
       return;
     }
 
-    if (!filters.activity && !filters.district && !filters.weekday && !filters.facility_type) {
+    if (!filters.activity && !filters.district && !filters.weekday ) {
       setData(null);
       return;
     }
@@ -39,15 +35,18 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       setError(null);
       
       try {
-        // Convert weekday string to number if present
-        const weekdayNum = filters.weekday 
-          ? (parseInt(filters.weekday, 10) || undefined)
-          : undefined;
+        let weekdayNum: number | undefined = undefined;
+        if (filters.weekday !== undefined && filters.weekday !== ''){
+          const parsed = Number(filters.weekday);
+          weekdayNum = Number.isNaN(parsed) ? undefined : parsed;
+        }
+        // const weekdayNum = filters.weekday 
+        //   ? (parseInt(filters.weekday, 10) || undefined)
+        //   : undefined;
 
         const centres = await getCentres({
           activity: filters.activity,
           district: filters.district,
-          facility_type: filters.facility_type,
           weekday: weekdayNum,
         });
         
@@ -68,7 +67,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.activity, filters.district, filters.weekday, filters.facility_type]);
+  }, [enabled, filters.activity, filters.district, filters.weekday]);
 
   return { data, loading, error };
 }
