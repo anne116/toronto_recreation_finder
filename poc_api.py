@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+import os
 import psycopg
 from psycopg.rows import dict_row, tuple_row
 from typing import Optional, List
@@ -19,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-DB_URL = "postgresql://poc:poc123@localhost:5432/poc_db"
+DB_URL = os.getenv("DATABASE_URL", "postgresql://poc:poc123@localhost:5432/poc_db")
 
 def get_db():
     return psycopg.connect(DB_URL, row_factory=dict_row)
@@ -807,4 +808,4 @@ async def get_program_search_stats(
             }
 
 if __name__ == "__main__":
-    uvicorn.run("poc_api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("poc_api:app", host="0.0.0.0", port=8080, reload=True)

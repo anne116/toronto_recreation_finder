@@ -105,7 +105,9 @@
     <div class="loading" id="loading">Loading...</div>
 
     <script>
-        const API_URL = 'http://localhost:8000';
+        const API_URL = window.location.hostname === 'localhost'
+          ? 'http://localhost:8080'
+          : 'https://toronto-recreation-finder.fly.dev';
         let map;
         let userLocation = null;
         let currentCentreId = null;

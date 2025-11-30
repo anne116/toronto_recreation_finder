@@ -65,7 +65,7 @@ function groupByDay(programs: DropInProgram[]) {
 
 export default function WeeklyScheduleGrid({ 
   programs, 
-  sport, 
+  // sport, 
   onLocationClick,
   initialWeekday 
 }: Props) {

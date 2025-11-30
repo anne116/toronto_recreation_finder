@@ -9,7 +9,7 @@ type Props = {
   onChange: (v: Filters) => void;
   onSearch: () => void;
   onReset: () => void;
-  onNearMe: () => void;
+  // onNearMe: () => void;
   status?: string;
 };
 
