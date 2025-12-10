@@ -35,7 +35,6 @@ export default function App() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
-  const [hasInteracted, setHasInteracted] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const { data: centres, loading: centresLoading } = useCentres({
@@ -66,26 +65,11 @@ export default function App() {
     };
   }, []);
 
-
-  useEffect(() => {
-    const mark = () => setHasInteracted(true);
-    window.addEventListener("pointerdown", mark, { once: true });
-    window.addEventListener("keydown", mark, { once: true });
-    window.addEventListener("touchstart", mark, { once: true });
-    
-    return () => {
-      window.removeEventListener("pointerdown", mark);
-      window.removeEventListener("keydown", mark);
-      window.removeEventListener("touchstart", mark);
-    };
-  }, []);
-
   function handleSearch() {
     setStatus('Searching...');
     setHasSearched(true);
     setSelectedLocationId(null);
     setActiveFilters(filters);
-    setHasInteracted(true);
     setIsFiltersOpen(false);
     
     if (filters.activity) {
@@ -112,7 +96,6 @@ export default function App() {
     setHasSearched(false);
     setStatus('Filters reset');
     setActiveFilters(null);
-    setHasInteracted(true);
     setIsScheduleOpen(false);
   }
 
