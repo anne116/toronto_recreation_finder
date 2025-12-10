@@ -10,9 +10,11 @@ type Props = {
   onSearch: () => void;
   onReset: () => void;
   status?: string;
+  isOpen: boolean;
+  onToggle: () => void;
 };
 
-export default function FiltersPanel({ value, onChange, onSearch, onReset, status }: Props) {
+export default function FiltersPanel({ value, onChange, onSearch, onReset, status, isOpen, onToggle }: Props) {
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [districts, setDistricts]   = useState<DistrictOption[]>([]);
 
@@ -32,7 +34,23 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
 
   return (
     <div className="filters-panel">
-      <h3>Toronto Recreation Finder</h3>
+
+      <div className="filters-panel__header">
+        <div className="filters-panel__title-wrap">
+          <h3>Toronto Recreation Finder</h3>
+          <div className="quick-intro">Select your preferences to discover the right recreation centres for you!</div>
+        </div>
+        <button
+          type="button"
+          className="filters-panel__toggle"
+          onClick={onToggle}
+          aria-label={isOpen ? 'Close filters' : 'Open filters'}
+          aria-expanded={isOpen}
+          title={isOpen ? 'Close filters' : 'Open filters'}
+        >
+          <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
+        </button>
+      </div>
 
       <div className="filter-group">
         <label>Activity / Program</label>

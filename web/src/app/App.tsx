@@ -132,16 +132,16 @@ export default function App() {
 
   return (
     <div className = "app-layout">
-      <button
-        type="button"
-        className="filters-toggle"
-        aria-label={isFiltersOpen ? 'Close filters' : 'Open filters'}
-        aria-expanded={isFiltersOpen}
-        onClick={() => setIsFiltersOpen(prev => !prev)}
-      >
-        <span className="filters-toggle-icon">{isFiltersOpen ? '✕' : '☰'}</span>
-        <span className="filters-toggle-text">Filters</span>
-      </button>
+      {!isFiltersOpen && (
+        <button
+          type="button"
+          className="filters-fab"
+          aria-label="Open filters"
+          onClick={() => setIsFiltersOpen(true)}
+        >
+          <span className="filters-fab-icon">☰</span>
+        </button>
+      )}
 
       {isFiltersOpen && (
         <div
@@ -157,6 +157,8 @@ export default function App() {
           onSearch = {handleSearch}
           onReset = {handleReset}
           status = {status}
+          isOpen={isFiltersOpen}
+          onToggle={() => setIsFiltersOpen(prev => !prev)}
         />
       </aside>
 
@@ -239,20 +241,6 @@ export default function App() {
           selectedLocationId = {selectedLocationId}
         />
       </main>
- 
-      {!hasSearched && !hasInteracted && (
-        <div className = "welcome-overlay">
-          <div>
-            <div style={{ fontSize: '48px', marginBottom: '8px' }}>🗺️</div>
-            <div style={{ fontWeight: 600, marginBottom: '8px' }}>
-              Toronto Recreation Finder
-            </div>
-            <div>
-              Select your preferences and click "Search" to discover recreation centres
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {hasSearched && centresLoading && (
