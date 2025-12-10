@@ -6,6 +6,7 @@ import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import MapView from '../features/map/ui/MapView';
 import SchedulePanel from '../features/centres/ui/SchedulePanel';
 import ResizablePanel from '../shared/ui/ResizablePanel';
+import '../App.css';
 
 export default function App() {
   
@@ -34,7 +35,9 @@ export default function App() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
-
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const { data: centres, loading: centresLoading } = useCentres({
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
@@ -46,7 +49,6 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true;
-    
     (async () => {
       try {
         const wardsData = await getWards();
@@ -59,9 +61,22 @@ export default function App() {
         }
       }
     })();
-    
     return () => {
       mounted = false;
+    };
+  }, []);
+
+
+  useEffect(() => {
+    const mark = () => setHasInteracted(true);
+    window.addEventListener("pointerdown", mark, { once: true });
+    window.addEventListener("keydown", mark, { once: true });
+    window.addEventListener("touchstart", mark, { once: true });
+    
+    return () => {
+      window.removeEventListener("pointerdown", mark);
+      window.removeEventListener("keydown", mark);
+      window.removeEventListener("touchstart", mark);
     };
   }, []);
 
@@ -70,13 +85,17 @@ export default function App() {
     setHasSearched(true);
     setSelectedLocationId(null);
     setActiveFilters(filters);
+    setHasInteracted(true);
+    setIsFiltersOpen(false);
     
     if (filters.activity) {
       setShowSchedulePanel(true);
       setStatus(`Showing ${filters.activity} programs`);
+      setIsScheduleOpen(true);
     } else {
       setShowSchedulePanel(false);
       setStatus('Showing all centres');
+      setIsScheduleOpen(false);
     }
   }
   
@@ -93,6 +112,8 @@ export default function App() {
     setHasSearched(false);
     setStatus('Filters reset');
     setActiveFilters(null);
+    setHasInteracted(true);
+    setIsScheduleOpen(false);
   }
 
 
@@ -110,86 +131,119 @@ export default function App() {
   
 
   return (
-    <div style={{ 
-      display: 'flex',
-      width: '100vw', 
-      height: '100vh',
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
-      
-      <div style={{
-        width: '320px',
-        flexShrink: 0,
-        height: '100vh',
-        overflow: 'auto',
-        zIndex: 10,
-      }}>
-        <FiltersPanel
-          value={filters}
-          onChange={setFilters}
-          onSearch={handleSearch}
-          onReset={handleReset}
-          status={status}
+    <div className = "app-layout">
+      <button
+        type="button"
+        className="filters-toggle"
+        aria-label={isFiltersOpen ? 'Close filters' : 'Open filters'}
+        aria-expanded={isFiltersOpen}
+        onClick={() => setIsFiltersOpen(prev => !prev)}
+      >
+        <span className="filters-toggle-icon">{isFiltersOpen ? '✕' : '☰'}</span>
+        <span className="filters-toggle-text">Filters</span>
+      </button>
+
+      {isFiltersOpen && (
+        <div
+          className="filters-backdrop"
+          onClick={() => setIsFiltersOpen(false)}
         />
-      </div>
-      
+      )}
+
+      <aside className={`filters-panel ${isFiltersOpen ? 'open' : 'closed'}`}>
+        <FiltersPanel
+          value = {filters}
+          onChange = {setFilters}
+          onSearch = {handleSearch}
+          onReset = {handleReset}
+          status = {status}
+        />
+      </aside>
 
       {showSchedulePanel && (
-        <ResizablePanel
-          title={
-            activeFilters?.activity
-              ? `${activeFilters.activity} Schedule`
-              : "Schedule"
-          }
-          initialWidth={400}
-          minWidth={300}
-          maxWidth={640}
-          onClose={() => setShowSchedulePanel(false)}
-        >
-          <SchedulePanel
-            activity={activeFilters?.activity ?? ''}
-            age={activeFilters?.age}
-            weekday={activeFilters?.weekday}
-            district={activeFilters?.district ?? ''}
-            isVisible={showSchedulePanel}
-            onLocationClick={handleLocationClick}
-          />
-        </ResizablePanel>
+        <>
+          <div className = "schedule-desktop">
+            <ResizablePanel
+              title={
+                activeFilters?.activity
+                  ? `${activeFilters.activity} Schedule`
+                  : "Schedule"
+              }
+              initialWidth={400}
+              minWidth={300}
+              maxWidth={640}
+              onClose={() => setShowSchedulePanel(false)}
+            >
+              <SchedulePanel
+                activity={activeFilters?.activity ?? ''}
+                age={activeFilters?.age}
+                weekday={activeFilters?.weekday}
+                district={activeFilters?.district ?? ''}
+                isVisible={showSchedulePanel}
+                onLocationClick={handleLocationClick}
+              />
+            </ResizablePanel>
+          </div>
+
+          <section 
+            className={`schedule-mobile ${isScheduleOpen ? 'open' : 'closed'}`}
+            aria-hidden={!isScheduleOpen}
+          >
+            <div className="schedule-mobile-header">
+              <div className="schedule-mobile-title">
+                {activeFilters?.activity
+                  ? `${activeFilters.activity} Schedule`
+                  : 'Schedule'}
+              </div>
+              <button
+                type="button"
+                className="schedule-mobile-close"
+                onClick={() => setIsScheduleOpen(false)}
+                aria-label="Close schedule"
+              >
+                x
+              </button>
+            </div>
+            <div className="schedule-mobile-body">
+              <SchedulePanel
+                activity={activeFilters?.activity ?? ''}
+                age={activeFilters?.age}
+                weekday={activeFilters?.weekday}
+                district={activeFilters?.district ?? ''}
+                isVisible={isScheduleOpen}
+                onLocationClick={handleLocationClick}
+              />
+            </div>
+          </section>
+
+          {!isScheduleOpen && (
+            <button
+              type="button"
+              className="schedule-toggle"
+              aria-label="Open schedule"
+              onClick={() => setIsScheduleOpen(true)}
+            >
+              <span className="schedule-toggle-icon">🗓️</span>
+              <span className="schedule-toggle-text">Schedule</span>
+            </button>
+          )}
+        </>
       )}
-      
 
-
-      <div style={{
-        flex: 1,
-        height: '100vh',
-        position: 'relative',
-      }}>
+      <main className = "map-panel">
         <MapView
-          centres={centres}
-          wards={wards}
-          onCentreClick={handleLocationClick}
-          layersVisible={layersVisible}
-          selectedLocationId={selectedLocationId}
+          centres = {centres}
+          wards = {wards}
+          onCentreClick = {handleLocationClick}
+          layersVisible = {layersVisible}
+          selectedLocationId = {selectedLocationId}
         />
-      </div>
-      {!hasSearched && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(248, 250, 252, 0.8)',
-            color: '#64748b',
-            fontSize: '18px',
-            textAlign: 'center',
-            padding: '40px',
-          }}
-        >
+      </main>
+ 
+      {!hasSearched && !hasInteracted && (
+        <div className = "welcome-overlay">
           <div>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗺️</div>
+            <div style={{ fontSize: '48px', marginBottom: '8px' }}>🗺️</div>
             <div style={{ fontWeight: 600, marginBottom: '8px' }}>
               Toronto Recreation Finder
             </div>
@@ -200,9 +254,17 @@ export default function App() {
         </div>
       )}
 
+
+      {hasSearched && centresLoading && (
+        <div className = "page-loading">
+          Loading centres...
+        </div>
+      )}    
+
+
       {hasSearched && (
         <div className="legend">
-          <div className="legend-title">Map Layers</div>
+          <div className="legend-title">Legend</div>
           
           <label className="legend-item">
             <input
@@ -223,23 +285,6 @@ export default function App() {
             <div className="legend-icon--line"/>
             <span className="legend-text">Ward Boundaries</span>
           </label>
-        </div>
-      )}
-      
-
-      {hasSearched && centresLoading && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'white',
-          padding: '20px 40px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          zIndex: 1000,
-        }}>
-          Loading centres...
         </div>
       )}
     </div>
