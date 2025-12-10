@@ -63,86 +63,35 @@ export default function ResizablePanel({
     return (
         <div
             ref={panelRef}
-            style={{
-                width,
-                flexShrink: 0,
-                height: "100vh",
-                display: "flex",
-                flexDirection: "column",
-                borderLeft: "1px solid #e2e8f0",
-                background: "#ffffff",
-                position: "relative",
-                zIndex: 10,
-            }}
+            className="resizable-panel"
+            style={{ width }}
         >
             <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "12px 16px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    color: "#ffffff",
-                    cursor: isDragging ? "col-resize" : "default",
-                }}
+              className="resizable-panel__header"
+              style={{ cursor: isDragging ? "col-resize" : "default"}}
             >
-
-                <div
-                    style={{
-                        flex: 1,
-                        fontWeight: 600,
-                        fontSize: 16,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                    }}
-                >
+                <div className="resizable-panel__title">
                     {title}
                 </div>
                 <button
                     onClick={onClose}
-                    style={{
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: 18,
-                        lineHeight: 1,
-                        color: "#ffffff",
-                        marginLeft: 8,
-                    }}
+                    className="resizable-panel__close"
                     aria-label="Close panel"
                 >
                     x
                 </button>
             </div>
 
-            <div
-                style={{
-                    flex: 1,
-                    overflow: "auto",
-                }}
-            >
+            <div className="resizable-panel__body">
                 {children}
             </div>
+
             <div
                 onMouseDown={startDrag}
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: 8,
-                    height: "100%",
-                    cursor: "col-resize",
-                    zIndex: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
+                className="resizable-panel__handle"
             >
                 <span
-                    style={{
-                        userSelect: "none",
-                        fontSize: 20,
-                    }}
+                    style={{ userSelect: "none", fontSize: 20 }}
                     aria-hidden="true"
                 >
                     ⋮

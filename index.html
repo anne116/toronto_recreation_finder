@@ -122,7 +122,6 @@
                         type: 'raster',
                         tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
                         tileSize: 256,
-                        attribution: '© OpenStreetMap contributors'
                     }
                 },
                 layers: [{
@@ -155,7 +154,6 @@
                 
                 map.addSource('wards', { type: 'geojson', data: data });
                 
-                // Add ward layers BEFORE adding centres layer
                 map.addLayer({
                     id: 'wards-fill',
                     type: 'fill',
@@ -427,10 +425,8 @@
                 if (detail.url && detail.url !== 'None') {
                     html += `<a href="${detail.url}" target="_blank" class="external-link">View on Toronto.ca</a>`;
       
-// === finish showCentreDetails: inject HTML and open the sidebar ===
                 }
 
-                // Inject into sidebar and open it
                 const panel = document.getElementById('sidebarContent');
                 panel.innerHTML = html;
                 openSidebar();
@@ -440,7 +436,6 @@
             showLoading(false);
         }
 
-// ========== UI helpers & event handlers ==========
 function showLoading(show) {
     const el = document.getElementById('loading');
     el.style.display = show ? 'block' : 'none';
@@ -452,7 +447,7 @@ function openSidebar() {
 function closeSidebar() {
     document.getElementById('detailsSidebar').classList.remove('open');
 }
-window.closeSidebar = closeSidebar; // enable HTML onclick
+window.closeSidebar = closeSidebar;
 
 function applyFilters() {
     loadCentres();
@@ -470,7 +465,6 @@ function resetFilters() {
 }
 window.resetFilters = resetFilters;
 
-// Re-render program lists in the sidebar when age filter changes
 function updateProgramsByAge() {
     if (!allPrograms) return;
     const age = document.getElementById('age-filter')?.value || '';
@@ -523,10 +517,8 @@ function updateProgramsByAge() {
     }
 }
 
-// live update when age changes
 document.getElementById('age-filter')?.addEventListener('change', updateProgramsByAge);
 
-// Legend toggles
 function toggleLayer(name) {
     if (!map) return;
     if (name === 'centres') {
@@ -542,7 +534,6 @@ function toggleLayer(name) {
 }
 window.toggleLayer = toggleLayer;
 
-// Find Near Me (geolocate and fly)
 let userMarker = null;
 function findNearMe() {
     if (!navigator.geolocation) {
@@ -564,7 +555,6 @@ function findNearMe() {
 }
 window.findNearMe = findNearMe;
 
-// Resizable sidebar
 function initSidebarResizer() {
     const sidebar = document.getElementById('detailsSidebar');
     const resizer = document.getElementById('sidebarResizer');
