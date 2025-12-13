@@ -9,7 +9,6 @@ type Props = {
   centres: CentresFeatureCollection | null;
   wards: WardFeatureCollection | null;
   onCentreClick: (id: string | number) => void;
-  layersVisible: { centres: boolean; wards: boolean };
   userLocation?: [number, number] | null;
   selectedLocationId?: string | number | null;
 };
@@ -18,7 +17,6 @@ export default function MapView({
   centres, 
   wards, 
   onCentreClick, 
-  layersVisible, 
   userLocation, 
   selectedLocationId, 
 }: Props) {
@@ -70,9 +68,7 @@ export default function MapView({
       map.addLayer({ id: 'wards-fill', type: 'fill', source: 'wards', paint: { 'fill-color': '#94a3b8', 'fill-opacity': 0.15 } });
       map.addLayer({ id: 'wards-outline', type: 'line', source: 'wards', paint: { 'line-color': '#1e293b', 'line-width': 2.5, 'line-opacity': 0.9 } });
     }
-    map.setLayoutProperty('wards-fill', 'visibility', layersVisible.wards ? 'visible' : 'none');
-    map.setLayoutProperty('wards-outline', 'visibility', layersVisible.wards ? 'visible' : 'none');
-  }, [wards, layersVisible.wards, mapReady]);
+  }, [wards, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -124,7 +120,7 @@ export default function MapView({
       map.setLayoutProperty(
         'centres-circle',
         'visibility',
-        layersVisible.centres && hasData ? 'visible' : 'none'
+        hasData ? 'visible' : 'none'
       );
     }
 
@@ -136,7 +132,7 @@ export default function MapView({
       map.fitBounds(b, { padding: 100, maxZoom: 13 });
     }
 
-  }, [centres, layersVisible.centres, mapReady, onCentreClick]);
+  }, [centres, mapReady, onCentreClick]);
 
   useEffect(() => {
     const map = mapRef.current;

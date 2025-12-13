@@ -28,10 +28,6 @@ export default function App() {
   const [status, setStatus] = useState<string>('Ready to search');
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [layersVisible, setLayersVisible] = useState({
-    centres: true,
-    wards: true,
-  });
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
@@ -105,12 +101,6 @@ export default function App() {
     setStatus('Viewing centre details');
   }
  
-  function toggleLayer(layer: 'centres' | 'wards') {
-    setLayersVisible(prev => ({
-      ...prev,
-      [layer]: !prev[layer],
-    }));
-  }
   
 
   return (
@@ -220,7 +210,6 @@ export default function App() {
           centres = {centres}
           wards = {wards}
           onCentreClick = {handleLocationClick}
-          layersVisible = {layersVisible}
           selectedLocationId = {selectedLocationId}
         />
       </main>
@@ -232,32 +221,6 @@ export default function App() {
         </div>
       )}    
 
-
-      {hasSearched && (
-        <div className="legend">
-          <div className="legend-title">Legend</div>
-          
-          <label className="legend-item">
-            <input
-              type="checkbox"
-              checked={layersVisible.centres}
-              onChange={() => toggleLayer('centres')}
-            />
-            <div className="legend-icon" style={{ background: '#3b82f6' }} />
-            <span className="legend-text">Recreation Centres</span>
-          </label>
-          
-          <label className="legend-item">
-            <input
-              type="checkbox"
-              checked={layersVisible.wards}
-              onChange={() => toggleLayer('wards')}
-            />
-            <div className="legend-icon--line"/>
-            <span className="legend-text">Ward Boundaries</span>
-          </label>
-        </div>
-      )}
     </div>
   );
 }
