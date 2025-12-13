@@ -137,28 +137,30 @@ export default function App() {
 
       {showSchedulePanel && (
         <>
-          <div className = "schedule-desktop">
-            <ResizablePanel
-              title={
-                activeFilters?.activity
-                  ? `${activeFilters.activity} Schedule`
-                  : "Schedule"
-              }
-              initialWidth={400}
-              minWidth={300}
-              maxWidth={640}
-              onClose={() => setShowSchedulePanel(false)}
-            >
-              <SchedulePanel
-                activity={activeFilters?.activity ?? ''}
-                age={activeFilters?.age}
-                weekday={activeFilters?.weekday}
-                district={activeFilters?.district ?? ''}
-                isVisible={showSchedulePanel}
-                onLocationClick={handleLocationClick}
-              />
-            </ResizablePanel>
-          </div>
+          {isScheduleOpen && (
+            <div className = "schedule-desktop">
+              <ResizablePanel
+                title={
+                  activeFilters?.activity
+                    ? `${activeFilters.activity} Schedule`
+                    : "Schedule"
+                }
+                initialWidth={400}
+                minWidth={300}
+                maxWidth={640}
+                onClose={() => setIsScheduleOpen(false)}
+              >
+                <SchedulePanel
+                  activity={activeFilters?.activity ?? ''}
+                  age={activeFilters?.age}
+                  weekday={activeFilters?.weekday}
+                  district={activeFilters?.district ?? ''}
+                  isVisible={isScheduleOpen}
+                  onLocationClick={handleLocationClick}
+                />
+              </ResizablePanel>
+            </div>
+          )}
 
           <section 
             className={`schedule-mobile ${isScheduleOpen ? 'open' : 'closed'}`}
