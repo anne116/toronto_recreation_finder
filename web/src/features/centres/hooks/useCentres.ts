@@ -40,16 +40,13 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
           const parsed = Number(filters.weekday);
           weekdayNum = Number.isNaN(parsed) ? undefined : parsed;
         }
-        // const weekdayNum = filters.weekday 
-        //   ? (parseInt(filters.weekday, 10) || undefined)
-        //   : undefined;
+
 
         const centres = await getCentres({
           activity: filters.activity,
           district: filters.district,
           weekday: weekdayNum,
         });
-        
         if (!abortController.signal.aborted) {
           setData(centres);
         }

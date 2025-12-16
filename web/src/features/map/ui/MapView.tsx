@@ -5,6 +5,23 @@ import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 
+function normalizeCentres(
+  centres: CentresFeatureCollection | null | undefined
+): any {
+  if (
+    centres &&
+    (centres as any).type === 'FeatureCollection' &&
+    Array.isArray((centres as any).features)
+  ) {
+    return centres as any;
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features: [],
+  } as any;
+}
+
 type Props = {
   centres: CentresFeatureCollection | null;
   wards: WardFeatureCollection | null;
@@ -71,68 +88,68 @@ export default function MapView({
   }, [wards, mapReady]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReady ) return;
+  const map = mapRef.current;
+  if (!map || !mapReady) return;
 
-    const source = map.getSource('centres') as GeoJSONSource | undefined;
+  // Always normalize what we send to MapLibre
+  const data = normalizeCentres(centres);
+  const features = (data as any).features ?? [];
 
-    if (!source && !centres) {
-      return;
-    }
+  let source = map.getSource('centres') as GeoJSONSource | undefined;
 
-    if (!source && centres) {
-      map.addSource('centres', { type: 'geojson', data: centres as any });
-      map.addLayer({
-        id: 'centres-circle', 
-        type: 'circle', 
-        source: 'centres',
-        paint: {
-          'circle-radius': 7,
-          'circle-color': '#3b82f6',
-          'circle-opacity': 0.9,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
-      map.on('click', 'centres-circle', (e) => {
-        const feature = e.features?.[0];
-        const id = feature?.properties?.id;
-        if (id != null) onCentreClick(id);
-      });
-      map.on('mouseenter', 'centres-circle', () => {
-        map.getCanvas().style.cursor = 'pointer'
-      });
-      map.on('mouseleave', 'centres-circle', () => {
-        map.getCanvas().style.cursor = ''
-      });
-    } else if (source) {
-      const data = 
-      centres &&
-      centres.type === 'FeatureCollection' &&
-      Array.isArray(centres.features)
-        ? centres
-        : ({ type: 'FeatureCollection', features: []} as any);
-      source.setData(data);
-    }
+  if (!source) {
+    // First time: create source + layer + handlers
+    map.addSource('centres', { type: 'geojson', data });
 
-    const hasData = !!centres && !!centres.features?.length;
-    if (map.getLayer('centres-circle')) {
-      map.setLayoutProperty(
-        'centres-circle',
-        'visibility',
-        hasData ? 'visible' : 'none'
-      );
-    }
+    map.addLayer({
+      id: 'centres-circle',
+      type: 'circle',
+      source: 'centres',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': '#3b82f6',
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
 
-    if (hasData) {
-      const b = new maplibregl.LngLatBounds();
-      centres!.features.forEach((f) => {
-        b.extend(f.geometry.coordinates as [number, number]);
-      });
-      map.fitBounds(b, { padding: 100, maxZoom: 13 });
-    }
+    map.on('click', 'centres-circle', (e) => {
+      const feature = e.features?.[0];
+      const id = feature?.properties?.id;
+      if (id != null) onCentreClick(id);
+    });
 
-  }, [centres, mapReady, onCentreClick]);
+    map.on('mouseenter', 'centres-circle', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'centres-circle', () => {
+      map.getCanvas().style.cursor = '';
+    });
+  } else {
+    // Subsequent updates: just change the data
+    source.setData(data);
+  }
+
+  const hasData = features.length > 0;
+
+  if (map.getLayer('centres-circle')) {
+    map.setLayoutProperty(
+      'centres-circle',
+      'visibility',
+      hasData ? 'visible' : 'none'
+    );
+  }
+
+  if (hasData) {
+    const b = new maplibregl.LngLatBounds();
+    features.forEach((f: any) => {
+      b.extend(f.geometry.coordinates as [number, number]);
+    });
+    map.fitBounds(b, { padding: 100, maxZoom: 13 });
+  }
+}, [centres, mapReady, onCentreClick]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -241,6 +258,21 @@ export default function MapView({
       map.flyTo({ center: userLocation, zoom: 13 });
     }
   }, [userLocation, mapReady]);
+
+  useEffect(() => {
+    if (!centres) {
+      console.log('[MapView] centres is null/undefined');
+      return;
+    }
+    const features = (centres as any).features ?? [];
+    const ids = features.map((f: any) => f.properties?.id ?? f.properties?.location_id);
+
+    console.log('[MapView] centres debug', {
+      featureCount: features.length,
+      uniqueIds: Array.from(new Set(ids)),
+      sample: ids.slice(0,10),
+    });
+  }, [centres]);
 
   return <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />;
 }
