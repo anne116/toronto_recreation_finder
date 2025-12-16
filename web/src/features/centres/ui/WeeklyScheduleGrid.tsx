@@ -65,7 +65,6 @@ function groupByDay(programs: DropInProgram[]) {
 
 export default function WeeklyScheduleGrid({ 
   programs, 
-  // sport, 
   onLocationClick,
   initialWeekday 
 }: Props) {
@@ -81,7 +80,11 @@ export default function WeeklyScheduleGrid({
   ];
   const [selectedDay, setSelectedDay] = useState<string>('Monday');
 
+
   useEffect(() => {
+    const daysWithPrograms = dayConfigs
+      .map(d => d.key)
+      .filter(dayKey => (grouped.get(dayKey) ?? []).length > 0);
     if (
       typeof initialWeekday === 'number' &&
       initialWeekday >= 0 &&
@@ -89,8 +92,15 @@ export default function WeeklyScheduleGrid({
     ) {
       const dayKey = dayConfigs[initialWeekday].key;
       setSelectedDay(dayKey);
+      return;
     }
-  }, [initialWeekday, dayConfigs.length]);
+
+    if (daysWithPrograms.length > 0) {
+      setSelectedDay(daysWithPrograms[0]);
+      } else {
+        setSelectedDay('Monday');
+      }
+    }, [initialWeekday, programs]);
   
   if (programs.length === 0) {
     return (
@@ -120,24 +130,42 @@ export default function WeeklyScheduleGrid({
       >
         {dayConfigs.map(({ key, label }) => {
           const isActive = key === selectedDay;
+          const hasPrograms = (grouped.get(key) ?? []).length > 0;
           return (
             <button
               key={key}
               type="button"
-              onClick={() => setSelectedDay(key)}
+              disabled={!hasPrograms}
+              onClick={() =>  {
+                if (!hasPrograms) return;
+                setSelectedDay(key)}
+              }
               style={{
-                border: isActive ? '2px solid #3b82f6' : '1.5px solid #bfdbfe',
+                border: isActive 
+                ? '2px solid #3b82f6'
+                : hasPrograms
+                ? '1.5px solid #bfdbfe'
+                : '1px dashed #cbd5f5',
                 padding: '8px 12px',
                 borderRadius: '12px 12px 0px 0px',
                 fontSize: 13,
-                cursor: 'pointer',
-                background: isActive ? '#4d95f7' : '#e5f0ff',
-                color: isActive ? '#ffffff' : '#1d4ed8',
+                cursor: hasPrograms ? 'pointer' : 'default',
+                background: isActive 
+                ? '#4d95f7' 
+                : hasPrograms
+                ? '#e5f0ff'
+                : '#f8fafc',
+                color: isActive 
+                ? '#ffffff' 
+                : hasPrograms
+                ? '#1d4ed8'
+                : '#94a3b8',
                 fontWeight: isActive ? 700 : 500,
                 whiteSpace: 'nowrap',
                 boxSizing: 'border-box',
                 flex: 1,
                 textAlign: 'center',
+                opacity: hasPrograms ? 1 : 0.6,
               }}
             >
               {label}
@@ -241,7 +269,7 @@ export default function WeeklyScheduleGrid({
           marginTop: 8,
         }}
       >
-        No programs scheduled
+        No programs scheduled for this day
       </div>
     )}
   </div>

@@ -27,7 +27,7 @@ const DAY_INDEX: Record<string, number> = {
 };
 
 function toWeekdayNumber(w?: string | number): number | undefined {
-  if (w === undefined || w === null) return undefined;
+  if (w === undefined || w === null || w === '') return undefined;
   if (typeof w === "number") return w;
   const asNumber = Number(w);
   if (!Number.isNaN(asNumber)) {
