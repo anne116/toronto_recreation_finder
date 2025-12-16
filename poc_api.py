@@ -73,7 +73,6 @@ async def get_centres(
                 query += """
                     AND (
                         pd.course_title ILIKE %(activity)s 
-                        OR pr.course_title ILIKE %(activity)s
                     )
                 """
                 params['activity'] = f"%{activity}%"
@@ -154,7 +153,6 @@ async def get_centres_geojson(
                 query += """
                     AND (
                         pd.course_title ILIKE %(activity)s 
-                        OR pr.course_title ILIKE %(activity)s
                     )
                 """
                 params['activity'] = f"%{activity}%"
