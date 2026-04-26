@@ -21,6 +21,7 @@ SSL_CONTEXT = ssl.create_default_context()
 
 LOCATION_CACHE = None
 COORDINATE_CACHE = None
+FACILITY_CACHE = None
 
 DISTRICT_NORMALIZATION = {
     "Toronto East York": "Toronto and East York",
@@ -34,6 +35,12 @@ def is_missing(value: object) -> bool:
         stripped = value.strip()
         return stripped == "" or stripped.lower() == "none"
     return False
+
+
+def clean_optional_string(value: object) -> str | None:
+    if is_missing(value):
+        return None
+    return str(value).strip()
 
 
 def fetch_json(url: str, params: dict | None = None) -> dict:
@@ -96,6 +103,14 @@ def format_time(hour_value: int | str | None, minute_value: int | str | None) ->
     return datetime(2000, 1, 1, hour, minute).strftime("%-I:%M %p")
 
 
+def format_time_hms(hour_value: int | str | None, minute_value: int | str | None) -> str | None:
+    if hour_value in (None, "") or minute_value in (None, ""):
+        return None
+    hour = int(hour_value)
+    minute = int(minute_value)
+    return f"{hour:02d}:{minute:02d}:00"
+
+
 def is_current(last_date_value: str | None) -> bool:
     if not last_date_value:
         return True
@@ -142,6 +157,15 @@ def matches_time_of_day(start_hour: int | str | None, weekday: int | None, time_
     return True
 
 
+def parse_int(value: object) -> int | None:
+    if is_missing(value):
+        return None
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def load_location_cache() -> dict[int, dict]:
     global LOCATION_CACHE
     if LOCATION_CACHE is not None:
@@ -150,10 +174,10 @@ def load_location_cache() -> dict[int, dict]:
     rows = fetch_all_datastore_rows(LOCATIONS_DATASTORE_ID)
     LOCATION_CACHE = {}
     for row in rows:
-        location_id = row.get("Location ID")
-        if location_id in (None, ""):
+        location_id = parse_int(row.get("Location ID"))
+        if location_id is None:
             continue
-        LOCATION_CACHE[int(location_id)] = {
+        LOCATION_CACHE[location_id] = {
             **row,
             "District": normalize_district(row.get("District")),
         }
@@ -170,25 +194,102 @@ def load_coordinate_cache() -> dict[int, dict]:
     for feature in geojson.get("features", []):
         props = feature.get("properties", {})
         geometry = feature.get("geometry", {})
-        location_id = props.get("LOCATIONID")
+        location_id = parse_int(props.get("LOCATIONID"))
         coords = geometry.get("coordinates") or []
-        if not location_id or not coords:
+        if location_id is None or not coords:
             continue
         try:
             lon, lat = coords[0]
-            cache[int(location_id)] = {
-                "lat": lat,
-                "lon": lon,
-                "phone": None if props.get("PHONE") in (None, "", "None") else props.get("PHONE"),
-                "url": props.get("URL"),
-                "address": props.get("ADDRESS"),
-                "facility_type": props.get("TYPE"),
-            }
-        except (ValueError, TypeError, IndexError):
+        except (TypeError, IndexError, ValueError):
             continue
+
+        existing = cache.get(location_id)
+        if existing and existing.get("url") and existing.get("phone"):
+            continue
+
+        cache[location_id] = {
+            "lat": lat,
+            "lon": lon,
+            "phone": clean_optional_string(props.get("PHONE")),
+            "url": clean_optional_string(props.get("URL")),
+            "address": clean_optional_string(props.get("ADDRESS")),
+            "facility_type": clean_optional_string(props.get("TYPE")),
+        }
 
     COORDINATE_CACHE = cache
     return COORDINATE_CACHE
+
+
+def load_facility_cache() -> dict[int, list[dict]]:
+    global FACILITY_CACHE
+    if FACILITY_CACHE is not None:
+        return FACILITY_CACHE
+
+    geojson = fetch_json(PARKS_GEOJSON_URL)
+    cache: dict[int, list[dict]] = {}
+    for feature in geojson.get("features", []):
+        props = feature.get("properties", {})
+        location_id = parse_int(props.get("LOCATIONID"))
+        if location_id is None:
+            continue
+
+        facility_type = clean_optional_string(props.get("TYPE"))
+        asset_name = clean_optional_string(props.get("ASSET_NAME"))
+        if facility_type is None and asset_name is None:
+            continue
+
+        cache.setdefault(location_id, []).append(
+            {
+                "facility_type": facility_type or "Unknown",
+                "asset_name": asset_name,
+                "permit": None,
+                "facility_rating": None,
+            }
+        )
+
+    FACILITY_CACHE = cache
+    return FACILITY_CACHE
+
+
+def location_name(location: dict | None) -> str | None:
+    if not location:
+        return None
+    return clean_optional_string(location.get("Location Name")) or clean_optional_string(location.get("Asset Name"))
+
+
+def location_facility_type(location: dict | None, coord: dict | None = None) -> str | None:
+    if coord:
+        from_coord = clean_optional_string(coord.get("facility_type"))
+        if from_coord:
+            return from_coord
+    if not location:
+        return None
+    return clean_optional_string(location.get("Location Type"))
+
+
+def location_matches_facility_type(location_id: int, filter_value: str | None) -> bool:
+    if is_missing(filter_value):
+        return True
+
+    needle = str(filter_value).strip().lower()
+    location = load_location_cache().get(location_id)
+    coord = load_coordinate_cache().get(location_id)
+    facilities = load_facility_cache().get(location_id, [])
+
+    candidates: list[str] = []
+    for value in (
+        location_facility_type(location, coord),
+        clean_optional_string(location.get("Location Type")) if location else None,
+    ):
+        if value:
+            candidates.append(value)
+
+    for facility in facilities:
+        value = clean_optional_string(facility.get("facility_type"))
+        if value:
+            candidates.append(value)
+
+    return any(needle in candidate.lower() for candidate in candidates)
 
 
 def build_activity_options(*, program_type: str | None = None, limit: int = 50) -> list[dict]:
@@ -213,14 +314,11 @@ def build_activity_options(*, program_type: str | None = None, limit: int = 50) 
         )
         entry["count"] = int(entry["count"]) + 1
 
-        location_id_value = row.get("Location ID")
-        try:
-            if not is_missing(location_id_value):
-                cast_locations = entry["locations"]
-                assert isinstance(cast_locations, set)
-                cast_locations.add(int(location_id_value))
-        except (TypeError, ValueError):
-            continue
+        location_id = parse_int(row.get("Location ID"))
+        if location_id is not None:
+            cast_locations = entry["locations"]
+            assert isinstance(cast_locations, set)
+            cast_locations.add(location_id)
 
     result = [
         {
@@ -258,7 +356,7 @@ def build_facility_type_options() -> list[dict]:
 
     for location_id, location in locations.items():
         coord = coordinates.get(location_id, {})
-        facility_type = coord.get("facility_type") or location.get("Location Type")
+        facility_type = location_facility_type(location, coord)
         if is_missing(facility_type):
             continue
         facility_type_str = str(facility_type).strip()
@@ -296,12 +394,7 @@ def build_program_search_response(
         if activity and activity.lower() not in raw_title.lower():
             continue
 
-        row_weekday = row.get("Weekday")
-        try:
-            row_weekday_int = int(row_weekday) if row_weekday not in (None, "") else None
-        except (TypeError, ValueError):
-            row_weekday_int = None
-
+        row_weekday_int = parse_int(row.get("Weekday"))
         if weekday is not None and row_weekday_int != weekday:
             continue
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
@@ -309,12 +402,8 @@ def build_program_search_response(
         if not matches_time_of_day(row.get("Start Hour"), row_weekday_int, time_of_day):
             continue
 
-        location_id_value = row.get("Location ID")
-        if location_id_value in (None, ""):
-            continue
-        try:
-            location_id = int(location_id_value)
-        except (TypeError, ValueError):
+        location_id = parse_int(row.get("Location ID"))
+        if location_id is None:
             continue
 
         location = locations.get(location_id)
@@ -333,19 +422,19 @@ def build_program_search_response(
                 "location_id": location_id,
                 "course_title": raw_title,
                 "weekday": row_weekday_int,
-                "day_of_week": row.get("DayOftheWeek"),
+                "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
                 "start_time": format_time(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time(row.get("End Hour"), row.get("End Min")),
                 "age_min": row.get("Age Min"),
                 "age_max": row.get("Age Max"),
-                "location_name": location.get("Location Name"),
-                "asset_name": location.get("Asset Name"),
-                "address": build_address(location) or coord.get("address"),
+                "location_name": location_name(location),
+                "asset_name": clean_optional_string(location.get("Asset Name")),
+                "address": build_address(location) or clean_optional_string(coord.get("address")),
                 "district": normalized_district,
-                "facility_type": coord.get("facility_type") or location.get("Location Type"),
-                "accessibility": location.get("Accessibility"),
-                "phone": coord.get("phone"),
-                "url": coord.get("url"),
+                "facility_type": location_facility_type(location, coord),
+                "accessibility": clean_optional_string(location.get("Accessibility")),
+                "phone": clean_optional_string(coord.get("phone")),
+                "url": clean_optional_string(coord.get("url")),
                 "lon": coord.get("lon"),
                 "lat": coord.get("lat"),
             }
@@ -374,3 +463,210 @@ def build_program_search_response(
         },
         "programs": programs,
     }
+
+
+def build_centres_geojson_response(
+    *,
+    activity: str | None = None,
+    district: str | None = None,
+    facility_type: str | None = None,
+    weekday: int | None = None,
+) -> dict:
+    drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
+    locations = load_location_cache()
+    coordinates = load_coordinate_cache()
+
+    grouped: dict[int, dict] = {}
+
+    for row in drop_in_rows:
+        raw_title = clean_optional_string(row.get("Course Title"))
+        if raw_title is None:
+            continue
+        if not is_current(row.get("Last Date")):
+            continue
+        if activity and activity.lower() not in raw_title.lower():
+            continue
+
+        row_weekday_int = parse_int(row.get("Weekday"))
+        if weekday is not None and row_weekday_int != weekday:
+            continue
+
+        location_id = parse_int(row.get("Location ID"))
+        if location_id is None:
+            continue
+
+        location = locations.get(location_id)
+        coord = coordinates.get(location_id)
+        if not location or not coord:
+            continue
+
+        normalized_district = normalize_district(location.get("District"))
+        if district and normalized_district != district:
+            continue
+        if not location_matches_facility_type(location_id, facility_type):
+            continue
+
+        bucket = grouped.setdefault(
+            location_id,
+            {
+                "id": location_id,
+                "name": location_name(location),
+                "address": build_address(location) or clean_optional_string(coord.get("address")),
+                "district": normalized_district,
+                "facility_type": location_facility_type(location, coord),
+                "dropin_count": 0,
+                "registered_count": 0,
+                "total_programs": 0,
+                "lon": coord.get("lon"),
+                "lat": coord.get("lat"),
+            },
+        )
+        bucket["dropin_count"] += 1
+        bucket["total_programs"] += 1
+
+    features = []
+    centres = sorted(
+        grouped.values(),
+        key=lambda item: (-int(item["total_programs"]), str(item["name"] or "")),
+    )
+    for centre in centres:
+        lon = centre.get("lon")
+        lat = centre.get("lat")
+        if lon is None or lat is None:
+            continue
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [lon, lat],
+                },
+                "properties": {
+                    "id": centre["id"],
+                    "name": centre["name"],
+                    "address": centre["address"],
+                    "district": centre["district"],
+                    "facility_type": centre["facility_type"],
+                    "dropin_count": centre["dropin_count"],
+                    "registered_count": centre["registered_count"],
+                    "total_programs": centre["total_programs"],
+                },
+            }
+        )
+
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+    }
+
+
+def build_centre_detail(location_id: str | int) -> dict | None:
+    location_id_int = parse_int(location_id)
+    if location_id_int is None:
+        return None
+
+    locations = load_location_cache()
+    coordinates = load_coordinate_cache()
+    location = locations.get(location_id_int)
+    coord = coordinates.get(location_id_int, {})
+    if not location:
+        return None
+
+    return {
+        "id": location_id_int,
+        "name": location_name(location),
+        "asset_name": clean_optional_string(location.get("Asset Name")),
+        "location_name": clean_optional_string(location.get("Location Name")),
+        "address": build_address(location) or clean_optional_string(coord.get("address")),
+        "district": normalize_district(location.get("District")),
+        "facility_type": location_facility_type(location, coord),
+        "amenities": clean_optional_string(location.get("Amenities")),
+        "accessibility": clean_optional_string(location.get("Accessibility")),
+        "intersection": clean_optional_string(location.get("Nearest Intersection")),
+        "ttc_information": clean_optional_string(location.get("TTC Information")),
+        "phone": clean_optional_string(coord.get("phone")),
+        "url": clean_optional_string(coord.get("url")),
+        "description": clean_optional_string(location.get("Location Description")),
+        "postal_code": clean_optional_string(location.get("Postal Code")),
+        "lon": coord.get("lon"),
+        "lat": coord.get("lat"),
+    }
+
+
+def build_centre_programs(location_id: str | int, *, age: str | None = None) -> dict | None:
+    location_id_int = parse_int(location_id)
+    if location_id_int is None:
+        return None
+
+    locations = load_location_cache()
+    if location_id_int not in locations:
+        return None
+
+    rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID, filters={"Location ID": location_id_int})
+    programs: list[dict] = []
+
+    for row in rows:
+        if not is_current(row.get("Last Date")):
+            continue
+        if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
+            continue
+
+        weekday = parse_int(row.get("Weekday"))
+        programs.append(
+            {
+                "id": row.get("_id") or row.get("Course_ID"),
+                "centre_id": location_id_int,
+                "location_id": location_id_int,
+                "course_id": row.get("Course_ID"),
+                "course_title": clean_optional_string(row.get("Course Title")) or "Unknown Program",
+                "activity": clean_optional_string(row.get("Course Title")),
+                "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
+                "weekday": weekday,
+                "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
+                "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
+                "age_min": parse_int(row.get("Age Min")),
+                "age_max": parse_int(row.get("Age Max")),
+            }
+        )
+
+    programs.sort(
+        key=lambda item: (
+            item.get("weekday") if item.get("weekday") is not None else 99,
+            item.get("start_time") or "",
+            item.get("course_title") or "",
+        )
+    )
+
+    return {
+        "dropin": programs,
+        "registered": [],
+    }
+
+
+def build_centre_facilities(location_id: str | int) -> list[dict] | None:
+    location_id_int = parse_int(location_id)
+    if location_id_int is None:
+        return None
+
+    locations = load_location_cache()
+    if location_id_int not in locations:
+        return None
+
+    facilities = list(load_facility_cache().get(location_id_int, []))
+    if facilities:
+        return facilities
+
+    location = locations.get(location_id_int)
+    coord = load_coordinate_cache().get(location_id_int, {})
+    fallback_type = location_facility_type(location, coord)
+    if not fallback_type:
+        return []
+
+    return [
+        {
+            "facility_type": fallback_type,
+            "asset_name": clean_optional_string(location.get("Asset Name")) if location else None,
+            "permit": None,
+            "facility_rating": None,
+        }
+    ]
