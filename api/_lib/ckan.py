@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import ssl
 import urllib.parse
 import urllib.request
@@ -16,12 +17,16 @@ PARKS_GEOJSON_URL = (
     "resource/f6cdcd50-da7b-4ede-8e60-c3cdba70b559/download/"
     "parks-and-recreation-facilities-4326.geojson"
 )
+WARDS_GEOJSON_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "raw_data" / "city-wards-data-4326.geojson"
+)
 
 SSL_CONTEXT = ssl.create_default_context()
 
 LOCATION_CACHE = None
 COORDINATE_CACHE = None
 FACILITY_CACHE = None
+WARDS_CACHE = None
 
 DISTRICT_NORMALIZATION = {
     "Toronto East York": "Toronto and East York",
@@ -41,6 +46,32 @@ def clean_optional_string(value: object) -> str | None:
     if is_missing(value):
         return None
     return str(value).strip()
+
+
+def normalize_facility_type_label(value: object) -> str | None:
+    cleaned = clean_optional_string(value)
+    if cleaned is None:
+        return None
+
+    lowered = cleaned.lower()
+    special_cases = {
+        "crc": "CRC",
+        "pool": "Pool",
+        "park": "Park",
+        "school": "School",
+        "church": "Church",
+        "stadium": "Stadium",
+        "camp": "Camp",
+        "garden": "Garden",
+        "other": "Other",
+    }
+    if lowered in special_cases:
+        return special_cases[lowered]
+
+    if cleaned.islower():
+        return " ".join(part.capitalize() for part in cleaned.split())
+
+    return cleaned
 
 
 def fetch_json(url: str, params: dict | None = None) -> dict:
@@ -213,7 +244,7 @@ def load_coordinate_cache() -> dict[int, dict]:
             "phone": clean_optional_string(props.get("PHONE")),
             "url": clean_optional_string(props.get("URL")),
             "address": clean_optional_string(props.get("ADDRESS")),
-            "facility_type": clean_optional_string(props.get("TYPE")),
+            "facility_type": normalize_facility_type_label(props.get("TYPE")),
         }
 
     COORDINATE_CACHE = cache
@@ -233,22 +264,40 @@ def load_facility_cache() -> dict[int, list[dict]]:
         if location_id is None:
             continue
 
-        facility_type = clean_optional_string(props.get("TYPE"))
+        facility_type = normalize_facility_type_label(props.get("TYPE"))
         asset_name = clean_optional_string(props.get("ASSET_NAME"))
         if facility_type is None and asset_name is None:
             continue
 
-        cache.setdefault(location_id, []).append(
-            {
-                "facility_type": facility_type or "Unknown",
-                "asset_name": asset_name,
-                "permit": None,
-                "facility_rating": None,
-            }
-        )
+        bucket = cache.setdefault(location_id, [])
+        candidate = {
+            "facility_type": facility_type or "Unknown",
+            "asset_name": asset_name,
+            "permit": None,
+            "facility_rating": None,
+        }
+        if candidate not in bucket:
+            bucket.append(candidate)
 
     FACILITY_CACHE = cache
     return FACILITY_CACHE
+
+
+def load_wards_geojson() -> dict:
+    global WARDS_CACHE
+    if WARDS_CACHE is not None:
+        return WARDS_CACHE
+
+    if not WARDS_GEOJSON_PATH.exists():
+        WARDS_CACHE = {"type": "FeatureCollection", "features": []}
+        return WARDS_CACHE
+
+    payload = json.loads(WARDS_GEOJSON_PATH.read_text(encoding="utf-8"))
+    WARDS_CACHE = {
+        "type": payload.get("type", "FeatureCollection"),
+        "features": payload.get("features", []),
+    }
+    return WARDS_CACHE
 
 
 def location_name(location: dict | None) -> str | None:
@@ -259,12 +308,12 @@ def location_name(location: dict | None) -> str | None:
 
 def location_facility_type(location: dict | None, coord: dict | None = None) -> str | None:
     if coord:
-        from_coord = clean_optional_string(coord.get("facility_type"))
+        from_coord = normalize_facility_type_label(coord.get("facility_type"))
         if from_coord:
             return from_coord
     if not location:
         return None
-    return clean_optional_string(location.get("Location Type"))
+    return normalize_facility_type_label(location.get("Location Type"))
 
 
 def location_matches_facility_type(location_id: int, filter_value: str | None) -> bool:
@@ -285,7 +334,7 @@ def location_matches_facility_type(location_id: int, filter_value: str | None) -
             candidates.append(value)
 
     for facility in facilities:
-        value = clean_optional_string(facility.get("facility_type"))
+        value = normalize_facility_type_label(facility.get("facility_type"))
         if value:
             candidates.append(value)
 
@@ -359,7 +408,9 @@ def build_facility_type_options() -> list[dict]:
         facility_type = location_facility_type(location, coord)
         if is_missing(facility_type):
             continue
-        facility_type_str = str(facility_type).strip()
+        facility_type_str = normalize_facility_type_label(facility_type)
+        if facility_type_str is None:
+            continue
         counts[facility_type_str] = counts.get(facility_type_str, 0) + 1
 
     result = [
@@ -670,3 +721,7 @@ def build_centre_facilities(location_id: str | int) -> list[dict] | None:
             "facility_rating": None,
         }
     ]
+
+
+def build_wards_geojson_response() -> dict:
+    return load_wards_geojson()
