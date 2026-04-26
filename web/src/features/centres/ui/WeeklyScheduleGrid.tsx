@@ -14,10 +14,12 @@ function formatTime(time?: string | null): string {
 }
 
 function formatAgeRange(min?: number | null, max?: number | null): string {
-  if (!min && !max) return 'All Ages';
-  if (min && max) return `${min}-${max}`;
-  if (min) return `${min}+`;
-  if (max) return `Under ${max}`;
+  const hasMin = min !== null && min !== undefined;
+  const hasMax = max !== null && max !== undefined;
+  if (!hasMin && !hasMax) return 'All Ages';
+  if (hasMin && hasMax) return `${min}-${max}`;
+  if (hasMin) return `${min}+`;
+  if (hasMax) return `Under ${max}`;
   return 'All Ages';
 }
 
@@ -29,8 +31,8 @@ function deduplicatePrograms(programs: DropInProgram[]): DropInProgram[] {
     const day = p.day_of_week || 'unknown';
     const start = formatTime(p.start_time);
     const end = formatTime(p.end_time);
-    const ageMin = p.age_min || 'any';
-    const ageMax = p.age_max || 'any';
+    const ageMin = p.age_min ?? 'any';
+    const ageMax = p.age_max ?? 'any';
     
     const key = `${locationId}-${day}-${start}-${end}-${ageMin}-${ageMax}`;
     

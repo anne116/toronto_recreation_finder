@@ -76,6 +76,7 @@ export default function SchedulePanel({
         const resp = await searchProgramsAggregated({
           activity,
           age,
+          weekday: normalizedWeekday,
           district,
           time_of_day,
           limit: 2000,
@@ -101,7 +102,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [activity, age, district, time_of_day, isVisible]);
+  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible]);
 
   if (!isVisible) return null;
 

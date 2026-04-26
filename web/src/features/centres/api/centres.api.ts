@@ -72,6 +72,7 @@ export async function getCentres(
   params: { 
     activity?: string; 
     district?: string; 
+    age?: "young" | "teen" | "adult" | "senior";
     facility_type?: string; 
     weekday?: number 
   }
@@ -79,6 +80,7 @@ export async function getCentres(
   const qs = new URLSearchParams();
   appendIfPresent(qs, "activity", params.activity);
   appendIfPresent(qs, "district", params.district);
+  appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "facility_type", params.facility_type);
   appendIfPresent(qs, "weekday", params.weekday);
   

@@ -37,6 +37,7 @@ export default function App() {
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? '',
+    age: activeFilters?.age,
   },
   { enabled: !!activeFilters }
 );

@@ -476,8 +476,8 @@ def build_program_search_response(
                 "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
                 "start_time": format_time(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time(row.get("End Hour"), row.get("End Min")),
-                "age_min": row.get("Age Min"),
-                "age_max": row.get("Age Max"),
+                "age_min": parse_int(row.get("Age Min")),
+                "age_max": parse_int(row.get("Age Max")),
                 "location_name": location_name(location),
                 "asset_name": clean_optional_string(location.get("Asset Name")),
                 "address": build_address(location) or clean_optional_string(coord.get("address")),
@@ -520,6 +520,7 @@ def build_centres_geojson_response(
     *,
     activity: str | None = None,
     district: str | None = None,
+    age: str | None = None,
     facility_type: str | None = None,
     weekday: int | None = None,
 ) -> dict:
@@ -540,6 +541,8 @@ def build_centres_geojson_response(
 
         row_weekday_int = parse_int(row.get("Weekday"))
         if weekday is not None and row_weekday_int != weekday:
+            continue
+        if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
 
         location_id = parse_int(row.get("Location ID"))

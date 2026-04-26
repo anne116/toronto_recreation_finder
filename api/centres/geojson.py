@@ -22,6 +22,7 @@ class handler(BaseHTTPRequestHandler):
         payload = build_centres_geojson_response(
             activity=params.get("activity", [None])[0],
             district=params.get("district", [None])[0],
+            age=params.get("age", [None])[0],
             facility_type=params.get("facility_type", [None])[0],
             weekday=weekday,
         )
