@@ -156,8 +156,8 @@ def matches_age(age_min: int | str | None, age_max: int | str | None, age_bucket
     if not age_bucket:
         return True
 
-    min_age = int(float(age_min)) if age_min not in (None, "") else 0
-    max_age = None if age_max in (None, "") else int(float(age_max))
+    min_age = int(float(age_min)) if not is_missing(age_min) else 0
+    max_age = None if is_missing(age_max) else int(float(age_max))
 
     bucket_ranges = {
         "young": (0, 12),
