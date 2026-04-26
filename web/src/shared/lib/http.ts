@@ -1,21 +1,24 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const USE_SERVERLESS_API = import.meta.env.VITE_USE_SERVERLESS_API === 'true';
+const FLY_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+function buildApiUrl(path: string): string {
+  if (USE_SERVERLESS_API) {
+    return path;
+  }
+  return `${FLY_API_URL}${path}`;
+}
 
 export async function get<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_URL}${path}`;
-  
-  
+  const url = buildApiUrl(path);
   const res = await fetch(url, options);
-  
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText} - ${url}`);
   }
-  
   return res.json() as Promise<T>;
 }
 
 export async function post<T>(path: string, body: unknown, options?: RequestInit): Promise<T> {
-  const url = `${API_URL}${path}`;
-  
+  const url = buildApiUrl(path);
   const res = await fetch(url, {
     ...options,
     method: 'POST',
@@ -25,10 +28,8 @@ export async function post<T>(path: string, body: unknown, options?: RequestInit
     },
     body: JSON.stringify(body),
   });
-  
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText} - ${url}`);
   }
-  
   return res.json() as Promise<T>;
 }
