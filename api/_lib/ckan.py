@@ -27,6 +27,15 @@ DISTRICT_NORMALIZATION = {
 }
 
 
+def is_missing(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped == "" or stripped.lower() == "none"
+    return False
+
+
 def fetch_json(url: str, params: dict | None = None) -> dict:
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
@@ -57,7 +66,7 @@ def fetch_all_datastore_rows(resource_id: str, filters: dict | None = None, page
 
 
 def normalize_district(value: str | None) -> str | None:
-    if value is None:
+    if is_missing(value):
         return None
     return DISTRICT_NORMALIZATION.get(value, value)
 
@@ -70,8 +79,10 @@ def build_address(location_row: dict) -> str | None:
         str(location_row.get("Street Type") or "").strip(),
         str(location_row.get("Street Direction") or "").strip(),
     ]
-    address = " ".join(part for part in parts if part)
+    address = " ".join(part for part in parts if part and part.lower() != "none")
     postal = str(location_row.get("Postal Code") or "").strip()
+    if postal.lower() == "none":
+        postal = ""
     if address and postal:
         return f"{address}, {postal}"
     return address or None
@@ -178,6 +189,87 @@ def load_coordinate_cache() -> dict[int, dict]:
 
     COORDINATE_CACHE = cache
     return COORDINATE_CACHE
+
+
+def build_activity_options(*, program_type: str | None = None, limit: int = 50) -> list[dict]:
+    if program_type not in (None, "dropin"):
+        return []
+
+    rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
+    counts: dict[str, dict[str, object]] = {}
+
+    for row in rows:
+        raw_title = row.get("Course Title")
+        if is_missing(raw_title):
+            continue
+        activity = str(raw_title).strip()
+        entry = counts.setdefault(
+            activity,
+            {
+                "activity": activity,
+                "count": 0,
+                "locations": set(),
+            },
+        )
+        entry["count"] = int(entry["count"]) + 1
+
+        location_id_value = row.get("Location ID")
+        try:
+            if not is_missing(location_id_value):
+                cast_locations = entry["locations"]
+                assert isinstance(cast_locations, set)
+                cast_locations.add(int(location_id_value))
+        except (TypeError, ValueError):
+            continue
+
+    result = [
+        {
+            "activity": item["activity"],
+            "count": item["count"],
+            "locations": len(item["locations"]),
+        }
+        for item in counts.values()
+    ]
+    result.sort(key=lambda item: (-int(item["count"]), str(item["activity"])))
+    return result[:limit]
+
+
+def build_district_options() -> list[dict]:
+    locations = load_location_cache()
+    counts: dict[str, int] = {}
+
+    for location in locations.values():
+        district = normalize_district(location.get("District"))
+        if is_missing(district):
+            continue
+        assert district is not None
+        counts[district] = counts.get(district, 0) + 1
+
+    return [
+        {"district": district, "location_count": counts[district]}
+        for district in sorted(counts.keys())
+    ]
+
+
+def build_facility_type_options() -> list[dict]:
+    locations = load_location_cache()
+    coordinates = load_coordinate_cache()
+    counts: dict[str, int] = {}
+
+    for location_id, location in locations.items():
+        coord = coordinates.get(location_id, {})
+        facility_type = coord.get("facility_type") or location.get("Location Type")
+        if is_missing(facility_type):
+            continue
+        facility_type_str = str(facility_type).strip()
+        counts[facility_type_str] = counts.get(facility_type_str, 0) + 1
+
+    result = [
+        {"facility_type": facility_type, "count": counts[facility_type]}
+        for facility_type in counts.keys()
+    ]
+    result.sort(key=lambda item: (-int(item["count"]), str(item["facility_type"])))
+    return result
 
 
 def build_program_search_response(
