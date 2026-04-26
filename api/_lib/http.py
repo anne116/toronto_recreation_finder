@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 def send_json(handler, payload: dict, status: int = 200) -> None:
-    handler.send_request(status)
+    handler.send_response(status)
     handler.send_header("Content/Type", "application/json")
     handler.send_header("Access-Control-Allow-Origin", "*")
     handler.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
