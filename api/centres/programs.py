@@ -4,21 +4,22 @@ import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_centre_facilities
-
-
-def extract_centre_id(path: str) -> str | None:
-    parts = [part for part in path.split("/") if part]
-    if len(parts) >= 3:
-        return parts[2]
-    return None
+from api._lib.ckan import build_centre_programs
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
-        centre_id = extract_centre_id(parsed.path)
-        payload = build_centre_facilities(centre_id) if centre_id is not None else None
+        params = urllib.parse.parse_qs(parsed.query)
+        centre_id = params.get("centre_id", [None])[0]
+        payload = (
+            build_centre_programs(
+                centre_id,
+                age=params.get("age", [None])[0],
+            )
+            if centre_id is not None
+            else None
+        )
 
         if payload is None:
             self.send_response(404)
