@@ -16,6 +16,15 @@ function timeLabel(p: DropInProgram) {
   return day || "";
 }
 
+function formatAgeRange(min?: number | null, max?: number | null) {
+  const hasMin = min !== null && min !== undefined;
+  const hasMax = max !== null && max !== undefined;
+  if (!hasMin && !hasMax) return null;
+  if (hasMin && hasMax) return `${min}-${max}`;
+  if (hasMin) return `${min}+`;
+  return `Under ${max}`;
+}
+
 function scheduleKey(p: DropInProgram) {
   const idLike =
     (p as any).course_id ??
@@ -82,15 +91,11 @@ export default function DropinList({ programs }: Props) {
                   {timeLabel(p)}
                 </>
               )}
-              {(p.age_min || p.age_max) && (
+              {formatAgeRange(p.age_min, p.age_max) && (
                 <>
                   {" "}
                   | Ages:{" "}
-                  {p.age_min && p.age_max
-                    ? `${p.age_min}-${p.age_max}`
-                    : p.age_min
-                    ? `${p.age_min}+`
-                    : `Under ${p.age_max}`}
+                  {formatAgeRange(p.age_min, p.age_max)}
                 </>
               )}
             </div>

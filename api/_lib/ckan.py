@@ -32,6 +32,26 @@ DISTRICT_NORMALIZATION = {
     "Toronto East York": "Toronto and East York",
 }
 
+WEEKDAY_TO_INDEX = {
+    "monday": 0,
+    "mon": 0,
+    "tuesday": 1,
+    "tue": 1,
+    "tues": 1,
+    "wednesday": 2,
+    "wed": 2,
+    "thursday": 3,
+    "thu": 3,
+    "thur": 3,
+    "thurs": 3,
+    "friday": 4,
+    "fri": 4,
+    "saturday": 5,
+    "sat": 5,
+    "sunday": 6,
+    "sun": 6,
+}
+
 
 def is_missing(value: object) -> bool:
     if value is None:
@@ -156,8 +176,8 @@ def matches_age(age_min: int | str | None, age_max: int | str | None, age_bucket
     if not age_bucket:
         return True
 
-    min_age = int(float(age_min)) if age_min not in (None, "") else 0
-    max_age = None if age_max in (None, "") else int(float(age_max))
+    min_age = int(float(age_min)) if not is_missing(age_min) else 0
+    max_age = None if is_missing(age_max) else int(float(age_max))
 
     bucket_ranges = {
         "young": (0, 12),
@@ -195,6 +215,23 @@ def parse_int(value: object) -> int | None:
         return int(str(value))
     except (TypeError, ValueError):
         return None
+
+
+def normalize_weekday(day_name: object, raw_weekday: object) -> int | None:
+    cleaned_day = clean_optional_string(day_name)
+    if cleaned_day:
+        normalized = WEEKDAY_TO_INDEX.get(cleaned_day.lower())
+        if normalized is not None:
+            return normalized
+
+    parsed = parse_int(raw_weekday)
+    if parsed is None:
+        return None
+    if 0 <= parsed <= 6:
+        return parsed
+    if 1 <= parsed <= 7:
+        return parsed - 1
+    return None
 
 
 def load_location_cache() -> dict[int, dict]:
@@ -445,7 +482,7 @@ def build_program_search_response(
         if activity and activity.lower() not in raw_title.lower():
             continue
 
-        row_weekday_int = parse_int(row.get("Weekday"))
+        row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
         if weekday is not None and row_weekday_int != weekday:
             continue
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
@@ -476,8 +513,8 @@ def build_program_search_response(
                 "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
                 "start_time": format_time(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time(row.get("End Hour"), row.get("End Min")),
-                "age_min": row.get("Age Min"),
-                "age_max": row.get("Age Max"),
+                "age_min": parse_int(row.get("Age Min")),
+                "age_max": parse_int(row.get("Age Max")),
                 "location_name": location_name(location),
                 "asset_name": clean_optional_string(location.get("Asset Name")),
                 "address": build_address(location) or clean_optional_string(coord.get("address")),
@@ -520,6 +557,7 @@ def build_centres_geojson_response(
     *,
     activity: str | None = None,
     district: str | None = None,
+    age: str | None = None,
     facility_type: str | None = None,
     weekday: int | None = None,
 ) -> dict:
@@ -538,8 +576,10 @@ def build_centres_geojson_response(
         if activity and activity.lower() not in raw_title.lower():
             continue
 
-        row_weekday_int = parse_int(row.get("Weekday"))
+        row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
         if weekday is not None and row_weekday_int != weekday:
+            continue
+        if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
 
         location_id = parse_int(row.get("Location ID"))
@@ -662,7 +702,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
 
-        weekday = parse_int(row.get("Weekday"))
+        weekday = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
         programs.append(
             {
                 "id": row.get("_id") or row.get("Course_ID"),

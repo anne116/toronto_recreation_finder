@@ -6,6 +6,7 @@ type CentresFilters = {
   activity?: string;
   district?: string;
   weekday?: string;
+  age?: "young" | "teen" | "adult" | "senior";
 };
 
 type UseCentresOptions = {
@@ -23,7 +24,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       return;
     }
 
-    if (!filters.activity && !filters.district && !filters.weekday ) {
+    if (!filters.activity && !filters.district && !filters.weekday && !filters.age) {
       setData(null);
       return;
     }
@@ -45,6 +46,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
         const centres = await getCentres({
           activity: filters.activity,
           district: filters.district,
+          age: filters.age,
           weekday: weekdayNum,
         });
         if (!abortController.signal.aborted) {
@@ -64,7 +66,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.activity, filters.district, filters.weekday]);
+  }, [enabled, filters.activity, filters.district, filters.weekday, filters.age]);
 
   return { data, loading, error };
 }
