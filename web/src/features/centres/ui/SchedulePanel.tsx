@@ -157,6 +157,7 @@ export default function SchedulePanel({
             programs={programs}
             onLocationClick={onLocationClick}
             initialWeekday={normalizedWeekday}
+            selectedActivity={activity}
           />
         )}
       </div>

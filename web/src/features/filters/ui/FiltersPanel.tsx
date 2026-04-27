@@ -49,7 +49,7 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
       <div className="filters-panel__header">
         <div className="filters-panel__title-wrap">
           <h3>Toronto Recreation Finder</h3>
-          <div className="quick-intro">Select your preferences to discover the right recreation centres for you!</div>
+          <div className="quick-intro">Search drop-in programs that match your needs across Toronto recreation centres!</div>
         </div>
         <button
           type="button"
