@@ -5,6 +5,7 @@ import type { DropInProgram } from "../../../shared/types";
 
 
 type Props = {
+  category?: string;
   activity?: string;
   age?: "young" | "teen" | "adult" | "senior";
   weekday?: string | number;
@@ -46,6 +47,7 @@ function normalizeProgram(p: any): DropInProgram {
   }
 
 export default function SchedulePanel({
+  category,
   activity,
   age,
   weekday,
@@ -76,6 +78,7 @@ export default function SchedulePanel({
         setError(null);
 
         const resp = await searchProgramsAggregated({
+          category,
           activity,
           age,
           weekday: normalizedWeekday,
@@ -104,7 +107,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible, hasSearchCriteria]);
+  }, [category, activity, age, district, time_of_day, normalizedWeekday, isVisible, hasSearchCriteria]);
 
   if (!isVisible) return null;
 

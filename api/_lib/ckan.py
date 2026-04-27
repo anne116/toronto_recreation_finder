@@ -7,6 +7,8 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime
 
+from api._lib.data import ACTIVITY_TAXONOMY
+
 CKAN_BASE_URL = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
 PACKAGE_ID = "registered-programs-and-drop-in-courses-offering"
 DROP_IN_DATASTORE_ID = "c99ec04f-4540-482c-9ee4-efb38774eab4"
@@ -50,6 +52,11 @@ WEEKDAY_TO_INDEX = {
     "sat": 5,
     "sunday": 6,
     "sun": 6,
+}
+
+CATEGORY_ACTIVITY_LOOKUP = {
+    category.lower(): set(activities)
+    for category, activities in ACTIVITY_TAXONOMY.items()
 }
 
 
@@ -127,6 +134,32 @@ def normalize_district(value: str | None) -> str | None:
     if is_missing(value):
         return None
     return DISTRICT_NORMALIZATION.get(value, value)
+
+
+def normalize_category(value: object) -> str | None:
+    cleaned = clean_optional_string(value)
+    if cleaned is None:
+        return None
+    for category in ACTIVITY_TAXONOMY.keys():
+        if category.lower() == cleaned.lower():
+            return category
+    return None
+
+
+def activity_matches_filters(
+    raw_title: str,
+    *,
+    category: str | None = None,
+    activity: str | None = None,
+) -> bool:
+    if activity and raw_title != activity:
+        return False
+
+    normalized_category = normalize_category(category)
+    if normalized_category is None:
+        return True
+
+    return raw_title in CATEGORY_ACTIVITY_LOOKUP.get(normalized_category.lower(), set())
 
 
 def build_address(location_row: dict) -> str | None:
@@ -460,6 +493,7 @@ def build_facility_type_options() -> list[dict]:
 
 def build_program_search_response(
     *,
+    category: str | None = None,
     activity: str | None = None,
     district: str | None = None,
     age: str | None = None,
@@ -479,7 +513,7 @@ def build_program_search_response(
             continue
         if not is_current(row.get("Last Date")):
             continue
-        if activity and activity.lower() not in raw_title.lower():
+        if not activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
         row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
@@ -543,6 +577,7 @@ def build_program_search_response(
         "program_type": "dropin",
         "count": len(programs),
         "filters": {
+            "category": normalize_category(category),
             "activity": activity,
             "age": age,
             "weekday": weekday,
@@ -555,6 +590,7 @@ def build_program_search_response(
 
 def build_centres_geojson_response(
     *,
+    category: str | None = None,
     activity: str | None = None,
     district: str | None = None,
     age: str | None = None,
@@ -573,7 +609,7 @@ def build_centres_geojson_response(
             continue
         if not is_current(row.get("Last Date")):
             continue
-        if activity and activity.lower() not in raw_title.lower():
+        if not activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
         row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))

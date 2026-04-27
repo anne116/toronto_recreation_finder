@@ -6,6 +6,7 @@ import type {
   CentreDetail,
   CentrePrograms,
   CentreFacility,
+  CategoryOption,
 } from "../../../shared/types";
 
 function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
@@ -16,6 +17,7 @@ function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
 
 
 export type SearchProgramsParams = {
+  category?: string;
   activity: string;
   age?: "young" | "teen" | "adult" | "senior";
   weekday?: number;
@@ -29,6 +31,7 @@ export type SearchProgramsResponse = {
   program_type: "dropin";
   count: number;
   filters: {
+    category?: string;
     activity?: string;
     age?: string;
     weekday?: number;
@@ -41,6 +44,7 @@ export async function searchProgramsAggregated(
   params: SearchProgramsParams
 ): Promise<SearchProgramsResponse> {
   const qs = new URLSearchParams();
+  appendIfPresent(qs, "category", params.category);
   appendIfPresent(qs, "activity", params.activity);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
@@ -70,6 +74,7 @@ export async function searchProgramsSearchStats(params: {
 
 export async function getCentres(
   params: { 
+    category?: string;
     activity?: string; 
     district?: string; 
     age?: "young" | "teen" | "adult" | "senior";
@@ -78,6 +83,7 @@ export async function getCentres(
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();
+  appendIfPresent(qs, "category", params.category);
   appendIfPresent(qs, "activity", params.activity);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "age", params.age);
@@ -135,17 +141,24 @@ export type FacilityTypeOption = {
 };
 
 export type FilterOptionsResponse = {
+  categories: CategoryOption[];
   activities: ActivityOption[];
   districts: DistrictOption[];
   facilityTypes: FacilityTypeOption[];
 };
 
 export async function getFilterOptions(): Promise<FilterOptionsResponse> {
-  const [activities, districts, facilityTypes] = await Promise.all([
+  const [categoriesPayload, activities, districts, facilityTypes] = await Promise.all([
+    get<{ categories: CategoryOption[] }>(`/api/categories`),
     get<ActivityOption[]>(`/api/activities?program_type=dropin&limit=200`),
     get<DistrictOption[]>(`/api/districts`),
     get<FacilityTypeOption[]>(`/api/facility-types`),
   ]);
   
-  return { activities, districts, facilityTypes };
+  return {
+    categories: categoriesPayload.categories,
+    activities,
+    districts,
+    facilityTypes,
+  };
 }

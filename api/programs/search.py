@@ -26,6 +26,7 @@ class handler(BaseHTTPRequestHandler):
             limit = 2000
 
         payload = build_program_search_response(
+            category=params.get("category", [None])[0],
             activity=params.get("activity", [None])[0],
             district=params.get("district", [None])[0],
             age=params.get("age", [None])[0],

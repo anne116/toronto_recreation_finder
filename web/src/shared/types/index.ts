@@ -24,6 +24,11 @@ export interface CentresFeatureCollection {
 export interface ActivityOption { activity: string; count: number }
 export interface DistrictOption { district: string; location_count: number }
 export interface FacilityTypeOption { facility_type: string; count: number }
+export interface CategoryOption {
+  name: string;
+  description: string;
+  activities: string[];
+}
 
 export interface CentreDetail {
   id: string | number; name: string;

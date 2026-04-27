@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { ActivityOption, DistrictOption, AgeFilter } from '../../../shared/types/index.ts';
+import { useEffect, useMemo, useState } from 'react';
+import type { ActivityOption, CategoryOption, DistrictOption, AgeFilter } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 
-type Filters = { activity: string; district: string; weekday: string; age?: AgeFilter };
+type Filters = { category: string; activity: string; district: string; weekday: string; age?: AgeFilter };
 
 type Props = {
   value: Filters;
@@ -15,22 +15,33 @@ type Props = {
 };
 
 export default function FiltersPanel({ value, onChange, onSearch, onReset, status, isOpen, onToggle }: Props) {
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [districts, setDistricts]   = useState<DistrictOption[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { activities, districts } = await getFilterOptions();
+      const { categories, activities, districts } = await getFilterOptions();
 
       const sortedActivities = [...activities].sort((a, b) =>
         a.activity.localeCompare(b.activity)
       );
+      setCategories(categories);
       setActivities(sortedActivities); 
       setDistricts(districts); 
     })();
   }, []);
 
   const update = (patch: Partial<Filters>) => onChange({ ...value, ...patch });
+  const categoryActivities = useMemo(() => {
+    if (!value.category) return [];
+    return categories.find((item) => item.name === value.category)?.activities ?? [];
+  }, [categories, value.category]);
+  const visibleActivities = useMemo(() => {
+    if (!value.category) return [];
+    const allowed = new Set(categoryActivities);
+    return activities.filter((item) => allowed.has(item.activity));
+  }, [activities, categoryActivities, value.category]);
 
   return (
     <div className="filters-panel">
@@ -53,12 +64,32 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
       </div>
 
       <div className="filter-group">
-        <label>Activity / Program</label>
-        <select value={value.activity} onChange={e => update({ activity: e.target.value })}>
-          <option value="">All Activities</option>
-          {activities.map(a => 
+        <label>Category</label>
+        <select
+          value={value.category}
+          onChange={e => update({ category: e.target.value, activity: '' })}
+        >
+          <option value="">All Categories</option>
+          {categories.map(category => (
+            <option key={category.name} value={category.name}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label>Activity</label>
+        <select
+          value={value.activity}
+          onChange={e => update({ activity: e.target.value })}
+          disabled={!value.category}
+        >
+          <option value="">
+            {value.category ? 'All Activities' : 'Choose a category first'}
+          </option>
+          {visibleActivities.map(a => 
             <option key={a.activity} value={a.activity}>
-              {/* {a.activity} ({a.count}) */}
               {a.activity}
             </option>)}
         </select>

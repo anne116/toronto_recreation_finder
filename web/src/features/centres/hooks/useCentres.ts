@@ -3,6 +3,7 @@ import { getCentres } from '../api/centres.api';
 import type { CentresFeatureCollection } from '../../../shared/types';
 
 type CentresFilters = {
+  category?: string;
   activity?: string;
   district?: string;
   weekday?: string;
@@ -24,7 +25,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       return;
     }
 
-    if (!filters.activity && !filters.district && !filters.weekday && !filters.age) {
+    if (!filters.category && !filters.activity && !filters.district && !filters.weekday && !filters.age) {
       setData(null);
       return;
     }
@@ -44,6 +45,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
 
 
         const centres = await getCentres({
+          category: filters.category,
           activity: filters.activity,
           district: filters.district,
           age: filters.age,
@@ -66,7 +68,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.activity, filters.district, filters.weekday, filters.age]);
+  }, [enabled, filters.category, filters.activity, filters.district, filters.weekday, filters.age]);
 
   return { data, loading, error };
 }
