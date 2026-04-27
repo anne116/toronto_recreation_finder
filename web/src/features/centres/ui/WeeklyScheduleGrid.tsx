@@ -225,7 +225,7 @@ export default function WeeklyScheduleGrid({
                     style={{
                       fontSize: '13px',
                       fontWeight: 700,
-                      color: '#334155',
+                      color: '#030fff',
                       marginBottom: '6px',
                     }}
                   >
