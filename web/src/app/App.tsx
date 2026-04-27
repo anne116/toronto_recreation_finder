@@ -33,6 +33,9 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
+  const hasScheduleFilters = Boolean(
+  activeFilters?.activity || activeFilters?.district || activeFilters?.weekday || activeFilters?.age
+  );
   const { data: centres, loading: centresLoading } = useCentres({
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
@@ -69,9 +72,9 @@ export default function App() {
     setActiveFilters(filters);
     setIsFiltersOpen(false);
     
-    if (filters.activity) {
+    if (filters.activity || filters.district || filters.weekday || filters.age) {
       setShowSchedulePanel(true);
-      setStatus(`Showing ${filters.activity} programs`);
+      setStatus(filters.activity ? `Showing ${filters.activity} programs` : 'Showing matching programs');
       setIsScheduleOpen(true);
     } else {
       setShowSchedulePanel(false);
@@ -156,6 +159,7 @@ export default function App() {
                   age={activeFilters?.age}
                   weekday={activeFilters?.weekday}
                   district={activeFilters?.district ?? ''}
+                  hasSearchCriteria={hasScheduleFilters}                  
                   isVisible={isScheduleOpen}
                   onLocationClick={handleLocationClick}
                 />
@@ -188,6 +192,7 @@ export default function App() {
                 age={activeFilters?.age}
                 weekday={activeFilters?.weekday}
                 district={activeFilters?.district ?? ''}
+                hasSearchCriteria={hasScheduleFilters}                
                 isVisible={isScheduleOpen}
                 onLocationClick={handleLocationClick}
               />

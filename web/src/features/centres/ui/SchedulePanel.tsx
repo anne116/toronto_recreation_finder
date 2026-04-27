@@ -10,6 +10,7 @@ type Props = {
   weekday?: string | number;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
+  hasSearchCriteria?: boolean;
   onLocationClick: (locationId: string | number) => void;
   isVisible: boolean;
   className?: string;
@@ -50,6 +51,7 @@ export default function SchedulePanel({
   weekday,
   district,
   time_of_day,
+  hasSearchCriteria = false,
   onLocationClick,
   isVisible,
 }: Props) {
@@ -59,7 +61,7 @@ export default function SchedulePanel({
 
   const normalizedWeekday = useMemo(() => toWeekdayNumber(weekday), [weekday]);
   useEffect(() => {
-    if (!isVisible || !activity) {
+    if (!isVisible || !hasSearchCriteria) {
       setPrograms([]);
       setError(null);
       setLoading(false);
@@ -102,7 +104,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible]);
+  }, [activity, age, district, time_of_day, normalizedWeekday, isVisible, hasSearchCriteria]);
 
   if (!isVisible) return null;
 
@@ -123,31 +125,31 @@ export default function SchedulePanel({
         overflow: 'auto',
         padding: '16px',
       }}>
-        {!activity && (
+        {!hasSearchCriteria && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
-            Select an activity to view available drop-in sessions
+            Select filters to view available drop-in sessions
           </div>
         )}
   
-        {activity && loading && (
+        {hasSearchCriteria && loading && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             Loading schedules…
           </div>
         )}
   
-        {activity && !loading && error && (
+        {hasSearchCriteria && !loading && error && (
           <div className="text-sm text-red-600" style={{ padding: '20px', background: '#fee2e2', borderRadius: '8px' }}>
             {error}
           </div>
         )}
   
-        {activity && !loading && !error && programs.length === 0 && (
+        {hasSearchCriteria && !loading && !error && programs.length === 0 && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             No sessions found for your search criteria
           </div>
         )}
   
-        {activity && !loading && !error && programs.length > 0 && (
+        {hasSearchCriteria && !loading && !error && programs.length > 0 && (
           <WeeklyScheduleGrid
             programs={programs}
             onLocationClick={onLocationClick}
