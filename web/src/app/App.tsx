@@ -11,6 +11,7 @@ import '../App.css';
 export default function App() {
   
   type Filters = {
+    category: string;
     activity: string;
     district: string;
     weekday: string;
@@ -19,6 +20,7 @@ export default function App() {
   };
   
   const [filters, setFilters] = useState<Filters>({
+    category: '',
     activity: '',
     district: '',
     weekday: '',
@@ -34,9 +36,10 @@ export default function App() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const hasScheduleFilters = Boolean(
-  activeFilters?.activity || activeFilters?.district || activeFilters?.weekday || activeFilters?.age
+    activeFilters?.category || activeFilters?.activity || activeFilters?.district || activeFilters?.weekday || activeFilters?.age
   );
   const { data: centres, loading: centresLoading } = useCentres({
+    category: activeFilters?.category ?? '',
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? '',
@@ -72,9 +75,15 @@ export default function App() {
     setActiveFilters(filters);
     setIsFiltersOpen(false);
     
-    if (filters.activity || filters.district || filters.weekday || filters.age) {
+    if (filters.category || filters.activity || filters.district || filters.weekday || filters.age) {
       setShowSchedulePanel(true);
-      setStatus(filters.activity ? `Showing ${filters.activity} programs` : 'Showing matching programs');
+      setStatus(
+        filters.activity
+          ? `Showing ${filters.activity} programs`
+          : filters.category
+            ? `Showing ${filters.category} programs`
+            : 'Showing matching programs'
+      );
       setIsScheduleOpen(true);
     } else {
       setShowSchedulePanel(false);
@@ -86,6 +95,7 @@ export default function App() {
 
   function handleReset() {
     setFilters({
+      category: '',
       activity: '',
       district: '',
       weekday: '',
@@ -147,7 +157,9 @@ export default function App() {
                 title={
                   activeFilters?.activity
                     ? `${activeFilters.activity} Schedule`
-                    : "Schedule"
+                    : activeFilters?.category
+                      ? `${activeFilters.category} Schedule`
+                      : "Schedule"
                 }
                 initialWidth={400}
                 minWidth={300}
@@ -155,11 +167,12 @@ export default function App() {
                 onClose={() => setIsScheduleOpen(false)}
               >
                 <SchedulePanel
+                  category={activeFilters?.category ?? ''}
                   activity={activeFilters?.activity ?? ''}
                   age={activeFilters?.age}
                   weekday={activeFilters?.weekday}
                   district={activeFilters?.district ?? ''}
-                  hasSearchCriteria={hasScheduleFilters}                  
+                  hasSearchCriteria={hasScheduleFilters}
                   isVisible={isScheduleOpen}
                   onLocationClick={handleLocationClick}
                 />
@@ -175,7 +188,9 @@ export default function App() {
               <div className="schedule-mobile-title">
                 {activeFilters?.activity
                   ? `${activeFilters.activity} Schedule`
-                  : 'Schedule'}
+                  : activeFilters?.category
+                    ? `${activeFilters.category} Schedule`
+                    : 'Schedule'}
               </div>
               <button
                 type="button"
@@ -188,11 +203,12 @@ export default function App() {
             </div>
             <div className="schedule-mobile-body">
               <SchedulePanel
+                category={activeFilters?.category ?? ''}
                 activity={activeFilters?.activity ?? ''}
                 age={activeFilters?.age}
                 weekday={activeFilters?.weekday}
                 district={activeFilters?.district ?? ''}
-                hasSearchCriteria={hasScheduleFilters}                
+                hasSearchCriteria={hasScheduleFilters}
                 isVisible={isScheduleOpen}
                 onLocationClick={handleLocationClick}
               />
