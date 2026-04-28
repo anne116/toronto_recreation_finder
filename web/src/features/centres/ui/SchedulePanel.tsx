@@ -119,17 +119,15 @@ export default function SchedulePanel({
     <div 
       style={{
         width: '100%',
-        height: '100vh',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         background: 'white',
-        overflow: 'hidden',
       }}
     >
   
       <div style={{
         flex: 1,
-        overflow: 'auto',
         padding: '16px',
       }}>
         {!hasSearchCriteria && (
