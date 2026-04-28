@@ -179,13 +179,6 @@ def build_address(location_row: dict) -> str | None:
     return address or None
 
 
-def format_time(hour_value: int | str | None, minute_value: int | str | None) -> str | None:
-    if hour_value in (None, "") or minute_value in (None, ""):
-        return None
-    hour = int(hour_value)
-    minute = int(minute_value)
-    return datetime(2000, 1, 1, hour, minute).strftime("%-I:%M %p")
-
 
 def format_time_hms(hour_value: int | str | None, minute_value: int | str | None) -> str | None:
     if hour_value in (None, "") or minute_value in (None, ""):
@@ -545,8 +538,8 @@ def build_program_search_response(
                 "course_title": raw_title,
                 "weekday": row_weekday_int,
                 "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
-                "start_time": format_time(row.get("Start Hour"), row.get("Start Minute")),
-                "end_time": format_time(row.get("End Hour"), row.get("End Min")),
+                "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
+                "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
                 "age_min": parse_int(row.get("Age Min")),
                 "age_max": parse_int(row.get("Age Max")),
                 "location_name": location_name(location),
