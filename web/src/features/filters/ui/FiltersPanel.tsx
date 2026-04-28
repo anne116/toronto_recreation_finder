@@ -38,7 +38,7 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
     return categories.find((item) => item.name === value.category)?.activities ?? [];
   }, [categories, value.category]);
   const visibleActivities = useMemo(() => {
-    if (!value.category) return [];
+    if (!value.category) return activities
     const allowed = new Set(categoryActivities);
     return activities.filter((item) => allowed.has(item.activity));
   }, [activities, categoryActivities, value.category]);
@@ -83,10 +83,9 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
         <select
           value={value.activity}
           onChange={e => update({ activity: e.target.value })}
-          disabled={!value.category}
         >
           <option value="">
-            {value.category ? 'All Activities' : 'Choose a category first'}
+            All Activities
           </option>
           {visibleActivities.map(a => 
             <option key={a.activity} value={a.activity}>
