@@ -11,7 +11,8 @@ type Props = {
   focusToken?: number;
 };
 
-const MATCH_HIGHLIGHT = '#A4E5E0';
+const MATCH_ROW_HIGHLIGHT = '#D8F3EE';
+const MATCH_TAB_TINT = '#BFE7DF';
 
 function formatTime(time?: string | null): string {
   if (!time) return '';
@@ -196,7 +197,7 @@ export default function WeeklyScheduleGrid({
                 border: isActive 
                 ? '2px solid #3b82f6'
                 : isMatchingDay
-                ? `2px solid ${MATCH_HIGHLIGHT}`
+                ? `2px solid ${MATCH_TAB_TINT}`
                 : hasPrograms
                 ? '1.5px solid #bfdbfe'
                 : '1px dashed #cbd5f5',
@@ -207,7 +208,7 @@ export default function WeeklyScheduleGrid({
                 background: isActive 
                 ? '#4d95f7' 
                 : isMatchingDay
-                ? MATCH_HIGHLIGHT
+                ? MATCH_TAB_TINT
                 : hasPrograms
                 ? '#e5f0ff'
                 : '#f8fafc',
@@ -267,7 +268,7 @@ export default function WeeklyScheduleGrid({
                     idx < dayPrograms.length - 1
                       ? '1px solid #f1f5f9'
                       : 'none',
-                  background: isHighlightedMatch ? MATCH_HIGHLIGHT : '#ffffff',
+                  background: isHighlightedMatch ? MATCH_ROW_HIGHLIGHT : '#ffffff',
                   cursor: onLocationClick && locationId ? 'pointer' : 'default',
                   transition: 'background 0.2s',
                 }}
@@ -276,11 +277,11 @@ export default function WeeklyScheduleGrid({
                 }
                 onMouseEnter={(e) => {
                   if (onLocationClick && locationId) {
-                    e.currentTarget.style.background = isHighlightedMatch ? MATCH_HIGHLIGHT : '#f8fafc';
+                    e.currentTarget.style.background = isHighlightedMatch ? MATCH_ROW_HIGHLIGHT : '#f8fafc';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = isHighlightedMatch ? MATCH_HIGHLIGHT : '#ffffff';
+                  e.currentTarget.style.background = isHighlightedMatch ? MATCH_ROW_HIGHLIGHT : '#ffffff';
                 }}
               >
                 {shouldShowCourseTitle && (
