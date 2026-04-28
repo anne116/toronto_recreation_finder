@@ -6,6 +6,7 @@ type Props = {
   sport?: string;
   onLocationClick?: (locationId: string | number) => void;
   initialWeekday?: number;
+  selectedActivity?: string;
 };
 
 function formatTime(time?: string | null): string {
@@ -68,7 +69,8 @@ function groupByDay(programs: DropInProgram[]) {
 export default function WeeklyScheduleGrid({ 
   programs, 
   onLocationClick,
-  initialWeekday 
+  initialWeekday,
+  selectedActivity,
 }: Props) {
   const grouped = groupByDay(programs);
   const dayConfigs = [
@@ -191,6 +193,7 @@ export default function WeeklyScheduleGrid({
               (program as any).asset_name ||
               'Unknown Location';
             const locationId = ((program as any).location_id);
+            const shouldShowCourseTitle = !selectedActivity && Boolean(program.course_title);
 
             return (
               <div
@@ -217,6 +220,19 @@ export default function WeeklyScheduleGrid({
                   e.currentTarget.style.background = '#ffffff';
                 }}
               >
+                {shouldShowCourseTitle && (
+                  <div
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: '#030fff',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    {program.course_title}
+                  </div>
+                )}
+
                 <div
                 style={{
                   fontSize: '15px',
