@@ -74,6 +74,7 @@ export default function App() {
     setStatus('Searching...');
     setHasSearched(true);
     setSelectedLocationId(null);
+    setHighlightedLocationId(null);
     setActiveFilters(filters);
     setIsFiltersOpen(false);
     
@@ -123,6 +124,7 @@ export default function App() {
   }
 
   function handleScheduleLocationClick(locationId: string | number) {
+    setHighlightedLocationId(null);
     setSelectedLocationId(locationId);
     setStatus('Viewing centre details');
   }
