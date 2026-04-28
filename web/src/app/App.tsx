@@ -31,6 +31,8 @@ export default function App() {
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
+  const [highlightedLocationId, setHighlightedLocationId] = useState<string | number | null>(null);
+  const [scheduleFocusToken, setScheduleFocusToken] = useState(0);
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
@@ -103,14 +105,24 @@ export default function App() {
     });
     setShowSchedulePanel(false);
     setSelectedLocationId(null);
+    setHighlightedLocationId(null);
     setHasSearched(false);
     setStatus('Filters reset');
     setActiveFilters(null);
     setIsScheduleOpen(false);
   }
 
+  function handleCentreMarkerClick(locationId: string | number) {
+    setSelectedLocationId(locationId);
+    setHighlightedLocationId(locationId);
+    setScheduleFocusToken(prev => prev + 1);
+    if (showSchedulePanel) {
+      setIsScheduleOpen(true);
+    }
+    setStatus('Viewing centre details');
+  }
 
-  function handleLocationClick(locationId: string | number) {
+  function handleScheduleLocationClick(locationId: string | number) {
     setSelectedLocationId(locationId);
     setStatus('Viewing centre details');
   }
@@ -174,7 +186,9 @@ export default function App() {
                   district={activeFilters?.district ?? ''}
                   hasSearchCriteria={hasScheduleFilters}
                   isVisible={isScheduleOpen}
-                  onLocationClick={handleLocationClick}
+                  onLocationClick={handleScheduleLocationClick}
+                  highlightedLocationId={highlightedLocationId}
+                  focusToken={scheduleFocusToken}
                 />
               </ResizablePanel>
             </div>
@@ -210,7 +224,9 @@ export default function App() {
                 district={activeFilters?.district ?? ''}
                 hasSearchCriteria={hasScheduleFilters}
                 isVisible={isScheduleOpen}
-                onLocationClick={handleLocationClick}
+                onLocationClick={handleScheduleLocationClick}
+                highlightedLocationId={highlightedLocationId}
+                focusToken={scheduleFocusToken}
               />
             </div>
           </section>
@@ -233,7 +249,7 @@ export default function App() {
         <MapView
           centres = {centres}
           wards = {wards}
-          onCentreClick = {handleLocationClick}
+          onCentreClick = {handleCentreMarkerClick}
           selectedLocationId = {selectedLocationId}
         />
       </main>

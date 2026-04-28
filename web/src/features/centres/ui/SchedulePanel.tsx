@@ -13,6 +13,8 @@ type Props = {
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   hasSearchCriteria?: boolean;
   onLocationClick: (locationId: string | number) => void;
+  highlightedLocationId?: string | number | null;
+  focusToken?: number;
   isVisible: boolean;
   className?: string;
 };
@@ -55,6 +57,8 @@ export default function SchedulePanel({
   time_of_day,
   hasSearchCriteria = false,
   onLocationClick,
+  highlightedLocationId,
+  focusToken = 0,
   isVisible,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
@@ -158,6 +162,8 @@ export default function SchedulePanel({
             onLocationClick={onLocationClick}
             initialWeekday={normalizedWeekday}
             selectedActivity={activity}
+            highlightedLocationId={highlightedLocationId}
+            focusToken={focusToken}
           />
         )}
       </div>
