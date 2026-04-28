@@ -1,5 +1,5 @@
 import type { DropInProgram } from '../../../shared/types';
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   programs: DropInProgram[];
@@ -7,7 +7,11 @@ type Props = {
   onLocationClick?: (locationId: string | number) => void;
   initialWeekday?: number;
   selectedActivity?: string;
+  highlightedLocationId?: string | number | null;
+  focusToken?: number;
 };
+
+const MATCH_HIGHLIGHT = '#A4E5E0';
 
 function formatTime(time?: string | null): string {
   if (!time) return '';
@@ -71,6 +75,8 @@ export default function WeeklyScheduleGrid({
   onLocationClick,
   initialWeekday,
   selectedActivity,
+  highlightedLocationId,
+  focusToken = 0,
 }: Props) {
   const grouped = groupByDay(programs);
   const dayConfigs = [
@@ -83,6 +89,21 @@ export default function WeeklyScheduleGrid({
     { key: 'Sunday', label: 'Sun' },
   ];
   const [selectedDay, setSelectedDay] = useState<string>('Monday');
+  const firstMatchingRowRef = useRef<HTMLDivElement | null>(null);
+  const highlightedLocationIdStr = highlightedLocationId != null ? String(highlightedLocationId) : null;
+  const matchingDaySet = useMemo(() => {
+    const days = new Set<string>();
+    if (!highlightedLocationIdStr) return days;
+
+    programs.forEach((program) => {
+      const locationId = (program as any).location_id;
+      if (locationId != null && String(locationId) === highlightedLocationIdStr && program.day_of_week) {
+        days.add(program.day_of_week);
+      }
+    });
+
+    return days;
+  }, [programs, highlightedLocationIdStr]);
 
 
   useEffect(() => {
@@ -105,6 +126,28 @@ export default function WeeklyScheduleGrid({
         setSelectedDay('Monday');
       }
     }, [initialWeekday, programs]);
+
+  useEffect(() => {
+    if (!highlightedLocationIdStr || matchingDaySet.size === 0) {
+      return;
+    }
+
+    const firstMatchingDay = dayConfigs.find(({ key }) => matchingDaySet.has(key))?.key;
+    if (firstMatchingDay) {
+      setSelectedDay(firstMatchingDay);
+    }
+  }, [focusToken, highlightedLocationIdStr, matchingDaySet]);
+
+  useEffect(() => {
+    if (!highlightedLocationIdStr || matchingDaySet.size === 0 || !matchingDaySet.has(selectedDay)) {
+      return;
+    }
+
+    firstMatchingRowRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, [selectedDay, highlightedLocationIdStr, matchingDaySet, focusToken]);
   
   if (programs.length === 0) {
     return (
@@ -115,6 +158,10 @@ export default function WeeklyScheduleGrid({
   }
 
   const dayPrograms = grouped.get(selectedDay) ?? [];
+  const firstMatchingIndex = dayPrograms.findIndex((program) => {
+    const locationId = (program as any).location_id;
+    return highlightedLocationIdStr !== null && locationId != null && String(locationId) === highlightedLocationIdStr;
+  });
   
   return (
     <div style={{ padding: '0' }}>
@@ -135,6 +182,7 @@ export default function WeeklyScheduleGrid({
         {dayConfigs.map(({ key, label }) => {
           const isActive = key === selectedDay;
           const hasPrograms = (grouped.get(key) ?? []).length > 0;
+          const isMatchingDay = matchingDaySet.has(key);
           return (
             <button
               key={key}
@@ -147,6 +195,8 @@ export default function WeeklyScheduleGrid({
               style={{
                 border: isActive 
                 ? '2px solid #3b82f6'
+                : isMatchingDay
+                ? `2px solid ${MATCH_HIGHLIGHT}`
                 : hasPrograms
                 ? '1.5px solid #bfdbfe'
                 : '1px dashed #cbd5f5',
@@ -156,11 +206,15 @@ export default function WeeklyScheduleGrid({
                 cursor: hasPrograms ? 'pointer' : 'default',
                 background: isActive 
                 ? '#4d95f7' 
+                : isMatchingDay
+                ? MATCH_HIGHLIGHT
                 : hasPrograms
                 ? '#e5f0ff'
                 : '#f8fafc',
                 color: isActive 
                 ? '#ffffff' 
+                : isMatchingDay
+                ? '#134e4a'
                 : hasPrograms
                 ? '#1d4ed8'
                 : '#94a3b8',
@@ -194,17 +248,26 @@ export default function WeeklyScheduleGrid({
               'Unknown Location';
             const locationId = ((program as any).location_id);
             const shouldShowCourseTitle = !selectedActivity && Boolean(program.course_title);
+            const isHighlightedMatch =
+              highlightedLocationIdStr !== null &&
+              locationId != null &&
+              String(locationId) === highlightedLocationIdStr;
 
             return (
               <div
                 key={`${selectedDay}-${idx}`}
+                ref={(node) => {
+                  if (idx === firstMatchingIndex) {
+                    firstMatchingRowRef.current = node;
+                  }
+                }}
                 style={{
                   padding: '12px',
                   borderBottom:
                     idx < dayPrograms.length - 1
                       ? '1px solid #f1f5f9'
                       : 'none',
-                  background: '#ffffff',
+                  background: isHighlightedMatch ? MATCH_HIGHLIGHT : '#ffffff',
                   cursor: onLocationClick && locationId ? 'pointer' : 'default',
                   transition: 'background 0.2s',
                 }}
@@ -213,11 +276,11 @@ export default function WeeklyScheduleGrid({
                 }
                 onMouseEnter={(e) => {
                   if (onLocationClick && locationId) {
-                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.background = isHighlightedMatch ? MATCH_HIGHLIGHT : '#f8fafc';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#ffffff';
+                  e.currentTarget.style.background = isHighlightedMatch ? MATCH_HIGHLIGHT : '#ffffff';
                 }}
               >
                 {shouldShowCourseTitle && (
@@ -225,7 +288,7 @@ export default function WeeklyScheduleGrid({
                     style={{
                       fontSize: '13px',
                       fontWeight: 700,
-                      color: '#030fff',
+                      color: '#334155',
                       marginBottom: '6px',
                     }}
                   >
