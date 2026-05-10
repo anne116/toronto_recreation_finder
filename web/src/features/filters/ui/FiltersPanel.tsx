@@ -48,8 +48,13 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
 
       <div className="filters-panel__header">
         <div className="filters-panel__title-wrap">
-          <h3>Toronto Recreation Finder</h3>
-          <div className="quick-intro">Search drop-in programs that match your needs across Toronto recreation centres!</div>
+          <a className="filters-panel__brand" href="/" aria-label="Reload Toronto Recreation Finder">
+            <img src="/trf-logo.png" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
+            <div className="filters-panel__brand-copy">
+              <h3>Toronto Recreation Finder</h3>
+              <div className="quick-intro">Find drop-in programs at Toronto rec centres — fast.</div>
+            </div>
+          </a>
         </div>
         <button
           type="button"
