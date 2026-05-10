@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getCentres } from '../api/centres.api';
-import type { CentresFeatureCollection } from '../../../shared/types';
+import type { AgeFilter, CentresFeatureCollection } from '../../../shared/types';
 
 type CentresFilters = {
   category?: string;
   activity?: string;
   district?: string;
   weekday?: string;
-  age?: "young" | "teen" | "adult" | "senior";
+  age?: AgeFilter;
 };
 
 type UseCentresOptions = {

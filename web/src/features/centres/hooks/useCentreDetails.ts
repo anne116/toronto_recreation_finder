@@ -24,14 +24,16 @@ function filterByAge<T extends DropInProgram | ProgramRegistered>(
     const maxAge = (p as any).age_max ?? (p as any).max_age ?? null;
 
     switch (age) {
-      case "young":
-        return (maxAge != null && maxAge <= 12) || (minAge == null || minAge < 12);
-      case "teen":
-        return (minAge == null || minAge <= 18) && (maxAge == null || maxAge >= 13);
-      case "adult":
-        return (minAge == null || minAge <= 65) && (maxAge == null || maxAge >= 19);
-      case "senior":
-        return minAge == null || minAge >= 55;
+      case "children":
+        return (maxAge ?? 200) >= 0 && (minAge ?? 0) <= 12;
+      case "teens":
+        return (maxAge ?? 200) >= 13 && (minAge ?? 0) <= 17;
+      case "young_adults":
+        return (maxAge ?? 200) >= 18 && (minAge ?? 0) <= 24;
+      case "adults":
+        return (maxAge ?? 200) >= 25 && (minAge ?? 0) <= 59;
+      case "seniors":
+        return (maxAge ?? 200) >= 60 && (minAge ?? 0) <= 200;
       default:
         return true;
     }

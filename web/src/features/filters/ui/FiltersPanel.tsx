@@ -129,10 +129,11 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
           }}
         >
           <option value="">All ages</option>
-          <option value="young">Young (≤12)</option>
-          <option value="teen">Teen (13–18)</option>
-          <option value="adult">Adult (19–65)</option>
-          <option value="senior">Senior (55+)</option>
+          <option value="children">Children (0-12)</option>
+          <option value="teens">Teens (13-17)</option>
+          <option value="young_adults">Young Adults (18-24)</option>
+          <option value="adults">Adults (25-59)</option>
+          <option value="seniors">Seniors (60+)</option>
         </select>
       </div>
 
