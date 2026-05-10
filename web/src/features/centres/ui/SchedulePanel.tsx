@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
-import type { DropInProgram } from "../../../shared/types";
+import type { AgeFilter, DropInProgram } from "../../../shared/types";
 
 
 type Props = {
   category?: string;
   activity?: string;
-  age?: "young" | "teen" | "adult" | "senior";
+  age?: AgeFilter;
   weekday?: string | number;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";

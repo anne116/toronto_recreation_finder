@@ -1,6 +1,7 @@
 import { get } from "../../../shared/lib/http";
 
 import type {
+  AgeFilter,
   CentresFeatureCollection,
   WardFeatureCollection,
   CentreDetail,
@@ -19,7 +20,7 @@ function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
 export type SearchProgramsParams = {
   category?: string;
   activity: string;
-  age?: "young" | "teen" | "adult" | "senior";
+  age?: AgeFilter;
   weekday?: number;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
@@ -56,7 +57,7 @@ export async function searchProgramsAggregated(
 
 export async function searchProgramsSearchStats(params: {
   activity?: string;
-  age?: "young" | "teen" | "adult" | "senior";
+  age?: AgeFilter;
   weekday?: number;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
@@ -77,7 +78,7 @@ export async function getCentres(
     category?: string;
     activity?: string; 
     district?: string; 
-    age?: "young" | "teen" | "adult" | "senior";
+    age?: AgeFilter;
     facility_type?: string; 
     weekday?: number 
   }
@@ -107,7 +108,7 @@ export async function getCentreDetail(
 
 export async function getCentrePrograms(
   centreId: string | number,
-  opts?: { age?: "young" | "teen" | "adult" | "senior" }
+  opts?: { age?: AgeFilter }
 ): Promise<CentrePrograms> {
   const qs = new URLSearchParams();
   appendIfPresent(qs, "age", opts?.age);

@@ -206,10 +206,11 @@ def matches_age(age_min: int | str | None, age_max: int | str | None, age_bucket
     max_age = None if is_missing(age_max) else int(float(age_max))
 
     bucket_ranges = {
-        "young": (0, 12),
-        "teen": (13, 18),
-        "adult": (19, 65),
-        "senior": (55, 200),
+        "children": (0, 12),
+        "teens": (13, 17),
+        "young_adults": (18, 24),
+        "adults": (25, 59),
+        "seniors": (60, 200),
     }
     bucket_min, bucket_max = bucket_ranges[age_bucket]
     effective_max = max_age if max_age is not None else 200
