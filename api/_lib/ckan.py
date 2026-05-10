@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime
 
-from api._lib.data import ACTIVITY_TAXONOMY
+from api._lib.data import ACTIVITY_TAXONOMY, RAW_TO_CANONICAL_ACTIVITY
 
 CKAN_BASE_URL = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
 PACKAGE_ID = "registered-programs-and-drop-in-courses-offering"
@@ -74,6 +74,20 @@ def clean_optional_string(value: object) -> str | None:
         return None
     return str(value).strip()
 
+def canonicalize_activity_title(value: object) -> str | None:
+    cleaned = clean_optional_string(value)
+    if cleaned is None:
+        return None
+    return RAW_TO_CANONICAL_ACTIVITY.get(cleaned, cleaned)
+
+def raw_titles_for_activity(activity: str) -> set[str]:
+    matches = {
+        raw_title
+        for raw_title, canonical_title in RAW_TO_CANONICAL_ACTIVITY.items()
+        if canonical_title == activity
+    }
+    matches.add(activity)
+    return matches
 
 def normalize_facility_type_label(value: object) -> str | None:
     cleaned = clean_optional_string(value)
@@ -152,14 +166,19 @@ def activity_matches_filters(
     category: str | None = None,
     activity: str | None = None,
 ) -> bool:
-    if activity and raw_title != activity:
+    canonical_title = canonicalize_activity_title(raw_title)
+    if canonical_title is None:
         return False
+    
+    if activity:
+        if raw_title not in raw_titles_for_activity(activity):
+            return False
 
     normalized_category = normalize_category(category)
     if normalized_category is None:
         return True
 
-    return raw_title in CATEGORY_ACTIVITY_LOOKUP.get(normalized_category.lower(), set())
+    return canonical_title in CATEGORY_ACTIVITY_LOOKUP.get(normalized_category.lower(), set())
 
 
 def build_address(location_row: dict) -> str | None:
@@ -416,7 +435,10 @@ def build_activity_options(*, program_type: str | None = None, limit: int = 50) 
         raw_title = row.get("Course Title")
         if is_missing(raw_title):
             continue
-        activity = str(raw_title).strip()
+        activity = canonicalize_activity_title(raw_title)
+        if activity is None:
+            continue
+
         entry = counts.setdefault(
             activity,
             {
@@ -537,6 +559,7 @@ def build_program_search_response(
                 "id": row.get("_id"),
                 "location_id": location_id,
                 "course_title": raw_title,
+                "activity": canonicalize_activity_title(raw_title),
                 "weekday": row_weekday_int,
                 "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
@@ -740,7 +763,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
                 "location_id": location_id_int,
                 "course_id": row.get("Course_ID"),
                 "course_title": clean_optional_string(row.get("Course Title")) or "Unknown Program",
-                "activity": clean_optional_string(row.get("Course Title")),
+                "activity": canonicalize_activity_title(row.get("Course Title")),
                 "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
                 "weekday": weekday,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
