@@ -27,7 +27,7 @@ export default function App() {
     age: undefined,
   });
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
-  const [status, setStatus] = useState<string>('Ready to search');
+  const [status, setStatus] = useState<string>('Pick a filter above and hit Search');
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);

@@ -54,16 +54,14 @@
 
 .filters-panel__brand:hover .filters-panel__brand-logo {
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(34, 195, 166, 0.25);
 }
 
 .filters-panel__brand-logo {
   width: 44px;
   height: 44px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  flex: 0 0 44px;
 }
 
 .filters-panel__brand-copy {
@@ -138,7 +136,7 @@
 .quick-intro {
   font-size: 14px;
   color: #1e40af;
-  padding: 0px 10px 0px 54px;
+  padding: 0px;
 }
 
 .filter-group {
@@ -191,7 +189,7 @@
 }
 
 .btn-secondary {
-  background: #64748b;
+  background: #abb8cb;
   color: white;
   margin-top: 8px;
 }
