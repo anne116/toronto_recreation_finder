@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ActivityOption, CategoryOption, DistrictOption, AgeFilter } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
+import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 
-type Filters = { category: string; activity: string; district: string; weekday: string; age?: AgeFilter };
+type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; age?: AgeFilter };
 
 type Props = {
   value: Filters;
@@ -112,15 +113,15 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
 
       <div className="filter-group">
         <label>Day of Week</label>
-        <select value={value.weekday} onChange={e => update({ weekday: e.target.value })}>
+        <select 
+        value={value.weekday ?? ''}
+        onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}>
           <option value="">Any Day</option>
-          <option value="0">Monday</option>
-          <option value="1">Tuesday</option>
-          <option value="2">Wednesday</option>
-          <option value="3">Thursday</option>
-          <option value="4">Friday</option>
-          <option value="5">Saturday</option>
-          <option value="6">Sunday</option>
+          {WEEKDAY_OPTIONS.map((day) => (
+            <option key={day} value={day}>
+              {day}
+            </option>
+          ))}
         </select>
       </div>
 

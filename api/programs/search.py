@@ -12,14 +12,9 @@ class handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed.query)
 
-        weekday_value = params.get("weekday", [None])[0]
+        weekday = params.get("weekday", [None])[0] or None
+        
         limit_value = params.get("limit", [None])[0]
-
-        try:
-            weekday = int(weekday_value) if weekday_value not in (None, "") else None
-        except (TypeError, ValueError):
-            weekday = None
-
         try:
             limit = int(limit_value) if limit_value not in (None, "") else 2000
         except (TypeError, ValueError):

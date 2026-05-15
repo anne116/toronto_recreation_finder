@@ -34,25 +34,18 @@ DISTRICT_NORMALIZATION = {
     "Toronto East York": "Toronto and East York",
 }
 
-WEEKDAY_TO_INDEX = {
-    "monday": 0,
-    "mon": 0,
-    "tuesday": 1,
-    "tue": 1,
-    "tues": 1,
-    "wednesday": 2,
-    "wed": 2,
-    "thursday": 3,
-    "thu": 3,
-    "thur": 3,
-    "thurs": 3,
-    "friday": 4,
-    "fri": 4,
-    "saturday": 5,
-    "sat": 5,
-    "sunday": 6,
-    "sun": 6,
-}
+WEEKDAY_NAMES = (
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+)
+
+WEEKDAY_NAME_LOOKUP = {name.lower(): name for name in WEEKDAY_NAMES}
+WEEKDAY_TO_INDEX = {name.lower(): index for index, name in enumerate(WEEKDAY_NAMES)}
 
 CATEGORY_ACTIVITY_LOOKUP = {
     category.lower(): set(activities)
@@ -236,11 +229,11 @@ def matches_age(age_min: int | str | None, age_max: int | str | None, age_bucket
     return not (effective_max < bucket_min or min_age > bucket_max)
 
 
-def matches_time_of_day(start_hour: int | str | None, weekday: int | None, time_of_day: str | None) -> bool:
+def matches_time_of_day(start_hour: int | str | None, weekday_index: int | None, time_of_day: str | None) -> bool:
     if not time_of_day:
         return True
     if time_of_day == "weekend":
-        return weekday in (5, 6)
+        return weekday_index in (0, 6)
     if start_hour in (None, ""):
         return False
 
@@ -263,21 +256,16 @@ def parse_int(value: object) -> int | None:
         return None
 
 
-def normalize_weekday(day_name: object, raw_weekday: object) -> int | None:
+def normalize_weekday_name(day_name: object) -> str | None:
     cleaned_day = clean_optional_string(day_name)
-    if cleaned_day:
-        normalized = WEEKDAY_TO_INDEX.get(cleaned_day.lower())
-        if normalized is not None:
-            return normalized
-
-    parsed = parse_int(raw_weekday)
-    if parsed is None:
+    if cleaned_day is None:
         return None
-    if 0 <= parsed <= 6:
-        return parsed
-    if 1 <= parsed <= 7:
-        return parsed - 1
-    return None
+    return WEEKDAY_NAME_LOOKUP.get(cleaned_day.lower())
+
+def weekday_index(day_name: str | None) -> int | None:
+    if day_name is None:
+        return None
+    return WEEKDAY_TO_INDEX.get(day_name.lower())
 
 
 def load_location_cache() -> dict[int, dict]:
@@ -514,7 +502,7 @@ def build_program_search_response(
     district: str | None = None,
     age: str | None = None,
     time_of_day: str | None = None,
-    weekday: int | None = None,
+    weekday: str | None = None,
     limit: int = 2000,
 ) -> dict:
     drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
@@ -532,12 +520,13 @@ def build_program_search_response(
         if not activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
-        row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
-        if weekday is not None and row_weekday_int != weekday:
+        row_day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
+        if weekday is not None and row_day_of_week != weekday:
             continue
+        row_weekday_index = weekday_index(row_day_of_week)
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
-        if not matches_time_of_day(row.get("Start Hour"), row_weekday_int, time_of_day):
+        if not matches_time_of_day(row.get("Start Hour"), row_weekday_index, time_of_day):
             continue
 
         location_id = parse_int(row.get("Location ID"))
@@ -560,8 +549,7 @@ def build_program_search_response(
                 "location_id": location_id,
                 "course_title": raw_title,
                 "activity": canonicalize_activity_title(raw_title),
-                "weekday": row_weekday_int,
-                "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
+                "day_of_week": row_day_of_week,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
                 "age_min": parse_int(row.get("Age Min")),
@@ -584,7 +572,7 @@ def build_program_search_response(
 
     programs.sort(
         key=lambda item: (
-            item.get("weekday") if item.get("weekday") is not None else 99,
+            weekday_index(item.get("day_of_week")) if item.get("day_of_week") is not None else 99,
             item.get("start_time") or "",
             item.get("location_name") or "",
         )
@@ -612,7 +600,7 @@ def build_centres_geojson_response(
     district: str | None = None,
     age: str | None = None,
     facility_type: str | None = None,
-    weekday: int | None = None,
+    weekday: str | None = None,
 ) -> dict:
     drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
     locations = load_location_cache()
@@ -629,8 +617,8 @@ def build_centres_geojson_response(
         if not activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
-        row_weekday_int = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
-        if weekday is not None and row_weekday_int != weekday:
+        row_day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
+        if weekday is not None and row_day_of_week != weekday:
             continue
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
@@ -755,7 +743,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
 
-        weekday = normalize_weekday(row.get("DayOftheWeek"), row.get("Weekday"))
+        day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
         programs.append(
             {
                 "id": row.get("_id") or row.get("Course_ID"),
@@ -764,8 +752,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
                 "course_id": row.get("Course_ID"),
                 "course_title": clean_optional_string(row.get("Course Title")) or "Unknown Program",
                 "activity": canonicalize_activity_title(row.get("Course Title")),
-                "day_of_week": clean_optional_string(row.get("DayOftheWeek")),
-                "weekday": weekday,
+                "day_of_week": day_of_week,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
                 "age_min": parse_int(row.get("Age Min")),
@@ -775,7 +762,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
 
     programs.sort(
         key=lambda item: (
-            item.get("weekday") if item.get("weekday") is not None else 99,
+            weekday_index(item.get("day_of_week")) if item.get("day_of_week") is not None else 99,
             item.get("start_time") or "",
             item.get("course_title") or "",
         )

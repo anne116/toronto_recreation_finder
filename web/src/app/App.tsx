@@ -7,6 +7,7 @@ import MapView from '../features/map/ui/MapView';
 import SchedulePanel from '../features/centres/ui/SchedulePanel';
 import ResizablePanel from '../shared/ui/ResizablePanel';
 import '../App.css';
+import type { WeekdayName } from '../shared/lib/weekday';
 
 export default function App() {
   
@@ -14,18 +15,18 @@ export default function App() {
     category: string;
     activity: string;
     district: string;
-    weekday: string;
+    weekday: WeekdayName | null;
     age?: AgeFilter;
     
   };
-  
   const [filters, setFilters] = useState<Filters>({
     category: '',
     activity: '',
     district: '',
-    weekday: '',
+    weekday: null,
     age: undefined,
   });
+
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
   const [status, setStatus] = useState<string>('Pick a filter above and hit Search');
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
@@ -44,7 +45,7 @@ export default function App() {
     category: activeFilters?.category ?? '',
     activity: activeFilters?.activity ?? '',
     district: activeFilters?.district ?? '',
-    weekday: activeFilters?.weekday ?? '',
+    weekday: activeFilters?.weekday ?? null,
     age: activeFilters?.age,
   },
   { enabled: !!activeFilters }
@@ -101,7 +102,7 @@ export default function App() {
       category: '',
       activity: '',
       district: '',
-      weekday: '',
+      weekday: null,
       age: undefined,
     });
     setShowSchedulePanel(false);
