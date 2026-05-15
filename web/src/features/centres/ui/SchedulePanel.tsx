@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
 import type { AgeFilter, DropInProgram } from "../../../shared/types";
+import type { WeekdayName } from "../../../shared/lib/weekday";
 
 
 type Props = {
   category?: string;
   activity?: string;
   age?: AgeFilter;
-  weekday?: string | number;
+  weekday?: WeekdayName | null;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   hasSearchCriteria?: boolean;
@@ -19,32 +20,11 @@ type Props = {
   className?: string;
 };
 
-const DAY_NAME = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const DAY_INDEX: Record<string, number> = {
-  Monday: 0,
-  Tuesday: 1,
-  Wednesday: 2,
-  Thursday: 3,
-  Friday: 4,
-  Saturday: 5,
-  Sunday: 6,
-};
-
-function toWeekdayNumber(w?: string | number): number | undefined {
-  if (w === undefined || w === null || w === '') return undefined;
-  if (typeof w === "number") return w;
-  const asNumber = Number(w);
-  if (!Number.isNaN(asNumber)) {
-    return asNumber;
-  }
-  return DAY_INDEX[w] ?? undefined;
-}
 
 function normalizeProgram(p: any): DropInProgram {
     return {
       ...p,
       course_title: p.course_title ?? "",
-      day_of_week: p.day_of_week ?? (typeof p.weekday === "number" ? DAY_NAME[p.weekday] : ""),
     } as DropInProgram;
   }
 
@@ -65,7 +45,6 @@ export default function SchedulePanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const normalizedWeekday = useMemo(() => toWeekdayNumber(weekday), [weekday]);
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
       setPrograms([]);
@@ -85,7 +64,7 @@ export default function SchedulePanel({
           category,
           activity,
           age,
-          weekday: normalizedWeekday,
+          weekday: weekday ?? undefined,
           district,
           time_of_day,
           limit: 2000,
@@ -111,7 +90,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, age, district, time_of_day, normalizedWeekday, isVisible, hasSearchCriteria]);
+  }, [category, activity, age, district, time_of_day, weekday, isVisible, hasSearchCriteria]);
 
   if (!isVisible) return null;
 
@@ -158,7 +137,7 @@ export default function SchedulePanel({
           <WeeklyScheduleGrid
             programs={programs}
             onLocationClick={onLocationClick}
-            initialWeekday={normalizedWeekday}
+            initialDay={weekday ?? undefined}
             selectedActivity={activity}
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}

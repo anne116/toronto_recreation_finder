@@ -5,7 +5,7 @@ type Props = {
   programs: DropInProgram[];
   sport?: string;
   onLocationClick?: (locationId: string | number) => void;
-  initialWeekday?: number;
+  initialDay?: string;
   selectedActivity?: string;
   highlightedLocationId?: string | number | null;
   focusToken?: number;
@@ -74,7 +74,7 @@ function groupByDay(programs: DropInProgram[]) {
 export default function WeeklyScheduleGrid({ 
   programs, 
   onLocationClick,
-  initialWeekday,
+  initialDay,
   selectedActivity,
   highlightedLocationId,
   focusToken = 0,
@@ -111,13 +111,8 @@ export default function WeeklyScheduleGrid({
     const daysWithPrograms = dayConfigs
       .map(d => d.key)
       .filter(dayKey => (grouped.get(dayKey) ?? []).length > 0);
-    if (
-      typeof initialWeekday === 'number' &&
-      initialWeekday >= 0 &&
-      initialWeekday < dayConfigs.length
-    ) {
-      const dayKey = dayConfigs[initialWeekday].key;
-      setSelectedDay(dayKey);
+      if (initialDay && (grouped.get(initialDay) ?? []).length >0) {
+        setSelectedDay(initialDay);
       return;
     }
 
@@ -126,7 +121,7 @@ export default function WeeklyScheduleGrid({
       } else {
         setSelectedDay('Monday');
       }
-    }, [initialWeekday, programs]);
+    }, [initialDay, programs]);
 
   useEffect(() => {
     if (!highlightedLocationIdStr || matchingDaySet.size === 0) {

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getCentres } from '../api/centres.api';
 import type { AgeFilter, CentresFeatureCollection } from '../../../shared/types';
+import type { WeekdayName } from '../../../shared/lib/weekday';
 
 type CentresFilters = {
   category?: string;
   activity?: string;
   district?: string;
-  weekday?: string;
+  weekday?: WeekdayName | null;
   age?: AgeFilter;
 };
 
@@ -37,19 +38,12 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       setError(null);
       
       try {
-        let weekdayNum: number | undefined = undefined;
-        if (filters.weekday !== undefined && filters.weekday !== ''){
-          const parsed = Number(filters.weekday);
-          weekdayNum = Number.isNaN(parsed) ? undefined : parsed;
-        }
-
-
         const centres = await getCentres({
           category: filters.category,
           activity: filters.activity,
           district: filters.district,
           age: filters.age,
-          weekday: weekdayNum,
+          weekday: filters.weekday ?? undefined,
         });
         if (!abortController.signal.aborted) {
           setData(centres);

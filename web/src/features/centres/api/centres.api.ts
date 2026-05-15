@@ -1,4 +1,5 @@
 import { get } from "../../../shared/lib/http";
+import type { WeekdayName } from "../../../shared/lib/weekday";
 
 import type {
   AgeFilter,
@@ -21,7 +22,7 @@ export type SearchProgramsParams = {
   category?: string;
   activity: string;
   age?: AgeFilter;
-  weekday?: number;
+  weekday?: WeekdayName;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   limit?: number;
@@ -35,7 +36,7 @@ export type SearchProgramsResponse = {
     category?: string;
     activity?: string;
     age?: string;
-    weekday?: number;
+    weekday?: WeekdayName;
     district?: string;
   };
   programs: any[];
@@ -58,7 +59,7 @@ export async function searchProgramsAggregated(
 export async function searchProgramsSearchStats(params: {
   activity?: string;
   age?: AgeFilter;
-  weekday?: number;
+  weekday?: WeekdayName;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
 }) {
@@ -80,7 +81,7 @@ export async function getCentres(
     district?: string; 
     age?: AgeFilter;
     facility_type?: string; 
-    weekday?: number 
+    weekday?: WeekdayName 
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();

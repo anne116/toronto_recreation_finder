@@ -12,12 +12,7 @@ class handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed.query)
 
-        weekday_value = params.get("weekday", [None])[0]
-
-        try:
-            weekday = int(weekday_value) if weekday_value not in (None, "") else None
-        except (TypeError, ValueError):
-            weekday = None
+        weekday = params.get("weekday", [None])[0] or None
 
         payload = build_centres_geojson_response(
             category=params.get("category", [None])[0],

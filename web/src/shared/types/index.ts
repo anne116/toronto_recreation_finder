@@ -1,3 +1,5 @@
+import type { WeekdayName } from "../lib/weekday";
+
 export interface WardFeatureCollection {
     type: 'FeatureCollection';
     features: Array<{
@@ -42,8 +44,7 @@ export interface DropInProgram {
   centre_id?: string | number;
   course_title: string;
   activity?: string | null;      
-  day_of_week?: string | null;  
-  weekday?: number; 
+  day_of_week?: WeekdayName | null;  
   start_time?: string | null; 
   end_time?: string | null; 
   age_min?: number | null;   
@@ -60,7 +61,7 @@ export type AgeFilter = 'children' | 'teens' | 'young_adults' | 'adults' | 'seni
 
 export interface RegisteredProgram extends ProgramRegistered {
 
-  day_of_week?: string | null;
+  day_of_week?: WeekdayName | null;
   start_time?: string | null;
   end_time?: string | null;
 
@@ -75,7 +76,7 @@ export interface RegisteredProgram extends ProgramRegistered {
   course_code?: string | number | null;
   program_id?: string | number | null;
 
-  weekday?: string | null;
+  weekday?: WeekdayName | null;
   start?: string | null;
   end?: string | null;
 
