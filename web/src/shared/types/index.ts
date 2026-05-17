@@ -44,9 +44,12 @@ export interface DropInProgram {
   centre_id?: string | number;
   course_title: string;
   activity?: string | null;      
-  day_of_week?: WeekdayName | null;  
-  start_time?: string | null; 
-  end_time?: string | null; 
+  day_of_week?: WeekdayName | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  date_range?: string | null;
   age_min?: number | null;   
   age_max?: number | null;
 }

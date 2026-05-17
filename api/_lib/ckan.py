@@ -267,6 +267,16 @@ def weekday_index(day_name: str | None) -> int | None:
         return None
     return WEEKDAY_TO_INDEX.get(day_name.lower())
 
+def normalize_date_fields(row: dict) -> tuple[str | None, str | None, str | None]:
+    start_date = clean_optional_string(row.get("First Date"))
+    end_date = clean_optional_string(row.get("Last Date"))
+    raw_date_range = clean_optional_string(row.get("Date Range"))
+    if raw_date_range is None:
+        if start_date and end_date:
+            raw_date_range = start_date if start_date == end_date else f"{start_date} to {end_date}"
+        else:
+            raw_date_range = start_date or end_date
+    return start_date, end_date, raw_date_range
 
 def load_location_cache() -> dict[int, dict]:
     global LOCATION_CACHE
@@ -542,6 +552,7 @@ def build_program_search_response(
             continue
 
         coord = coordinates.get(location_id, {})
+        start_date, end_date, date_range = normalize_date_fields(row)
 
         programs.append(
             {
@@ -552,6 +563,9 @@ def build_program_search_response(
                 "day_of_week": row_day_of_week,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
+                "start_date": start_date,
+                "end_date": end_date,
+                "date_range": date_range,
                 "age_min": parse_int(row.get("Age Min")),
                 "age_max": parse_int(row.get("Age Max")),
                 "location_name": location_name(location),
@@ -573,6 +587,7 @@ def build_program_search_response(
     programs.sort(
         key=lambda item: (
             weekday_index(item.get("day_of_week")) if item.get("day_of_week") is not None else 99,
+            item.get("start_date") or "",
             item.get("start_time") or "",
             item.get("location_name") or "",
         )
@@ -744,6 +759,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
             continue
 
         day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
+        start_date, end_date, date_range = normalize_date_fields(row)
         programs.append(
             {
                 "id": row.get("_id") or row.get("Course_ID"),
@@ -755,6 +771,9 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
                 "day_of_week": day_of_week,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
+                "start_date": start_date,
+                "end_date": end_date,
+                "date_range": date_range,
                 "age_min": parse_int(row.get("Age Min")),
                 "age_max": parse_int(row.get("Age Max")),
             }
@@ -763,6 +782,7 @@ def build_centre_programs(location_id: str | int, *, age: str | None = None) -> 
     programs.sort(
         key=lambda item: (
             weekday_index(item.get("day_of_week")) if item.get("day_of_week") is not None else 99,
+            item.get("start_date") or "",
             item.get("start_time") or "",
             item.get("course_title") or "",
         )

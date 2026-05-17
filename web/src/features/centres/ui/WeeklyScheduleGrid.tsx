@@ -29,43 +29,37 @@ function formatAgeRange(min?: number | null, max?: number | null): string {
   return 'All Ages';
 }
 
-function deduplicatePrograms(programs: DropInProgram[]): DropInProgram[] {
-  const seen = new Map<string, DropInProgram>();
-  
-  programs.forEach(p => {
-    const locationId = (p as any).location_id || 'unknown';
-    const day = p.day_of_week || 'unknown';
-    const start = formatTime(p.start_time);
-    const end = formatTime(p.end_time);
-    const ageMin = p.age_min ?? 'any';
-    const ageMax = p.age_max ?? 'any';
-    
-    const key = `${locationId}-${day}-${start}-${end}-${ageMin}-${ageMax}`;
-    
-    if (!seen.has(key)) {
-      seen.set(key, p);
-    }
-  });
-  
-  return Array.from(seen.values());
+function formatDateDisplay(program: DropInProgram): string {
+  return program.date_range ?? program.start_date ?? program.end_date ?? '';
+}
+
+function comparePrograms(a: DropInProgram, b: DropInProgram): number {
+  const dateCompare = (a.start_date || '').localeCompare(b.start_date || '');
+  if (dateCompare !== 0) return dateCompare;
+
+  const timeCompare = formatTime(a.start_time).localeCompare(formatTime(b.start_time));
+  if (timeCompare !== 0) return timeCompare;
+
+  return (a.course_title || '').localeCompare(b.course_title || '');
 }
 
 function groupByDay(programs: DropInProgram[]) {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const grouped = new Map<string, DropInProgram[]>();
   
-  days.forEach(day => grouped.set(day, []));
+  days.forEach(day => grouped.set(day, []));  
   
-  const uniquePrograms = deduplicatePrograms(programs);
-  
-  
-  uniquePrograms.forEach(p => {
+  programs.forEach(p => {
     const day = p.day_of_week || 'Unknown';
     if (grouped.has(day)) {
       grouped.get(day)!.push(p);
     } else {
       grouped.set(day, [p]);
     }
+  });
+
+  grouped.forEach((dayPrograms, day) => {
+    grouped.set(day, [...dayPrograms].sort(comparePrograms));
   });
   
   return grouped;
@@ -302,6 +296,18 @@ export default function WeeklyScheduleGrid({
               >
                  🕒 {formatTime(program.start_time)} - {formatTime(program.end_time)}
               </div>
+
+              {formatDateDisplay(program) && (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    marginBottom: '4px',
+                  }}
+                >
+                  📅 {formatDateDisplay(program)}
+                </div>
+              )}
 
               <div
                 style={{
