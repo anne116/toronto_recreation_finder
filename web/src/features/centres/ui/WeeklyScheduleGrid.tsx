@@ -1,6 +1,10 @@
 import type { DropInProgram } from '../../../shared/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+type ScheduleProgram = DropInProgram & {
+  occurrence_count?: number;
+}
+
 type Props = {
   programs: DropInProgram[];
   sport?: string;
@@ -33,6 +37,14 @@ function formatDateDisplay(program: DropInProgram): string {
   return program.date_range ?? program.start_date ?? program.end_date ?? '';
 }
 
+function formatScheduleLine(program: ScheduleProgram): string {
+  const dateDisplay = formatDateDisplay(program);
+  if ((program.occurrence_count ?? 1) >1 && program.day_of_week) {
+    return dateDisplay ? `Every ${program.day_of_week} (${dateDisplay})` : `Every ${program.day_of_week}`;
+  }
+  return dateDisplay;
+}
+
 function comparePrograms(a: DropInProgram, b: DropInProgram): number {
   const dateCompare = (a.start_date || '').localeCompare(b.start_date || '');
   if (dateCompare !== 0) return dateCompare;
@@ -43,13 +55,57 @@ function comparePrograms(a: DropInProgram, b: DropInProgram): number {
   return (a.course_title || '').localeCompare(b.course_title || '');
 }
 
+function groupRecurringPrograms(programs: DropInProgram[]): ScheduleProgram[] {
+  const grouped = new Map<string, DropInProgram[]>();
+
+  programs.forEach((program) => {
+    const locationId = (program as any).location_id ?? '';
+    const courseId = (program as any).course_id ?? '';
+    const key = [
+      locationId,
+      courseId,
+      program.day_of_week ?? '',
+      program.start_time ?? '',
+      program.end_time ?? '',
+    ].join('|');
+
+    const bucket = grouped.get(key);
+    if (bucket) {
+      bucket.push(program);
+    } else {
+      grouped.set(key, [program]);
+    }
+  });
+
+  return Array.from(grouped.values()).map((bucket) => {
+    const sorted = [...bucket].sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''));
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const startDate = first.start_date ?? null;
+    const endDate = last.end_date ?? last.start_date ?? null;
+    
+    let dateRange = first.date_range ?? startDate ?? endDate ?? null;
+    if (startDate && endDate) {
+      dateRange = startDate === endDate ? startDate : `${startDate} to ${endDate}`; 
+    }
+
+    return {
+      ...first,
+      start_date: startDate,
+      end_date: endDate,
+      date_range: dateRange,
+      occurrence_count: sorted.length,
+    };
+  });
+}
+
 function groupByDay(programs: DropInProgram[]) {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const grouped = new Map<string, DropInProgram[]>();
+  const grouped = new Map<string, ScheduleProgram[]>();
   
   days.forEach(day => grouped.set(day, []));  
   
-  programs.forEach(p => {
+  groupRecurringPrograms(programs).forEach(p => {
     const day = p.day_of_week || 'Unknown';
     if (grouped.has(day)) {
       grouped.get(day)!.push(p);
@@ -305,7 +361,7 @@ export default function WeeklyScheduleGrid({
                     marginBottom: '4px',
                   }}
                 >
-                  📅 {formatDateDisplay(program)}
+                  📅 {formatScheduleLine(program)}
                 </div>
               )}
 
