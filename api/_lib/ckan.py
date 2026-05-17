@@ -270,12 +270,17 @@ def weekday_index(day_name: str | None) -> int | None:
 def normalize_date_fields(row: dict) -> tuple[str | None, str | None, str | None]:
     start_date = clean_optional_string(row.get("First Date"))
     end_date = clean_optional_string(row.get("Last Date"))
+
+    if start_date and end_date:
+        return start_date if start_date == end_date else f"{start_date} to {end_date}"
+    
+    if start_date:
+        return start_date, None, start_date
+
+    if end_date:
+        return None, end_date, end_date
+    
     raw_date_range = clean_optional_string(row.get("Date Range"))
-    if raw_date_range is None:
-        if start_date and end_date:
-            raw_date_range = start_date if start_date == end_date else f"{start_date} to {end_date}"
-        else:
-            raw_date_range = start_date or end_date
     return start_date, end_date, raw_date_range
 
 def load_location_cache() -> dict[int, dict]:
