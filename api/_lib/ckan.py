@@ -272,7 +272,7 @@ def normalize_date_fields(row: dict) -> tuple[str | None, str | None, str | None
     end_date = clean_optional_string(row.get("Last Date"))
 
     if start_date and end_date:
-        return start_date if start_date == end_date else f"{start_date} to {end_date}"
+        return start_date, end_date, start_date if start_date == end_date else f"{start_date} to {end_date}"
     
     if start_date:
         return start_date, None, start_date
