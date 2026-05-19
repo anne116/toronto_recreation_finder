@@ -27,6 +27,17 @@ function buildPanelTitle(programType: ProgramType, filters: Filters | null): str
   return suffix;
 }
 
+function hasAnySelectedFilter(filters: Filters): boolean {
+  return Boolean(
+    filters.category ||
+    filters.activity ||
+    filters.district ||
+    filters.weekday ||
+    filters.startMonth ||
+    filters.age
+  );
+}
+
 export default function App() {
   const [programType, setProgramType] = useState<ProgramType>('dropin');
   const [filters, setFilters] = useState<Filters>({
@@ -40,6 +51,7 @@ export default function App() {
 
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
   const [status, setStatus] = useState<string>('Pick a filter above and hit Search');
+  const [searchNotice, setSearchNotice] = useState<string | null>(null);
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
@@ -84,29 +96,39 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!searchNotice) return;
+
+    const timer = window.setTimeout(() => {
+      setSearchNotice(null);
+    }, 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [searchNotice]);
+
   function handleSearch() {
+    if (!hasAnySelectedFilter(filters)) {
+      setSearchNotice('Select at least one filter to search.');
+      setStatus('Select at least one filter to search.');
+      return;
+    }
+
     setStatus('Searching...');
     setHasSearched(true);
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
     setActiveFilters(filters);
     setIsFiltersOpen(false);
-    
-    if (filters.category || filters.activity || filters.district || filters.weekday || filters.startMonth || filters.age) {
-      setShowSchedulePanel(true);
-      setStatus(
-        filters.activity
-          ? `Showing ${filters.activity} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-          : filters.category
-            ? `Showing ${filters.category} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-            : `Showing matching ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-      );
-      setIsScheduleOpen(true);
-    } else {
-      setShowSchedulePanel(false);
-      setStatus('Showing all centres');
-      setIsScheduleOpen(false);
-    }
+
+    setShowSchedulePanel(true);
+    setStatus(
+      filters.activity
+        ? `Showing ${filters.activity} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
+        : filters.category
+          ? `Showing ${filters.category} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
+          : `Showing matching ${programType === 'dropin' ? 'programs' : 'registered programs'}`
+    );
+    setIsScheduleOpen(true);
   }
   
 
@@ -183,6 +205,12 @@ export default function App() {
           className="filters-backdrop"
           onClick={() => setIsFiltersOpen(false)}
         />
+      )}
+
+      {searchNotice && (
+        <div className="search-notice" role="status" aria-live="polite">
+          {searchNotice}
+        </div>
       )}
 
       <aside className={`filters-panel ${isFiltersOpen ? 'open' : 'closed'}`}>

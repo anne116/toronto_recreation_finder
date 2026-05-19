@@ -68,9 +68,7 @@ export default function FiltersPanel({
             <div className="filters-panel__brand-copy">
               <h3>Toronto Recreation Finder</h3>
               <div className="quick-intro">
-                {programType === 'dropin'
-                  ?  'Find drop-in programs at Toronto rec centres — fast.'
-                  :  'Find registered programs at Toronto rec centres - fast.'}
+                'Find drop-in/registered programs at Toronto rec centres — fast.'
               </div>
             </div>
           </a>
@@ -90,7 +88,7 @@ export default function FiltersPanel({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: '1fr 1.1fr',
           gap: '8px',
           marginBottom: '20px',
         }}

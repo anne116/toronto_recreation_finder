@@ -195,7 +195,7 @@ export async function getFilterOptions(programType: ProgramType): Promise<Filter
   }
 
   const [filterOptions, districts, facilityTypes] = await Promise.all([
-    get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/filter-options?limit=200`),
+    get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/filter-options`),
     get<DistrictOption[]>(`/api/districts`),
     get<FacilityTypeOption[]>(`/api/facility-types`),
   ]);

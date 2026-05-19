@@ -10,15 +10,6 @@ from api._lib.data import ACTIVITY_TAXONOMY, CATEGORY_DESCRIPTIONS
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        parsed = urllib.parse.urlparse(self.path)
-        params = urllib.parse.parse_qs(parsed.query)
-
-        limit_value = params.get("limit", [None])[0]
-        try:
-            limit = int(limit_value) if limit_value not in (None, "") else 200
-        except (TypeError, ValueError):
-            limit = 200
-
         payload = {
             "categories": [
                 {
@@ -28,10 +19,7 @@ class handler(BaseHTTPRequestHandler):
                 }
                 for name, activities in ACTIVITY_TAXONOMY.items()
             ],
-            "activities": build_activity_options(
-                program_type="dropin",
-                limit=max(1, min(limit, 2000)),
-            ),
+            "activities": build_activity_options(limit=2000),
         }
 
         self.send_response(200)
