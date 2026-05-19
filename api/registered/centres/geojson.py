@@ -4,7 +4,7 @@ import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_activity_options
+from api._lib.ckan import build_registered_centres_geojson_response
 
 
 class handler(BaseHTTPRequestHandler):
@@ -12,17 +12,14 @@ class handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed.query)
 
-        program_type = params.get("program_type", [None])[0]
-        limit_value = params.get("limit", [None])[0]
+        start_month = params.get("start_month", [None])[0] or None
 
-        try:
-            limit = int(limit_value) if limit_value not in (None, "") else 50
-        except (TypeError, ValueError):
-            limit = 50
-
-        payload = build_activity_options(
-            program_type=program_type,
-            limit=max(1, min(limit, 2000)),
+        payload = build_registered_centres_geojson_response(
+            category=params.get("category", [None])[0],
+            activity=params.get("activity", [None])[0],
+            district=params.get("district", [None])[0],
+            age=params.get("age", [None])[0],
+            start_month=start_month,
         )
 
         self.send_response(200)

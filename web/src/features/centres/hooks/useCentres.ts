@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { getCentres } from '../api/centres.api';
-import type { AgeFilter, CentresFeatureCollection } from '../../../shared/types';
+import { getCentres, getRegisteredCentres } from '../api/centres.api';
+import type { CentresFeatureCollection, DropInAgeFilter, ProgramAgeFilter, ProgramType } from '../../../shared/types';
 import type { WeekdayName } from '../../../shared/lib/weekday';
 
 type CentresFilters = {
+  programType: ProgramType;
   category?: string;
   activity?: string;
   district?: string;
   weekday?: WeekdayName | null;
-  age?: AgeFilter;
+  startMonth?: string;
+  age?: ProgramAgeFilter;
 };
 
 type UseCentresOptions = {
@@ -26,7 +28,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       return;
     }
 
-    if (!filters.category && !filters.activity && !filters.district && !filters.weekday && !filters.age) {
+    if (!filters.category && !filters.activity && !filters.district && !filters.weekday && !filters.age && !filters.startMonth) {
       setData(null);
       return;
     }
@@ -38,13 +40,22 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       setError(null);
       
       try {
-        const centres = await getCentres({
-          category: filters.category,
-          activity: filters.activity,
-          district: filters.district,
-          age: filters.age,
-          weekday: filters.weekday ?? undefined,
-        });
+        const centres = 
+          filters.programType === 'registered'
+            ? await getRegisteredCentres({
+              category: filters.category,
+              activity: filters.activity,
+              district: filters.district,
+              age: filters.age,
+              start_month: filters.startMonth,
+              })
+            : await getCentres({
+              category: filters.category,
+              activity: filters.activity,
+              district: filters.district,
+              age: filters.age as DropInAgeFilter | undefined,
+              weekday: filters.weekday ?? undefined,
+              });
         if (!abortController.signal.aborted) {
           setData(centres);
         }
@@ -62,7 +73,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.category, filters.activity, filters.district, filters.weekday, filters.age]);
+  }, [enabled, filters.programType, filters.category, filters.activity, filters.district, filters.weekday, filters.startMonth, filters.age]);
 
   return { data, loading, error };
 }
