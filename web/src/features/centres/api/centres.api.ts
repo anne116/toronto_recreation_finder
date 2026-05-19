@@ -194,16 +194,15 @@ export async function getFilterOptions(programType: ProgramType): Promise<Filter
     return get<FilterOptionsResponse>(`/api/registered/filter-options`);
   }
 
-  const [categoriesPayload, activities, districts, facilityTypes] = await Promise.all([
-    get<{ categories: CategoryOption[] }>(`/api/categories`),
-    get<ActivityOption[]>(`/api/activities?program_type=dropin&limit=200`),
+  const [filterOptions, districts, facilityTypes] = await Promise.all([
+    get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/filter-options?limit=200`),
     get<DistrictOption[]>(`/api/districts`),
     get<FacilityTypeOption[]>(`/api/facility-types`),
   ]);
   
   return {
-    categories: categoriesPayload.categories,
-    activities,
+    categories: filterOptions.categories,
+    activities: filterOptions.activities,
     districts,
     facilityTypes,
   };
