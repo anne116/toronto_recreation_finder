@@ -68,7 +68,7 @@ export default function FiltersPanel({
             <div className="filters-panel__brand-copy">
               <h3>Toronto Recreation Finder</h3>
               <div className="quick-intro">
-                'Find drop-in/registered programs at Toronto rec centres — fast.'
+                Find drop-in / registered programs at Toronto rec centres — fast.
               </div>
             </div>
           </a>
