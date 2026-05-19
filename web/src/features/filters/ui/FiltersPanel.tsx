@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ActivityOption, CategoryOption, DistrictOption, AgeFilter } from '../../../shared/types/index.ts';
+import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 
-type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; age?: AgeFilter };
+type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
 
 type Props = {
+  programType: ProgramType;
+  onProgramTypeChange: (v: ProgramType) => void;
   value: Filters;
   onChange: (v: Filters) => void;
   onSearch: () => void;
@@ -15,14 +17,25 @@ type Props = {
   onToggle: () => void;
 };
 
-export default function FiltersPanel({ value, onChange, onSearch, onReset, status, isOpen, onToggle }: Props) {
+export default function FiltersPanel({ 
+  programType,
+  onProgramTypeChange,
+  value, 
+  onChange, 
+  onSearch, 
+  onReset, 
+  status, 
+  isOpen, 
+  onToggle
+}: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [districts, setDistricts]   = useState<DistrictOption[]>([]);
+  const [startMonths, setStartMonths] = useState<StartMonthOption[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { categories, activities, districts } = await getFilterOptions();
+      const { categories, activities, districts, startMonths } = await getFilterOptions(programType);
 
       const sortedActivities = [...activities].sort((a, b) =>
         a.activity.localeCompare(b.activity)
@@ -30,8 +43,9 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
       setCategories(categories);
       setActivities(sortedActivities); 
       setDistricts(districts); 
+      setStartMonths(startMonths ?? []);
     })();
-  }, []);
+  }, [programType]);
 
   const update = (patch: Partial<Filters>) => onChange({ ...value, ...patch });
   const categoryActivities = useMemo(() => {
@@ -53,7 +67,11 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
             <img src="/trf-logo.png" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
             <div className="filters-panel__brand-copy">
               <h3>Toronto Recreation Finder</h3>
-              <div className="quick-intro">Find drop-in programs at Toronto rec centres — fast.</div>
+              <div className="quick-intro">
+                {programType === 'dropin'
+                  ?  'Find drop-in programs at Toronto rec centres — fast.'
+                  :  'Find registered programs at Toronto rec centres - fast.'}
+              </div>
             </div>
           </a>
         </div>
@@ -66,6 +84,30 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
           title={isOpen ? 'Close filters' : 'Open filters'}
         >
           <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          marginBottom: '20px',
+        }}
+      >
+        <button
+          type="button"
+          className={programType === 'dropin' ? 'btn btn-primary' : 'btn btn-secondary'}
+          onClick={() => onProgramTypeChange('dropin')}
+        >
+          Drop-in Programs
+        </button>
+        <button
+          type="button"
+          className={programType === 'registered' ? 'btn btn-primary' : 'btn btn-secondary'}
+          onClick={() => onProgramTypeChange('registered')}
+        >
+          Registered Programs
         </button>
       </div>
 
@@ -111,39 +153,68 @@ export default function FiltersPanel({ value, onChange, onSearch, onReset, statu
         </select>
       </div>
 
-      <div className="filter-group">
-        <label>Day of Week</label>
-        <select 
-        value={value.weekday ?? ''}
-        onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}>
-          <option value="">Any Day</option>
-          {WEEKDAY_OPTIONS.map((day) => (
-            <option key={day} value={day}>
-              {day}
-            </option>
-          ))}
-        </select>
-      </div>
+      {programType === 'dropin' ? (
+        <div className="filter-group">
+          <label>Day of Week</label>
+          <select 
+          value={value.weekday ?? ''}
+          onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}>
+            <option value="">Any Day</option>
+            {WEEKDAY_OPTIONS.map((day) => (
+              <option key={day} value={day}>
+                {day}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="filter-group">
+          <label>Start Month</label>
+          <select
+            value={value.startMonth ?? ''}
+            onChange={(e) => update({ startMonth: e.target.value || undefined })}
+          >
+            <option value="">All Months</option>
+            {startMonths.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="filter-group">
-        <label>Age</label>
+        <label>{programType === 'dropin' ? 'Age' : 'Age Group'}</label>
         <select
           value={value.age ?? ''}
           onChange={(e) => {
-            const v = e.target.value as '' | AgeFilter;
-            onChange({ ...value, age: v === '' ? undefined : v });
+            const v = e.target.value as '' | ProgramAgeFilter;
+            onChange({...value, age: v === '' ? undefined : v });
           }}
         >
           <option value="">All ages</option>
-          <option value="children">Children (0-12)</option>
-          <option value="teens">Teens (13-17)</option>
-          <option value="young_adults">Young Adults (18-24)</option>
-          <option value="adults">Adults (25-59)</option>
-          <option value="seniors">Seniors (60+)</option>
+          {programType === 'dropin' ? (
+            <>
+              <option value={'children' satisfies DropInAgeFilter}>Children (0-12)</option>
+              <option value={'teens' satisfies DropInAgeFilter}>Teens (13-17)</option>
+              <option value={'young_adults' satisfies DropInAgeFilter}>Young Adults (18-24)</option>
+              <option value={'adults' satisfies DropInAgeFilter}>Adults (25-59)</option>
+              <option value={'seniors' satisfies DropInAgeFilter}>Seniors (60+)</option>
+            </>
+          ) : (
+            <>
+              <option value={'infants_toddlers' satisfies RegisteredAgeFilter}>Infants & Toddlers (0-2)</option>
+              <option value={'preschool_early_childhood' satisfies RegisteredAgeFilter}>Preschool & Early Childhood (3-5)</option>
+              <option value={'children' satisfies RegisteredAgeFilter}>Children (6-12)</option>
+              <option value={'teens' satisfies RegisteredAgeFilter}>Teens (13-17)</option>
+              <option value={'young_adults' satisfies RegisteredAgeFilter}>Young Adults (18-24)</option>
+              <option value={'adults' satisfies RegisteredAgeFilter}>Adults (25-59)</option>
+              <option value={'seniors' satisfies RegisteredAgeFilter}>Seniors (60+)</option>
+            </>
+          )}
         </select>
       </div>
-
-
 
       <div className="filter-group">
         <button className="btn btn-primary" onClick={onSearch}>Search</button>
