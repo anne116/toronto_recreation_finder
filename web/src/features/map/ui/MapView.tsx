@@ -91,14 +91,12 @@ export default function MapView({
   const map = mapRef.current;
   if (!map || !mapReady) return;
 
-  // Always normalize what we send to MapLibre
   const data = normalizeCentres(centres);
   const features = (data as any).features ?? [];
 
   let source = map.getSource('centres') as GeoJSONSource | undefined;
 
   if (!source) {
-    // First time: create source + layer + handlers
     map.addSource('centres', { type: 'geojson', data });
 
     map.addLayer({
@@ -128,7 +126,6 @@ export default function MapView({
       map.getCanvas().style.cursor = '';
     });
   } else {
-    // Subsequent updates: just change the data
     source.setData(data);
   }
 

@@ -7,8 +7,6 @@ import type {
   CentresFeatureCollection,
   WardFeatureCollection,
   CentreDetail,
-  CentrePrograms,
-  CentreFacility,
   DistrictOption,
   DropInAgeFilter,
   FacilityTypeOption,
@@ -93,24 +91,6 @@ export async function searchRegisteredPrograms(
   });
 }
 
-export async function searchProgramsSearchStats(params: {
-  activity?: string;
-  age?: DropInAgeFilter;
-  weekday?: WeekdayName;
-  district?: string;
-  time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
-}) {
-  const qs = new URLSearchParams();
-  appendIfPresent(qs, "activity", params.activity);
-  appendIfPresent(qs, "age", params.age);
-  appendIfPresent(qs, "district", params.district);
-  appendIfPresent(qs, "time_of_day", params.time_of_day);
-  appendIfPresent(qs, "weekday", params.weekday);
-  
-  return get(`/api/programs/search/stats?${qs.toString()}`);
-}
-
-
 export async function getCentres(
   params: { 
     category?: string;
@@ -161,24 +141,6 @@ export async function getCentreDetail(
   init?: RequestInit
 ): Promise<CentreDetail> {
   return get<CentreDetail>(`/api/centres/${centreId}`, init);
-}
-
-export async function getCentrePrograms(
-  centreId: string | number,
-  opts?: { age?: DropInAgeFilter }
-): Promise<CentrePrograms> {
-  const qs = new URLSearchParams();
-  appendIfPresent(qs, "age", opts?.age);
-  const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  
-  return get<CentrePrograms>(`/api/centres/${centreId}/programs${suffix}`);
-}
-
-export async function getCentreFacilities(
-  centreId: string | number,
-  init?: RequestInit
-): Promise<CentreFacility[]> {
-  return get<CentreFacility[]>(`/api/centres/${centreId}/facilities`, init);
 }
 
 export type FilterOptionsResponse = {
