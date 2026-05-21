@@ -56,9 +56,6 @@ export interface DropInProgram {
   age_max?: number | null;
 }
 
-export interface CentrePrograms { dropin: DropInProgram[]}
-export interface CentreFacility { facility_type: string }
-
 export interface RegisteredProgramPeriod {
   id: string;
   course_id?: string | number | null;
