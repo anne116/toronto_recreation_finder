@@ -5,7 +5,6 @@ import type {
   CentreFacility,
   CentrePrograms,
   DropInProgram,
-  ProgramRegistered,
 } from "../../../shared/types";
 import {
   getCentreDetail,
@@ -13,7 +12,7 @@ import {
   getCentrePrograms,
 } from "../api/centres.api";
 
-function filterByAge<T extends DropInProgram | ProgramRegistered>(
+function filterByAge<T extends DropInProgram>(
   programs: T[],
   age?: AgeFilter
 ): T[] {
@@ -91,10 +90,9 @@ export function useCentreDetails(id: string | number | null, age?: AgeFilter) {
   }, [id]);
 
   const programs = useMemo(() => {
-    if (!programsRaw) return { dropin: [] as DropInProgram[], registered: [] as ProgramRegistered[] };
+    if (!programsRaw) return { dropin: [] as DropInProgram[]};
     return {
       dropin: filterByAge(programsRaw.dropin ?? [], age),
-      registered: filterByAge(programsRaw.registered ?? [], age),
     };
   }, [programsRaw, age]);
 
