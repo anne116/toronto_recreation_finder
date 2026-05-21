@@ -57,11 +57,11 @@
 }
 
 .filters-panel__brand-logo {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  flex: 0 0 44px;
+  flex: 0 0 48px;
 }
 
 .filters-panel__brand-copy {

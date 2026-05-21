@@ -64,7 +64,7 @@ export default function FiltersPanel({
       <div className="filters-panel__header">
         <div className="filters-panel__title-wrap">
           <a className="filters-panel__brand" href="/" aria-label="Reload Toronto Recreation Finder">
-            <img src="/trf-logo.png" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
+            <img src="/trf-logo.svg" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
             <div className="filters-panel__brand-copy">
               <h3>Toronto Recreation Finder</h3>
               <div className="quick-intro">
