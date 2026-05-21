@@ -7,14 +7,6 @@
       "destination": "/api/centres/geojson"
     },
     {
-      "source": "/api/centres/:centre_id/programs",
-      "destination": "/api/centres/programs"
-    },
-    {
-      "source": "/api/centres/:centre_id/facilities",
-      "destination": "/api/centres/facilities"
-    },
-    {
       "source": "/api/centres/:centre_id",
       "destination": "/api/centres/detail"
     },
