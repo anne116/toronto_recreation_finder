@@ -37,7 +37,7 @@ export default function MapView({
   userLocation, 
   selectedLocationId, 
 }: Props) {
-  const { detail } = useCentreDetails(selectedLocationId ?? null, undefined)
+  const { detail } = useCentreDetails(selectedLocationId ?? null);
   const mapRef = useRef<MaplibreMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -224,24 +224,11 @@ export default function MapView({
       .setHTML(popupHtml)
       .addTo(map);
 
-      const popupEl = popup.getElement();
-      const closeBtn = popupEl.querySelector(
-        '.maplibregl-popup-close-button'
-      ) as HTMLElement | null;
-
-      if (closeBtn && centres?.features?.length) {
-        closeBtn.addEventListener(
-          'click',
-          () => {
-            const b = new maplibregl.LngLatBounds();
-            centres.features.forEach(f => {
-              b.extend(f.geometry.coordinates as [number, number]);
-            });
-            map.fitBounds(b, { padding: 100, maxZoom: 13 });
-          },
-          { once: true }
-        );
+    popup.on('close', () => {
+      if (selectedPopupRef.current ===popup) {
+        selectedPopupRef.current = null;
       }
+    });
 
     selectedPopupRef.current = popup;
   }, [selectedLocationId, mapReady, centres, detail]);
