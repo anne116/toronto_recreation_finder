@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
 import type { WardFeatureCollection, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter } from '../shared/types';
@@ -39,14 +40,16 @@ function hasAnySelectedFilter(filters: Filters): boolean {
 }
 
 export default function App() {
-  const [programType, setProgramType] = useState<ProgramType>('dropin');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const programTypeFromURL = (searchParams.get('programType') as ProgramType) || 'dropin';
+  const [programType, setProgramType] = useState<ProgramType>(programTypeFromURL);
   const [filters, setFilters] = useState<Filters>({
-    category: '',
-    activity: '',
-    district: '',
-    weekday: null,
-    startMonth: undefined,
-    age: undefined,
+    category: searchParams.get('category') || '',
+    activity: searchParams.get('activity') || '',
+    district: searchParams.get('district') || '',
+    weekday: (searchParams.get('weekday') as WeekdayName) || null,
+    startMonth: searchParams.get('startMonth') || undefined,
+    age: (searchParams.get('age') as ProgramAgeFilter) || undefined,
   });
 
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
@@ -106,12 +109,31 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [searchNotice]);
 
+  useEffect(() => {
+    if (hasAnySelectedFilter(filters)) {
+      setActiveFilters(filters);
+      setShowSchedulePanel(true);
+      setHasSearched(true);
+      setIsScheduleOpen(true);
+    }
+  }, []);
+
   function handleSearch() {
     if (!hasAnySelectedFilter(filters)) {
       setSearchNotice('Select at least one filter to search.');
       setStatus('Select at least one filter to search.');
       return;
     }
+
+    const params = new URLSearchParams();
+    params.set('programType', programType);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.activity) params.set('activity', filters.activity);
+    if (filters.district) params.set('district', filters.district);
+    if (filters.weekday) params.set('weekday', filters.weekday);
+    if (filters.startMonth) params.set('startMonth', filters.startMonth);
+    if (filters.age) params.set('age', filters.age);
+    setSearchParams(params);
 
     setStatus('Searching...');
     setHasSearched(true);
@@ -133,6 +155,8 @@ export default function App() {
   
 
   function handleReset() {
+    setSearchParams({});
+
     setFilters({
       category: '',
       activity: '',
