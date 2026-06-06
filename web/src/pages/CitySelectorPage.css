@@ -101,59 +101,17 @@
     margin-bottom: 1.5rem;
   }
   
-  .input-group {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .city-input {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: 2px solid #e2e8f0;
+  .google-form-embed {
+    margin-top: 1.5rem;
     border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: white;
   }
   
-  .city-input:focus {
-    outline: none;
-    border-color: #667eea;
-  }
-  
-  .city-input:disabled {
-    background: #f7fafc;
-    cursor: not-allowed;
-  }
-  
-  .submit-button {
-    padding: 0.75rem 1.5rem;
-    background: #667eea;
-    color: white;
+  .google-form-embed iframe {
+    display: block;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-  
-  .submit-button:hover:not(:disabled) {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-  
-  .submit-button:disabled {
-    background: #cbd5e0;
-    cursor: not-allowed;
-  }
-  
-  .success-message {
-    color: #38a169;
-    font-weight: 500;
-    animation: fadeIn 0.3s;
   }
   
   .city-selector-footer {
@@ -185,12 +143,8 @@
       font-size: 2rem;
     }
   
-    .input-group {
-      flex-direction: column;
-    }
-  
-    .submit-button {
-      width: 100%;
+    .google-form-embed iframe {
+        height: 500px;
     }
   }
   

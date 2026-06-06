@@ -1,23 +1,8 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './CitySelectorPage.css';
 
 export default function CitySelectorPage() {
-    const [cityRequest, setCityRequest] = useState('');
-    const [submitted, setSubmitted] = useState(false);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!cityRequest.trim()) return;
-
-        console.log('City requested:', cityRequest);
-
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
-            setCityRequest('');
-        }, 3000);
-    };
+    const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe5OWlVTy9aLpPP4DZWO3JHgkJP8Kwyi9DH0B5Xs6u_9m8Wxg/viewform?embedded=true';
 
     return (
         <div className="city-selector-page">
@@ -41,29 +26,19 @@ export default function CitySelectorPage() {
                 <section className="city-request-form">
                     <h2>Don't see your city?</h2>
                     <p>Let us know which city you'd like us to add next!</p>
-                    <form onSubmit={handleSubmit}>
-                        <div className="input-group">
-                            <input
-                                type="text"
-                                value={cityRequest}
-                                onChange={(e) => setCityRequest(e.target.value)}
-                                placeholder="Enter your city name..."
-                                disabled={submitted}
-                            />
-                            <button 
-                                type="submit"
-                                className="submit-button"
-                                disabled={submitted || !cityRequest.trim()}
-                            >
-                                {submitted ? '✓ Submitted!' : 'Submit Request'}
-                            </button>
-                        </div>
-                    </form>
-                    {submitted && (
-                        <p className="success-message">
-                            Thank you for your request! We'll add your city - {cityRequest} - as soon as possible.
-                        </p>
-                    )}
+                    <div className="google-form-embed">
+                        <iframe
+                            src={GOOGLE_FORM_EMBED_URL}
+                            width="100%"
+                            height="600"
+                            frameBorder="0"
+                            marginHeight={0}
+                            marginWidth={0}
+                            title="City Request Form"
+                        >
+                            Loading form...
+                        </iframe>
+                    </div>
                 </section>
 
                 <footer className="city-selector-footer">
