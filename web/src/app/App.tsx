@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; 
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
 import type { WardFeatureCollection, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter } from '../shared/types';
@@ -37,6 +38,47 @@ function hasAnySelectedFilter(filters: Filters): boolean {
     filters.startMonth ||
     filters.age
   );
+}
+
+function buildPageMetadata(programType: ProgramType, activeFilters: Filters | null) {
+  const baseUrl = 'https://cityrecreationfinder.com/toronto';
+
+  if (!activeFilters) {
+    return {
+      title: 'Toronto Recreation Finder - Find Drop-in & Registered Programs',
+      description: 'Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule.',
+      canonicalUrl: baseUrl,
+    }
+  }
+
+  const programTypeLabel = programType === 'dropin' ? 'Drop-in' : 'Registered';
+  const activity = activeFilters.activity;
+  const category = activeFilters.category;
+  const district = activeFilters.district;
+  let titleParts: string[] = [];
+  if (activity) {
+    titleParts.push(activity);
+  } else if (category) {
+    titleParts.push(category);
+  }
+  titleParts.push(programTypeLabel);
+
+  if (district) {
+    titleParts.push(`in ${district}`);
+  }
+  const title = `${titleParts.join(' ')} | Toronto Recreation Finder`;
+
+  let description = `Find ${activity || category || programTypeLabel.toLowerCase()} programs`;
+  if (district) {
+    description += ` in ${district}`;
+  }
+  description += ' at Toronto recreation centres. Filter by location, activity, age, and schedule.';
+
+  return {
+    title,
+    description,
+    canonicalURL: baseUrl,
+  }
 }
 
 export default function App() {
@@ -209,64 +251,126 @@ export default function App() {
     setStatus('Viewing centre details');
   }
  
-  
+  const pageMetadata = buildPageMetadata(programType, activeFilters);
 
   return (
-    <div className = "app-layout">
-      {!isFiltersOpen && (
-        <button
-          type="button"
-          className="filters-fab"
-          aria-label="Open filters"
-          onClick={() => setIsFiltersOpen(true)}
-        >
-          <span className="filters-fab-icon">☰</span>
-        </button>
-      )}
+    <>
+      <Helmet>
+        <title>{pageMetadata.title}</title>
+        <meta name="description" content={pageMetadata.description} />
+        <link rel="canonical" href={pageMetadata.canonicalUrl} />
 
-      {isFiltersOpen && (
-        <div
-          className="filters-backdrop"
-          onClick={() => setIsFiltersOpen(false)}
-        />
-      )}
+        <meta property="og:title" content={pageMetadata.title} />
+        <meta property="og:description" content={pageMetadata.description} />
+        <meta property="og:url" content={pageMetadata.canonicalUrl} />
+        <meta property="og:type" content="website" />
+      </Helmet>
+    
+      <div className = "app-layout">
+        {!isFiltersOpen && (
+          <button
+            type="button"
+            className="filters-fab"
+            aria-label="Open filters"
+            onClick={() => setIsFiltersOpen(true)}
+          >
+            <span className="filters-fab-icon">☰</span>
+          </button>
+        )}
 
-      {searchNotice && (
-        <div className="search-notice" role="status" aria-live="polite">
-          {searchNotice}
-        </div>
-      )}
+        {isFiltersOpen && (
+          <div
+            className="filters-backdrop"
+            onClick={() => setIsFiltersOpen(false)}
+          />
+        )}
 
-      <aside className={`filters-panel ${isFiltersOpen ? 'open' : 'closed'}`}>
-        <FiltersPanel
-          programType={programType}
-          onProgramTypeChange={handleProgramTypeChange}
-          value={filters}
-          onChange={setFilters}
-          onSearch={handleSearch}
-          onReset={handleReset}
-          status={status}
-          isOpen={isFiltersOpen}
-          onToggle={() => setIsFiltersOpen(prev => !prev)}
-        />
-      </aside>
+        {searchNotice && (
+          <div className="search-notice" role="status" aria-live="polite">
+            {searchNotice}
+          </div>
+        )}
 
-      {showSchedulePanel && (
-        <>
-          {isScheduleOpen && (
-            <div className = "schedule-desktop">
-              <ResizablePanel
-                title={buildPanelTitle(programType, activeFilters)}
-                initialWidth={400}
-                minWidth={300}
-                maxWidth={640}
-                onClose={() => setIsScheduleOpen(false)}
-              >
+        <aside className={`filters-panel ${isFiltersOpen ? 'open' : 'closed'}`}>
+          <FiltersPanel
+            programType={programType}
+            onProgramTypeChange={handleProgramTypeChange}
+            value={filters}
+            onChange={setFilters}
+            onSearch={handleSearch}
+            onReset={handleReset}
+            status={status}
+            isOpen={isFiltersOpen}
+            onToggle={() => setIsFiltersOpen(prev => !prev)}
+          />
+        </aside>
+
+        {showSchedulePanel && (
+          <>
+            {isScheduleOpen && (
+              <div className = "schedule-desktop">
+                <ResizablePanel
+                  title={buildPanelTitle(programType, activeFilters)}
+                  initialWidth={400}
+                  minWidth={300}
+                  maxWidth={640}
+                  onClose={() => setIsScheduleOpen(false)}
+                >
+                  {programType === 'dropin' ? (
+                    <SchedulePanel
+                      category={activeFilters?.category ?? ''}
+                      activity={activeFilters?.activity ?? ''}
+                      age={activeFilters?.age as DropInAgeFilter | undefined}
+                      weekday={activeFilters?.weekday}
+                      district={activeFilters?.district ?? ''}
+                      hasSearchCriteria={hasScheduleFilters}
+                      isVisible={isScheduleOpen}
+                      onLocationClick={handleScheduleLocationClick}
+                      highlightedLocationId={highlightedLocationId}
+                      focusToken={scheduleFocusToken}
+                    />
+                  ) : (
+                    <RegisteredProgramsPanel
+                      category={activeFilters?.category ?? ''}
+                      activity={activeFilters?.activity ?? ''}
+                      age={activeFilters?.age as RegisteredAgeFilter | undefined}
+                      startMonth={activeFilters?.startMonth}
+                      district={activeFilters?.district ?? ''}
+                      hasSearchCriteria={hasScheduleFilters}
+                      isVisible={isScheduleOpen}
+                      onLocationClick={handleScheduleLocationClick}
+                      highlightedLocationId={highlightedLocationId}
+                      focusToken={scheduleFocusToken}
+                    />
+                    )
+                  }
+                </ResizablePanel>
+              </div>
+            )}
+
+            <section 
+              className={`schedule-mobile ${isScheduleOpen ? 'open' : 'closed'}`}
+              aria-hidden={!isScheduleOpen}
+            >
+              <div className="schedule-mobile-header">
+                <div className="schedule-mobile-title">
+                  {buildPanelTitle(programType, activeFilters)}
+                </div>
+                <button
+                  type="button"
+                  className="schedule-mobile-close"
+                  onClick={() => setIsScheduleOpen(false)}
+                  aria-label="Close schedule"
+                >
+                  x
+                </button>
+              </div>
+              <div className="schedule-mobile-body">
                 {programType === 'dropin' ? (
                   <SchedulePanel
                     category={activeFilters?.category ?? ''}
                     activity={activeFilters?.activity ?? ''}
-                    age={activeFilters?.age as DropInAgeFilter | undefined}
+                    age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
                     district={activeFilters?.district ?? ''}
                     hasSearchCriteria={hasScheduleFilters}
@@ -279,7 +383,7 @@ export default function App() {
                   <RegisteredProgramsPanel
                     category={activeFilters?.category ?? ''}
                     activity={activeFilters?.activity ?? ''}
-                    age={activeFilters?.age as RegisteredAgeFilter | undefined}
+                    age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
                     district={activeFilters?.district ?? ''}
                     hasSearchCriteria={hasScheduleFilters}
@@ -288,93 +392,44 @@ export default function App() {
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
                   />
-                  )
-                }
-              </ResizablePanel>
-            </div>
-          )}
+                )}
 
-          <section 
-            className={`schedule-mobile ${isScheduleOpen ? 'open' : 'closed'}`}
-            aria-hidden={!isScheduleOpen}
-          >
-            <div className="schedule-mobile-header">
-              <div className="schedule-mobile-title">
-                {buildPanelTitle(programType, activeFilters)}
               </div>
+            </section>
+
+            {!isScheduleOpen && (
               <button
                 type="button"
-                className="schedule-mobile-close"
-                onClick={() => setIsScheduleOpen(false)}
-                aria-label="Close schedule"
+                className="schedule-toggle"
+                aria-label={programType === 'dropin' ? 'Open schedule' : 'Open programs'}
+                onClick={() => setIsScheduleOpen(true)}
               >
-                x
+                <span className="schedule-toggle-icon">🗓️</span>
+                <span className="schedule-toggle-text">
+                  {programType === 'dropin' ? 'Schedule' : 'Programs'}
+                </span>
               </button>
-            </div>
-            <div className="schedule-mobile-body">
-              {programType === 'dropin' ? (
-                <SchedulePanel
-                  category={activeFilters?.category ?? ''}
-                  activity={activeFilters?.activity ?? ''}
-                  age={activeFilters?.age as DropInAgeFilter}
-                  weekday={activeFilters?.weekday}
-                  district={activeFilters?.district ?? ''}
-                  hasSearchCriteria={hasScheduleFilters}
-                  isVisible={isScheduleOpen}
-                  onLocationClick={handleScheduleLocationClick}
-                  highlightedLocationId={highlightedLocationId}
-                  focusToken={scheduleFocusToken}
-                />
-              ) : (
-                <RegisteredProgramsPanel
-                  category={activeFilters?.category ?? ''}
-                  activity={activeFilters?.activity ?? ''}
-                  age={activeFilters?.age as RegisteredAgeFilter}
-                  startMonth={activeFilters?.startMonth}
-                  district={activeFilters?.district ?? ''}
-                  hasSearchCriteria={hasScheduleFilters}
-                  isVisible={isScheduleOpen}
-                  onLocationClick={handleScheduleLocationClick}
-                  highlightedLocationId={highlightedLocationId}
-                  focusToken={scheduleFocusToken}
-                />
-              )}
+            )}
+          </>
+        )}
 
-            </div>
-          </section>
-
-          {!isScheduleOpen && (
-            <button
-              type="button"
-              className="schedule-toggle"
-              aria-label={programType === 'dropin' ? 'Open schedule' : 'Open programs'}
-              onClick={() => setIsScheduleOpen(true)}
-            >
-              <span className="schedule-toggle-icon">🗓️</span>
-              <span className="schedule-toggle-text">
-                {programType === 'dropin' ? 'Schedule' : 'Programs'}
-              </span>
-            </button>
-          )}
-        </>
-      )}
-
-      <main className = "map-panel">
-        <MapView
-          centres = {centres}
-          wards = {wards}
-          onCentreClick = {handleCentreMarkerClick}
-          selectedLocationId = {selectedLocationId}
-        />
-      </main>
+        <main className = "map-panel">
+          <MapView
+            centres = {centres}
+            wards = {wards}
+            onCentreClick = {handleCentreMarkerClick}
+            selectedLocationId = {selectedLocationId}
+          />
+        </main>
 
 
-      {hasSearched && centresLoading && (
-        <div className = "page-loading">
-          Loading centres...
-        </div>
-      )}    
+        {hasSearched && centresLoading && (
+          <div className = "page-loading">
+            Loading centres...
+          </div>
+        )}    
 
-    </div>
+      </div>
+    </>
   );
 }
