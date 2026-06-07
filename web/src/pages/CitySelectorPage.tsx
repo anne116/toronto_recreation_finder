@@ -1,11 +1,35 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { generateWebApplicationSchema } from '../shared/lib/schema';
 import './CitySelectorPage.css';
 
 export default function CitySelectorPage() {
     const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe5OWlVTy9aLpPP4DZWO3JHgkJP8Kwyi9DH0B5Xs6u_9m8Wxg/viewform?embedded=true';
 
+    const pageTitle = 'Find Drop-in & Registered Programs in Toronto | City Recreation Finder';
+    const pageDescription = 'Search Drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule.'
+    const canonicalUrl = 'https://cityrecreationfinder.com';
+
+    const webAppSchema = generateWebApplicationSchema({
+        name: 'City Recreation Finder',
+        url: canonicalUrl,
+        description: 'Find drop-in and registered programs at recreation centres across Toronto',
+    });
     return (
         <div className="city-selector-page">
+            <Helmet>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDescription} />
+                <link rel="canonical" href={canonicalUrl} />
+                <meta property="og:title" content="City Recreation Finder - Toronto drop-in & registered programs" />
+                <meta property="og:description" content="Find drop-in and registered programs at recreation centres acroos Toronto" />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:type" content="website" />
+                <script type="application/ld+json">
+                  {JSON.stringify(webAppSchema)}
+                </script>
+            </Helmet>
+
             <div className="city-selector-container">
                 <header className="city-selector-header">
                     <h1>City Recreation Finder</h1>
