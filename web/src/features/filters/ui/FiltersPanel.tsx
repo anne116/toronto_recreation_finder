@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
+import { trackEvent } from '../../../shared/lib/analytics';
 
 type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
 
@@ -47,7 +48,20 @@ export default function FiltersPanel({
     })();
   }, [programType]);
 
-  const update = (patch: Partial<Filters>) => onChange({ ...value, ...patch });
+  const update = (patch: Partial<Filters>) => {
+    const filterType = Object.keys(patch)[0];
+    const filterValue = patch[filterType as keyof Filters];
+
+    if (filterType && filterValue !== undefined) {
+      trackEvent('filter_used', {
+        filter_type: filterType,
+        value: filterValue,
+        program_type: programType,
+      });
+    }
+
+    onChange({ ...value, ...patch });
+  };
   const categoryActivities = useMemo(() => {
     if (!value.category) return [];
     return categories.find((item) => item.name === value.category)?.activities ?? [];

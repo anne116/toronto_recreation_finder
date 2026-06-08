@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { generateWebApplicationSchema } from '../shared/lib/schema';
 import './CitySelectorPage.css';
+import { trackEvent } from '../shared/lib/analytics';
 
 export default function CitySelectorPage() {
     const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe5OWlVTy9aLpPP4DZWO3JHgkJP8Kwyi9DH0B5Xs6u_9m8Wxg/viewform?embedded=true';
@@ -15,6 +16,19 @@ export default function CitySelectorPage() {
         url: canonicalUrl,
         description: 'Find drop-in and registered programs at recreation centres across Toronto',
     });
+
+    const handdleCityCardClick = (cityName: string) => {
+        trackEvent('city_selected', {
+            city: cityName,
+        });
+    };
+
+    const handleFormInteraction = () => {
+        trackEvent('city_request_form_interacted', {
+            form_type: 'google_form',
+        });
+    };
+
     return (
         <div className="city-selector-page">
             <Helmet>
@@ -39,7 +53,11 @@ export default function CitySelectorPage() {
                 <section className="available-cities">
                     <h2>Available Cities</h2>
                     <div className="city-grid">
-                        <Link to="/toronto" className="city-card">
+                        <Link 
+                            to="/toronto"
+                            className="city-card"
+                            onClick={() => handdleCityCardClick('Toronto')}
+                        >
                             <div className="city-card-icon">🏙️</div>
                             <h3>Toronto</h3>
                             <p>Browse 150+ recreation centres</p>
@@ -50,7 +68,10 @@ export default function CitySelectorPage() {
                 <section className="city-request-form">
                     <h2>Don't see your city?</h2>
                     <p>Let us know which city you'd like us to add next!</p>
-                    <div className="google-form-embed">
+                    <div 
+                        className="google-form-embed"
+                        onClick={handleFormInteraction}
+                    >
                         <iframe
                             src={GOOGLE_FORM_EMBED_URL}
                             width="100%"
