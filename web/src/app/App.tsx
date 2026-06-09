@@ -252,8 +252,12 @@ export default function App() {
   }
 
   function handleCentreMarkerClick(locationId: string | number) {
+    const locationName = centres?.features?.find(
+      f => f.properties.id === locationId
+    )?.properties.name;
+    
     trackEvent('map_pin_clicked', {
-      location_id: locationId,
+      location_name: locationName || `Location {locationId}`,
       program_type: programType,
     })
     setSelectedLocationId(locationId);
@@ -266,8 +270,11 @@ export default function App() {
   }
 
   function handleScheduleLocationClick(locationId: string | number) {
-    trackEvent('session_click', {
-      location_id: locationId,
+    const locationName = centres?.features?.find(
+      f => f.properties.id === locationId
+    )?.properties.name;
+    trackEvent('session_clicked', {
+      location_id: locationName || `Location {locationId}`,
       program_type: programType,
     })
     setHighlightedLocationId(null);

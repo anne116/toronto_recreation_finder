@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
-import { trackEvent } from '../../../shared/lib/analytics';
 
 type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
 
@@ -49,17 +48,6 @@ export default function FiltersPanel({
   }, [programType]);
 
   const update = (patch: Partial<Filters>) => {
-    const filterType = Object.keys(patch)[0];
-    const filterValue = patch[filterType as keyof Filters];
-
-    if (filterType && filterValue !== undefined) {
-      trackEvent('filter_used', {
-        filter_type: filterType,
-        value: filterValue,
-        program_type: programType,
-      });
-    }
-
     onChange({ ...value, ...patch });
   };
   const categoryActivities = useMemo(() => {
@@ -156,7 +144,10 @@ export default function FiltersPanel({
 
       <div className="filter-group">
         <label>District</label>
-        <select value={value.district} onChange={e => update({ district: e.target.value })}>
+        <select 
+          value={value.district} 
+          onChange={e => update({ district: e.target.value })}
+        >
           <option value="">All Districts</option>
           {districts.map(d => <option key={d.district} value={d.district}>
             {/* {d.district} ({d.location_count}) */}
@@ -169,8 +160,9 @@ export default function FiltersPanel({
         <div className="filter-group">
           <label>Day of Week</label>
           <select 
-          value={value.weekday ?? ''}
-          onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}>
+            value={value.weekday ?? ''}
+            onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}
+          >
             <option value="">Any Day</option>
             {WEEKDAY_OPTIONS.map((day) => (
               <option key={day} value={day}>
