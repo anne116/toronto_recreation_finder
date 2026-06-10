@@ -302,7 +302,7 @@ export default function RegisteredProgramsPanel({
                         cursor: "pointer",
                       }}
                     >
-                      {isExpanded ? "Hide registration periods" : "More registration periods available"}
+                      {isExpanded ? "Hide registration periods" : "View all registration periods"}
                     </button>
                   )}
 
