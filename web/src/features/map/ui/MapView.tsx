@@ -212,7 +212,7 @@ export default function MapView({
         ${district ? `<div>District: ${district}</div>` : '' }
         ${address ? `<div>Address: ${address}</div>` : '' }
         ${phone ? `<div>Phone: ${phone}</div>` : ''}
-        ${url ? `<div>Visit their <a id="centre-website-link" ref="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
+        ${url ? `<div>Visit their <a id="centre-website-link" href="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
       </div>
     `;
 
@@ -226,16 +226,20 @@ export default function MapView({
       .addTo(map);
     
     if (url) {
-      const linkElement = document.getElementById('centre-website-link');
-      if (linkElement) {
-        linkElement.addEventListener('click', () => {
-          trackEvent('external_link_clicked', {
-            location_name: name,
-            link_type: 'centre_website',
-            url: url,
+      setTimeout(() => {
+        const popupElement = popup.getElement();
+        const linkElement = popupElement?.querySelector('centre-website-link');
+        if (linkElement) {
+          linkElement.addEventListener('click', () => {
+            trackEvent('external_link_clicked', {
+              location_name: name,
+              link_type: 'centre_website',
+              url: url,
+            });
           });
-        });
-      }
+        }
+      })
+
     }
 
     popup.on('close', () => {
