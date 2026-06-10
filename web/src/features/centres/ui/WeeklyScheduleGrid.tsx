@@ -8,7 +8,11 @@ type ScheduleProgram = DropInProgram & {
 type Props = {
   programs: DropInProgram[];
   sport?: string;
-  onLocationClick?: (locationId: string | number) => void;
+  onLocationClick?: (locationId: string | number, programDetails?: {
+    activity?: string | null;
+    day_of_week?: string | null;
+    start_time?: string | null;
+  }) => void;
   initialDay?: string;
   selectedActivity?: string;
   highlightedLocationId?: string | number | null;
@@ -318,7 +322,11 @@ export default function WeeklyScheduleGrid({
                   transition: 'background 0.2s',
                 }}
                 onClick={() => 
-                  onLocationClick && locationId && onLocationClick(locationId)
+                  onLocationClick && locationId && onLocationClick(locationId, {
+                    activity: program.activity,
+                    day_of_week: selectedDay,
+                    start_time: program.start_time
+                  })
                 }
                 onMouseEnter={(e) => {
                   if (onLocationClick && locationId) {

@@ -11,6 +11,7 @@ import ResizablePanel from '../shared/ui/ResizablePanel';
 import '../App.css';
 import type { WeekdayName } from '../shared/lib/weekday';
 import RegisteredProgramsPanel from '../features/centres/ui/RegisteredProgramsPanel';
+import { trackEvent } from '../shared/lib/analytics';
 
 
   type Filters = {
@@ -167,6 +168,16 @@ export default function App() {
       return;
     }
 
+    trackEvent('search_executed', {
+      program_type: programType,
+      category: filters.category || undefined,
+      activity: filters.activity || undefined,
+      district: filters.district || undefined,
+      weekday: filters.weekday || undefined,
+      start_month: filters.startMonth || undefined,
+      age: filters.age || undefined,
+    })
+
     const params = new URLSearchParams();
     params.set('programType', programType);
     if (filters.category) params.set('category', filters.category);
@@ -218,6 +229,11 @@ export default function App() {
 
   function handleProgramTypeChange(nextType: ProgramType) {
     if (nextType === programType) return;
+    trackEvent('program_type_toggle', {
+      from_type: programType,
+      to_type: nextType,
+    });
+
     setProgramType(nextType);
     setFilters({
       category: '',
@@ -236,6 +252,14 @@ export default function App() {
   }
 
   function handleCentreMarkerClick(locationId: string | number) {
+    const locationName = centres?.features?.find(
+      f => f.properties.id === locationId
+    )?.properties.name;
+    
+    trackEvent('map_pin_clicked', {
+      location_name: locationName || `Location {locationId}`,
+      program_type: programType,
+    })
     setSelectedLocationId(locationId);
     setHighlightedLocationId(locationId);
     setScheduleFocusToken(prev => prev + 1);
@@ -245,7 +269,26 @@ export default function App() {
     setStatus('Viewing centre details');
   }
 
-  function handleScheduleLocationClick(locationId: string | number) {
+  function handleScheduleLocationClick(
+    locationId: string | number,
+    programDetails?: {
+      activity?: string | null;
+      day_of_week?: string | null;
+      start_time?: string | null;
+    }
+  ) {
+    const locationName = centres?.features?.find(
+      f => f.properties.id === locationId
+    )?.properties.name;
+
+    trackEvent('session_clicked', {
+      location_id: locationName || `Location {locationId}`,
+      activity: programDetails?.activity || undefined,
+      day_of_week: programDetails?.day_of_week || undefined,
+      start_time: programDetails?.start_time || undefined,
+      program_type: programType,
+    })
+    
     setHighlightedLocationId(null);
     setSelectedLocationId(locationId);
     setStatus('Viewing centre details');

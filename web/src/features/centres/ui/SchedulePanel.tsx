@@ -13,7 +13,11 @@ type Props = {
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   hasSearchCriteria?: boolean;
-  onLocationClick: (locationId: string | number) => void;
+  onLocationClick: (locationId: string | number, programDetails?: {
+    activity?: string | null;
+    day_of_week?: string | null;
+    start_time?: string | null;
+  }) => void;
   highlightedLocationId?: string | number | null;
   focusToken?: number;
   isVisible: boolean;
@@ -62,7 +66,7 @@ export default function SchedulePanel({
 
         const resp = await searchProgramsAggregated({
           category,
-          activity,
+          activity: activity ?? '',
           age,
           weekday: weekday ?? undefined,
           district,

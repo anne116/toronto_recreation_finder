@@ -47,7 +47,9 @@ export default function FiltersPanel({
     })();
   }, [programType]);
 
-  const update = (patch: Partial<Filters>) => onChange({ ...value, ...patch });
+  const update = (patch: Partial<Filters>) => {
+    onChange({ ...value, ...patch });
+  };
   const categoryActivities = useMemo(() => {
     if (!value.category) return [];
     return categories.find((item) => item.name === value.category)?.activities ?? [];
@@ -142,7 +144,10 @@ export default function FiltersPanel({
 
       <div className="filter-group">
         <label>District</label>
-        <select value={value.district} onChange={e => update({ district: e.target.value })}>
+        <select 
+          value={value.district} 
+          onChange={e => update({ district: e.target.value })}
+        >
           <option value="">All Districts</option>
           {districts.map(d => <option key={d.district} value={d.district}>
             {/* {d.district} ({d.location_count}) */}
@@ -155,8 +160,9 @@ export default function FiltersPanel({
         <div className="filter-group">
           <label>Day of Week</label>
           <select 
-          value={value.weekday ?? ''}
-          onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}>
+            value={value.weekday ?? ''}
+            onChange={(e) => update({ weekday: e.target.value === '' ? null : (e.target.value as WeekdayName)})}
+          >
             <option value="">Any Day</option>
             {WEEKDAY_OPTIONS.map((day) => (
               <option key={day} value={day}>

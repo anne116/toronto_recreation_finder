@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { searchRegisteredPrograms } from "../api/centres.api";
 import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 type Props = {
   category?: string;
@@ -10,7 +11,11 @@ type Props = {
   startMonth?: string;
   district?: string;
   hasSearchCriteria?: boolean;
-  onLocationClick: (locationId: string | number) => void;
+  onLocationClick: (locationId: string | number, programDetails?: {
+    activity?: string | null;
+    day_of_week?: string | null;
+    start_time?: string | null;
+  }) => void;
   highlightedLocationId?: string | number | null;
   focusToken?: number;
   isVisible: boolean;
@@ -217,7 +222,11 @@ export default function RegisteredProgramsPanel({
                   ref={(node) => {
                     cardRefs.current.set(program.id, node);
                   }}
-                  onClick={() => onLocationClick(program.location_id)}
+                  onClick={() => onLocationClick(program.location_id, {
+                    activity: program.course_title,
+                    day_of_week: collapsedDays?.[0] || undefined,
+                    start_time: collapsedStartTime
+                  })}
                   style={{
                     border: "1px solid #e2e8f0",
                     borderRadius: "14px",
@@ -249,7 +258,15 @@ export default function RegisteredProgramsPanel({
                         href={primaryRegisterUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          trackEvent('external_link_clicked', {
+                            location_name: program.location_name,
+                            link_type: 'registration',
+                            activity: program.course_title,
+                            url: primaryRegisterUrl,
+                          });
+                        }}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
@@ -320,7 +337,15 @@ export default function RegisteredProgramsPanel({
                               href={period.activity_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              onClick={(event) => event.stopPropagation()}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                trackEvent('external_link_clicked', {
+                                  location_name: program.location_name,
+                                  link_type: 'registration',
+                                  activity: program.course_title,
+                                  url: period.activity_url,
+                                })
+                              }}
                               style={{
                                 color: "#1d4ed8",
                                 fontSize: "13px",
