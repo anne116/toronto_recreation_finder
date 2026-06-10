@@ -269,14 +269,26 @@ export default function App() {
     setStatus('Viewing centre details');
   }
 
-  function handleScheduleLocationClick(locationId: string | number) {
+  function handleScheduleLocationClick(
+    locationId: string | number,
+    programDetails?: {
+      activity?: string | null;
+      day_of_week?: string | null;
+      start_time?: string | null;
+    }
+  ) {
     const locationName = centres?.features?.find(
       f => f.properties.id === locationId
     )?.properties.name;
+
     trackEvent('session_clicked', {
       location_id: locationName || `Location {locationId}`,
+      activity: programDetails?.activity || undefined,
+      day_of_week: programDetails?.day_of_week || undefined,
+      start_time: programDetails?.start_time || undefined,
       program_type: programType,
     })
+    
     setHighlightedLocationId(null);
     setSelectedLocationId(locationId);
     setStatus('Viewing centre details');

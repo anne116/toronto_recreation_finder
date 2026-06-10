@@ -4,6 +4,7 @@ import maplibregl from 'maplibre-gl';
 import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
+import { trackEvent } from '../../../shared/lib/analytics';
 
 function normalizeCentres(
   centres: CentresFeatureCollection | null | undefined
@@ -211,7 +212,7 @@ export default function MapView({
         ${district ? `<div>District: ${district}</div>` : '' }
         ${address ? `<div>Address: ${address}</div>` : '' }
         ${phone ? `<div>Phone: ${phone}</div>` : ''}
-        ${url ? `<div>Visit their <a href="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
+        ${url ? `<div>Visit their <a id="centre-website-link" ref="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
       </div>
     `;
 
@@ -223,6 +224,19 @@ export default function MapView({
       .setLngLat(coords)
       .setHTML(popupHtml)
       .addTo(map);
+    
+    if (url) {
+      const linkElement = document.getElementById('centre-website-link');
+      if (linkElement) {
+        linkElement.addEventListener('click', () => {
+          trackEvent('external_link_clicked', {
+            location_name: name,
+            link_type: 'centre_website',
+            url: url,
+          });
+        });
+      }
+    }
 
     popup.on('close', () => {
       if (selectedPopupRef.current ===popup) {
