@@ -1,0 +1,233 @@
+/**
+ * Animations - City Recreation Finder
+ * CSS-only animations using opacity and transform only
+ */
+
+/* ========================================
+   ACCESSIBILITY - REDUCED MOTION
+   ======================================== */
+
+   @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
+  /* ========================================
+     KEYFRAME ANIMATIONS
+     ======================================== */
+  
+  /* 1. Page Load - Fade up */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* 2. Hero Activity Card Float */
+  @keyframes cardFloat {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+  
+  /* 3. Schedule Panel Slide In */
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* 4. Program Card Hover - handled via CSS transitions */
+  /* No keyframes needed - use transform: translateY(-2px) on :hover */
+  
+  /* 5. Filter Active Border - Scale Y */
+  @keyframes scaleYIn {
+    from {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+  
+  /* 6. Map Marker Pulse */
+  @keyframes markerPulse {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+  
+  /* 7. Tab Content Fade */
+  @keyframes tabFade {
+    from {
+      opacity: 0.6;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* 8. Step Icon Bounce */
+  @keyframes stepBounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    25% {
+      transform: translateY(-8px);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+    75% {
+      transform: translateY(0);
+    }
+  }
+  
+  /* 9. Bookmark Scale */
+  @keyframes bookmarkScale {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+  
+  /* ========================================
+     UTILITY ANIMATION CLASSES
+     ======================================== */
+  
+  /* Page load animation - apply to main content */
+  .animate-page-load {
+    animation: fadeUp 300ms ease-out;
+  }
+  
+  /* Staggered fade up - for hero elements */
+  .animate-fade-up-1 {
+    animation: fadeUp 300ms ease-out;
+    animation-delay: 0ms;
+  }
+  
+  .animate-fade-up-2 {
+    animation: fadeUp 300ms ease-out;
+    animation-delay: 50ms;
+  }
+  
+  .animate-fade-up-3 {
+    animation: fadeUp 300ms ease-out;
+    animation-delay: 100ms;
+  }
+  
+  .animate-fade-up-4 {
+    animation: fadeUp 300ms ease-out;
+    animation-delay: 150ms;
+  }
+  
+  .animate-fade-up-5 {
+    animation: fadeUp 300ms ease-out;
+    animation-delay: 200ms;
+  }
+  
+  /* Hero floating cards - staggered delays */
+  .animate-float-1 {
+    animation: cardFloat 3s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+  
+  .animate-float-2 {
+    animation: cardFloat 3.5s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+  
+  .animate-float-3 {
+    animation: cardFloat 4s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+  
+  .animate-float-4 {
+    animation: cardFloat 3.2s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+  
+  /* Schedule panel slide in */
+  .animate-slide-in {
+    animation: slideInLeft 250ms ease-out;
+  }
+  
+  /* Tab content fade */
+  .animate-tab-fade {
+    animation: tabFade 150ms ease-out;
+  }
+  
+  /* Step icon bounce - staggered */
+  .animate-step-bounce-1 {
+    animation: stepBounce 2s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+  
+  .animate-step-bounce-2 {
+    animation: stepBounce 2s ease-in-out infinite;
+    animation-delay: 0.4s;
+  }
+  
+  .animate-step-bounce-3 {
+    animation: stepBounce 2s ease-in-out infinite;
+    animation-delay: 0.8s;
+  }
+  
+  /* Bookmark click animation - add via JS */
+  .animate-bookmark-click {
+    animation: bookmarkScale 200ms ease-out;
+  }
+  
+  /* Map marker pulse ring - pseudo element */
+  .map-marker-selected::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    animation: markerPulse 600ms ease-out;
+    pointer-events: none;
+  }
+  
+  /* Active filter border animation */
+  .filter-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--color-primary);
+    border-radius: 0 var(--radius-button) var(--radius-button) 0;
+    transform-origin: top;
+    animation: scaleYIn 120ms ease-out;
+  }
+  
