@@ -216,49 +216,51 @@ export default function CitySelectorPage() {
                 </div>
             </section>
 
-            <div className="city-selector-page">
-                <div className="city-selector-container">
-                    <section className="available-cities">
-                        <h2>Available Cities</h2>
-                        <div className="city-grid">
+            <section className="landing-cities">
+                <div className="landing-cities__container">
+                    <h2 className="landing-cities__title">Available Cities</h2>
+                        <div className="landing-cities__grid">
                             <Link 
                                 to="/toronto"
-                                className="city-card"
+                                className="landing-city-card"
                                 onClick={() => handleCityCardClick('Toronto')}
                             >
-                                <div className="city-card-icon">🏙️</div>
-                                <h3>Toronto</h3>
-                                <p>Browse 150+ recreation centres</p>
+                                <div className="landing-city-card__icon">🏙️</div>
+                                <h3 className="landing-city-card__name">Toronto</h3>
+                                <p className="landing-city-card__description">Browse 150+ recreation centres</p>
                             </Link>
                         </div>
-                    </section>
+                    </div>
+            </section>
 
-                    <section className="city-request-form">
-                        <h2>Don't see your city?</h2>
-                        <p>Let us know which city you'd like us to add next!</p>
-                        <div 
-                            className="google-form-embed"
-                            onClick={handleFormInteraction}
+            <section className="landing-request">
+                <div className="landing-request__container">
+                    <h2 className="landing-request__title">Don't see your city?</h2>
+                    <p className="landing-request__description">Let us know which city you'd like us to add next!</p>
+                    <div 
+                        className="landing-request__form"
+                        onClick={handleFormInteraction}
+                    >
+                        <iframe
+                            src={GOOGLE_FORM_EMBED_URL}
+                            width="100%"
+                            height="600"
+                            frameBorder="0"
+                            marginHeight={0}
+                            marginWidth={0}
+                            title="City Request Form"
                         >
-                            <iframe
-                                src={GOOGLE_FORM_EMBED_URL}
-                                width="100%"
-                                height="600"
-                                frameBorder="0"
-                                marginHeight={0}
-                                marginWidth={0}
-                                title="City Request Form"
-                            >
-                                Loading form...
-                            </iframe>
-                        </div>
-                    </section>
-
-                    <footer className="city-selector-footer">
-                        <p>More cities coming soon based on demand</p>
-                    </footer>
+                            Loading form...
+                        </iframe>
+                    </div>
                 </div>
-            </div>
+            </section>
+
+            <footer className="landing-footer">
+                <div className="landing-footer__container">
+                    <p className="landing-footer__text">More cities coming soon based on demand</p>
+                </div>
+            </footer>
         </>
     );
 }
