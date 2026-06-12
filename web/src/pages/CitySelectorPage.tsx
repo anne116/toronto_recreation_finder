@@ -1,5 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { FaSwimmer, FaTableTennis } from 'react-icons/fa';
+import { BiSwim } from "react-icons/bi";
+import { LiaDumbbellSolid } from "react-icons/lia";
+import { GiCampingTent } from "react-icons/gi";
+import { TbYoga } from 'react-icons/tb';
+import { GrYoga } from "react-icons/gr";
+import { MdOutlineSportsBasketball, MdChevronRight, MdOutlineFamilyRestroom, MdOutlineCastForEducation, MdOutlinePalette } from 'react-icons/md';
+import { GiShuttlecock, GiTennisRacket } from 'react-icons/gi';
+import { HiOutlineMapPin } from 'react-icons/hi2';
 import { generateWebApplicationSchema } from '../shared/lib/schema';
 import './CitySelectorPage.css';
 import { trackEvent } from '../shared/lib/analytics';
@@ -17,7 +26,7 @@ export default function CitySelectorPage() {
         description: 'Find drop-in and registered programs at recreation centres across Toronto',
     });
 
-    const handdleCityCardClick = (cityName: string) => {
+    const handleCityCardClick = (cityName: string) => {
         trackEvent('city_selected', {
             city: cityName,
         });
@@ -30,7 +39,7 @@ export default function CitySelectorPage() {
     };
 
     return (
-        <div className="city-selector-page">
+        <>
             <Helmet>
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
@@ -44,32 +53,192 @@ export default function CitySelectorPage() {
                 </script>
             </Helmet>
 
-            <div className="city-selector-container">
-                <header className="city-selector-header">
-                    <h1>City Recreation Finder</h1>
-                    <p>Find drop-in programs and registered activities provided by your city's recreation centres</p>
-                </header>
+            <nav className="landing-navbar">
+                <div className="landing-navbar__content">
+                    <img
+                        src="/logo.png"
+                        alt="City Recreation Finder"
+                        className="landing-navbar__logo"
+                    />
+                    <Link
+                        to="/toronto"
+                        className="landing-navbar__city-pill"
+                        onClick={() => handleCityCardClick('Toronto')}
+                    >
+                        <HiOutlineMapPin size={14} />
+                        <span>Toronto</span>
+                        <MdChevronRight size={14}/>
+                    </Link>
+                </div>
+            </nav>
 
-                <section className="available-cities">
-                    <h2>Available Cities</h2>
-                    <div className="city-grid">
-                        <Link 
-                            to="/toronto"
-                            className="city-card"
-                            onClick={() => handdleCityCardClick('Toronto')}
-                        >
-                            <div className="city-card-icon">🏙️</div>
-                            <h3>Toronto</h3>
-                            <p>Browse 150+ recreation centres</p>
-                        </Link>
+            <section className="landing-hero">
+                <div className="landing-hero__container">
+                    <div className="landing-hero__content">
+                        <div className="landing-hero__eyebrow animate-fade-up-1">
+                            Free · No account needed
+                        </div>
+
+                        <h1 className="landing-hero__title animate-fade-up-2">
+                            Find drop-in & registered programs at your city's recreation centres
+                        </h1>
+
+                        <p className="landing-hero__description animate-fade-up-3">
+                            Recreation centres offer hundreds of programs — swimming, skating, fitness, arts and more.
+                            We make them easy to search and find, without digging through city portals.
+                        </p>
+
+                        <p className="landing-hero__description animate-fade-up-4">
+                            No more clicking through the city portal page by page.
+                        </p>
+
+                        <div className="landing-hero__buttons animate-fade-up-5">
+                            <Link to="/toronto"
+                            className="landing-hero__button--primary">
+                                Browse programs
+                            </Link>
+                            <Link to="/toronto"
+                            className="landing-hero__button--outline">
+                                Drop-in today
+                            </Link>
+                        </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section className="city-request-form">
-                    <h2>Don't see your city?</h2>
-                    <p>Let us know which city you'd like us to add next!</p>
+            <section className="landing-programs">
+                <div className="landing-programs__container">
+                    <h2 className="landing-programs__title">Drop-in Programs</h2>
+                    <div className="landing-programs__grid">
+                        <div className="landing-activity-card animate-float-1">
+                            <div className="landing-activity-card__icon">
+                                <FaSwimmer size={24}/>
+                            </div>
+                            <div className="landing-activity-card__name">Swimming</div>
+                            <div className="landing-activity-card__subtitle">All ages · Skill levels</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-float-2">
+                            <div className="landing-activity-card__icon">
+                                <LiaDumbbellSolid size={24}/>
+                            </div>
+                            <div className="landing-activity-card__name">Gym</div>
+                            <div className="landing-activity-card__subtitle">Cardio · Weights</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-float-3">
+                            <div className="landing-activity-card__icon">
+                                <FaTableTennis size={24}/>
+                            </div>
+                            <div className="landing-activity-card__name">Table Tennis</div>
+                            <div className="landing-activity-card__subtitle">All Levels · Indoor Courts</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-float-4">
+                            <div className="landing-activity-card__icon">
+                                <GiShuttlecock size={24}/>
+                            </div>
+                            <div className="landing-activity-card__name">Badminton</div>
+                            <div className="landing-activity-card__subtitle">All Levels · Casual Play</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-float-5">
+                            <div className="landing-activity-card__icon">
+                                <MdOutlineSportsBasketball size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Basketball</div>
+                            <div className="landing=activity-card__subtitle">Pick-up Games · Hardwood Courts</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-float-6">
+                            <div className="landing-activity-card__icon">
+                                <GrYoga size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Yoga & Pilates</div>
+                            <div className="landing-actiivty-card__subtitle">All Levels · Mind & Body</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="landing-programs">
+                <div className="landing-programs__container">
+                    <h2 className="landing-programs__title">Registered Programs</h2>
+                    <div className="landing-programs__grid">
+                        <div className="landing-activity-card animate-fade-up-1">
+                            <div className="landing-activity-card__icon">
+                                <BiSwim size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Swimming Lessons</div>
+                            <div className="landing-activity-card_subtitle">All Ages · Skill Levels</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-fade-up-2">
+                            <div className="landing-activity-card__icon">
+                                <GiTennisRacket size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Tennis Classes</div>
+                            <div className="landing-activity-card__subtitle">All Ages · Private · Small Group · Instructional</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-fade-up-3">
+                            <div className="landing-activity-card__icon">
+                                <GiCampingTent size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Camps & School Break Programs</div>
+                            <div className="landing-activity-card__subtitle">After-School · Summer Camps</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-fade-up-4">
+                            <div className="landing-activity-card__icon">
+                                <MdOutlineCastForEducation size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Education & Life Skills Workshops</div>
+                            <div className="landing-activity-card_subtitle">Financial Literacy · Leadership · Tech</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-fade-up-5">
+                            <div className="landing-activity-card__icon">
+                                <MdOutlinePalette size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Arts & Crafts Lessons</div>
+                            <div className="landing-activity-card__subtitle">Pottery · Painting · Sculpting</div>
+                        </div>
+
+                        <div className="landing-activity-card animate-fade-up-6">
+                            <div className="landing-activity-card__icon">
+                                <TbYoga size={24} />
+                            </div>
+                            <div className="landing-activity-card__name">Fitness & Wellness Classes</div>
+                            <div className="landing-activity-card__subtitle">Yoga · HIIT · Beginner to Advanced</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="landing-cities">
+                <div className="landing-cities__container">
+                    <h2 className="landing-cities__title">Available Cities</h2>
+                        <div className="landing-cities__grid">
+                            <Link 
+                                to="/toronto"
+                                className="landing-city-card"
+                                onClick={() => handleCityCardClick('Toronto')}
+                            >
+                                <div className="landing-city-card__icon">🏙️</div>
+                                <h3 className="landing-city-card__name">Toronto</h3>
+                                <p className="landing-city-card__description">Browse 150+ recreation centres</p>
+                            </Link>
+                        </div>
+                    </div>
+            </section>
+
+            <section className="landing-request">
+                <div className="landing-request__container">
+                    <h2 className="landing-request__title">Don't see your city?</h2>
+                    <p className="landing-request__description">Let us know which city you'd like us to add next!</p>
                     <div 
-                        className="google-form-embed"
+                        className="landing-request__form"
                         onClick={handleFormInteraction}
                     >
                         <iframe
@@ -84,12 +253,14 @@ export default function CitySelectorPage() {
                             Loading form...
                         </iframe>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <footer className="city-selector-footer">
-                    <p>More cities coming soon based on demand</p>
-                </footer>
-            </div>
-        </div>
+            <footer className="landing-footer">
+                <div className="landing-footer__container">
+                    <p className="landing-footer__text">More cities coming soon based on demand</p>
+                </div>
+            </footer>
+        </>
     );
 }
