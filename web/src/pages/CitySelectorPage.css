@@ -548,6 +548,186 @@
   margin: 0;
 }
 
+/* Dark Map Section */
+.landing-map-section {
+  background: var(--color-dark-bg);
+  padding: var(--space-14) 0;
+}
+
+.landing-map-section__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.landing-map-section__header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.landing-map-section__eyebrow {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+
+.landing-map-section__title {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-surface);
+  margin-bottom: var(--space-2);
+  line-height: var(--line-height-tight);
+}
+
+.landing-map-section__description {
+  font-size: var(--font-size-body);
+  color: var(--color-text-tertiary);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: var(--line-height-relaxed);
+}
+
+/* Map Full */
+.landing-map-full {
+  position: relative;
+  background: var(--color-dark-card);
+  border-radius: var(--radius-card);
+  height: 220px;
+  overflow: hidden;
+  border: 1px solid rgba(42, 157, 143, 0.3);
+}
+
+.landing-map-full__grid {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(42, 157, 143, 0.07) 24px, rgba(42, 157, 143, 0.07) 25px),
+    repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(42, 157, 143, 0.07) 24px, rgba(42, 157, 143, 0.07) 25px);
+}
+
+/* Map Grid Lines */
+.landing-map-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-map-line--h {
+  height: 4px;
+  left: 0;
+  right: 0;
+}
+
+.landing-map-line--v {
+  width: 4px;
+  top: 0;
+  bottom: 0;
+}
+
+/* Map Markers */
+.landing-map-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-map-marker__pin-wrap {
+  position: relative;
+}
+
+.landing-map-marker__pin {
+  width: 20px;
+  height: 20px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  animation: pinDrop 0.5s ease-out both;
+}
+
+.landing-map-marker__pin--active {
+  background: var(--color-primary);
+}
+
+.landing-map-marker__pin--dim {
+  background: #2A5048;
+}
+
+.landing-map-marker__ring {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-primary);
+  animation: ripple 2s ease-out infinite;
+  top: -5px;
+  left: -5px;
+}
+
+.landing-map-marker__label {
+  font-family: var(--font-family);
+  font-size: 9px;
+  font-weight: var(--font-weight-medium);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+.landing-map-marker__label--active {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
+}
+
+.landing-map-marker__label--dim {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-tertiary);
+}
+
+/* Map Counter */
+.landing-map-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(42, 157, 143, 0.2);
+  border: 1px solid rgba(42, 157, 143, 0.4);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 9px;
+  color: #5DCAA5;
+  font-family: var(--font-family);
+}
+
+/* Map Stats */
+.landing-map-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.landing-map-stat {
+  text-align: center;
+  padding: var(--space-3);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(42, 157, 143, 0.15);
+}
+
+.landing-map-stat__number {
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  margin-bottom: 3px;
+}
+
+.landing-map-stat__label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
 /* Available Cities Section */
 .landing-cities {
   background: var(--color-surface);
@@ -899,7 +1079,7 @@
   .landing-features__grid {
     grid-template-columns: 1fr;
   }
-  
+
   .landing-steps-grid {
     grid-template-columns: 1fr;
   }

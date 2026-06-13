@@ -312,7 +312,6 @@ export default function CitySelectorPage() {
 
             <section className="landing-alternating">
                 <div className="landing-alternating__container">
-                {/* Row 1: Filter Demo */}
                     <div className="landing-alt-row">
                         <div className="landing-alt-content">
                             <div className="landing-alt-eyebrow">Drop-in programs</div>
@@ -371,7 +370,6 @@ export default function CitySelectorPage() {
                         </div>
                     </div>
 
-                    {/* Row 2: Registration Status (reversed) */}
                     <div className="landing-alt-row landing-alt-row--reversed">
                         <div className="landing-alt-content">
                             <div className="landing-alt-eyebrow">Registered programs</div>
@@ -456,6 +454,69 @@ export default function CitySelectorPage() {
                 </div>
             </section>
 
+            <section className="landing-map-section">
+                <div className="landing-map-section__container">
+                    <div className="landing-map-section__header">
+                        <div className="landing-map-section__eyebrow">Interactive map</div>
+                        <h2 className="landing-map-section__title">Every centre on a map — click to explore</h2>
+                        <p className="landing-map-section__description">Click any pin to see that centre's programs. Click a session to jump to its location. The map and schedule panel are always in sync.</p>
+                    </div>
+
+                    <div className="landing-map-full">
+                        <div className="landing-map-full__grid"></div>
+
+                        <div className="landing-map-line landing-map-line--h" style={{top: '35%'}}></div>
+                        <div className="landing-map-line landing-map-line--h" style={{top: '62%'}}></div>
+                        <div className="landing-map-line landing-map-line--v" style={{left: '25%'}}></div>
+                        <div className="landing-map-line landing-map-line--v" style={{left: '58%'}}></div>
+
+                    <div className="landing-map-marker" style={{left: '25%', top: '20%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.5s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">North Toronto Memorial Community Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '58%', top: '27%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.2s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">Milliken Park Community Recreation Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '40%', top: '52%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.3s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">O'Connor Community Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '68%', top: '57%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.4s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">Toronto Pan Am Sports Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '15%', top: '60%'}}>
+                        <div className="landing-map-marker__pin-wrap">
+                            <div className="landing-map-marker__ring"></div>
+                            <div className="landing-map-marker__pin landing-map-marker__pin--active" style={{animationDelay: '0.1s'}}></div>
+                        </div>
+                        <div className="landing-map-marker__label landing-map-marker__label--active">Trinity Community Recreation Centre</div>
+                    </div>
+
+                    <div className="landing-map-counter">5 centres found</div>
+                </div>
+
+                <div className="landing-map-stats">
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">100+</div>
+                        <div className="landing-map-stat__label">Centres on the map</div>
+                    </div>
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">4</div>
+                        <div className="landing-map-stat__label">Districts covered</div>
+                    </div>
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">Weekly</div>
+                        <div className="landing-map-stat__label">Data updates</div>
+                    </div>
+                </div>
+                </div>
+            </section>
 
             <section className="landing-cities">
                 <div className="landing-cities__container">
