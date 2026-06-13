@@ -216,6 +216,308 @@ export default function CitySelectorPage() {
                 </div>
             </section>
 
+            <section className="landing-features">
+                <div className="landing-features__container">
+                    <div className="landing-features__eyebrow">What you can find</div>
+                    <h2 className="landing-features__title">Everything your city offers, <br />finally easy to browse</h2>
+                    <p className="landing-features__description">Drop-in or registered - filter by category/activity, location, day and age group, all in one place.</p>
+
+                    <div className="landing-features__grid">
+                        <div className="landing-feature-card">
+                            <div className="landing-feature-card__preview">
+                                <div className="feature-mini-stack">
+                                    <div className="feature-mini-card">
+                                        <div className="feature-mini-card__title">Recreation Fun and Play with Caregiver</div>
+                                        <div className="feature-mini-card__meta">North Toronto Memorial Community Centre · Mon 9:00am</div>
+                                        <div className="feature-mini-card_badges">
+                                            <span className="feature-badge feature-badge--teal">Drop-in</span>
+                                            <span className="feature-badge feature-badge--green">Open</span>
+                                        </div>
+                                    </div>
+                                    <div className="feature-mini-card">
+                                        <div className="feature-mini-card__title">Pickleball — Young Adults(18-24)</div>
+                                        <div className="feature-mini-card__meta">Mary McCormick Recreation Centre · Mon 07:00am</div>
+                                        <div className="feature-mini-card__badges">
+                                            <span className="feature-badge feature-badge--teal">Drop-in</span>
+                                            <span className="feature-badge feature-badge--green">Open</span>
+                                        </div>
+                                    </div>
+                                    <div className="feature-mini-card">
+                                        <div className="feature-mini-card__title">Aquatic Fitness: Shallow</div>
+                                        <div className="feature-mini-card__meta">York Recreation Centre · Mon 08:30am</div>
+                                        <div className="feature-mini-card__badges">
+                                            <span className="feature-badge feature-badge--teal">Drop-in</span>
+                                            <span className="feature-badge feature-badge--green">Open</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="landing-feature-card__body">
+                                <h3 className="landing-feature-card__title">Drop-in programs</h3>
+                                <p className="landing-feature-card__desc">Show up any time — no registration. Filter by day, district, age group and activity.</p>
+                            </div>                            
+                        </div>
+
+                        <div className="landing-feature-card">
+                            <div className="landing-feature-card__preview">
+                                <div className="feature-mini-stack">
+                                    <div className="feature-reg-card">
+                                        <div className="feature-reg-card__title">Learn to Skate — Beginner</div>
+                                        <div className="feature-reg-card__meta">Starts Jan 13 · 8 weeks · North York</div>
+                                        <div className="feature-reg-bar">
+                                            <div className="feature-reg-bar__fill" style={{width: '60%'}}></div>
+                                        </div>
+                                    </div>
+                                    <div className="feature-reg-card">
+                                        <div className="feature-reg-card__title">Basketball: Instructional — Teens(13-16)</div>
+                                        <div className="feature-reg-card__meta">Starts Jul 10 · 8 weeks · Scarborough</div>
+                                        <div className="feature-reg-bar">
+                                            <div className="feature-reg-bar__fill" style={{width: '30%'}}></div>
+                                        </div>
+                                    </div>
+                                    <div className="feature-reg-card">
+                                        <div className="feature-reg-card__title">CampTO Plus: Computers — Children(6-12)</div>
+                                        <div className="feature-reg-card__meta">Starts Jan 29 · 2 weeks · Toronto and East York</div>
+                                        <div className="feature-reg-bar">
+                                            <div className="feature-reg-bar__fill" style={{width: '30%'}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="landing-feature-card__body">
+                                <h3 className="landing-feature-card__title">Registered programs</h3>
+                                <p className="landing-feature-card__desc">Multi-week courses and classes. See what's open for registration right now.</p>
+                            </div>
+                        </div>
+                        <div className="landing-feature-card">
+                            <div className="landing-feature-card__preview">
+                                <div className="feature-map-mini">
+                                <div className="feature-map-mini__grid"></div>
+                                <div className="feature-map-pin" style={{left: '25%', top: '30%'}}>
+                                    <div className="feature-map-pin__ring"></div>
+                                </div>
+                                <div className="feature-map-pin feature-map-pin--dim" style={{left: '55%', top: '40%'}}></div>
+                                <div className="feature-map-pin feature-map-pin--dim" style={{left: '70%', top: '60%'}}></div>
+                                <div className="feature-map-pin feature-map-pin--dim" style={{left: '38%', top: '58%'}}></div>
+                            </div>
+                            </div>
+                            <div className="landing-feature-card__body">
+                                <h3 className="landing-feature-card__title">Interactive map</h3>
+                                <p className="landing-feature-card__desc">Every centre on a map. Click a pin to see its full program schedule at a glance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="landing-alternating">
+                <div className="landing-alternating__container">
+                    <div className="landing-alt-row">
+                        <div className="landing-alt-content">
+                            <div className="landing-alt-eyebrow">Drop-in programs</div>
+                            <h2 className="landing-alt-title">Filter once,<br />find it instantly</h2>
+                            <p className="landing-alt-description">Pick activity, district, day and age group. Your results appear immediately — no page reloads. Monday morning lane swims to Sunday afternoon yoga, all in one search.</p>
+                        </div>
+                        <div className="landing-alt-visual">
+                            <div className="filter-demo">
+                                <div className="filter-demo-row filter-demo-row--active">
+                                    <span>Aquatics — Lane swim</span>
+                                    <span>✓</span>
+                                </div>
+                                <div className="filter-demo-row filter-demo-row--active">
+                                    <span>Etobicoke</span>
+                                    <span>✓</span>
+                                </div>
+                                <div className="filter-demo-row">
+                                    <span>Day of week</span>
+                                    <span style={{color: '#C0CCCB'}}>▾</span>
+                                </div>
+                                <div className="filter-demo-row">
+                                    <span>Age group</span>
+                                    <span style={{color: '#C0CCCB'}}>▾</span>
+                                </div>
+                                <button className="filter-demo-btn">Search programs</button>
+                            </div>
+                            <div className="result-cards">
+                                <div className="result-card animate-slide-in-1">
+                                    <div className="result-card__title">Lane Swim — Adult</div>
+                                    <div className="result-card__meta">📍 Centennial Park Pool · Tue 6:30am</div>
+                                    <div className="result-card__badges">
+                                        <span className="result-badge result-badge--teal">Drop-in</span>
+                                        <span className="result-badge result-badge--green">Open</span>
+                                        <span className="result-badge result-badge--gray">18+</span>
+                                    </div>
+                                </div>
+                                <div className="result-card animate-slide-in-2">
+                                    <div className="result-card__title">Lane Swim — Adult</div>
+                                    <div className="result-card__meta">📍 Etobicoke Olympium · Tue 7:00am</div>
+                                    <div className="result-card__badges">
+                                        <span className="result-badge result-badge--teal">Drop-in</span>
+                                        <span className="result-badge result-badge--green">Open</span>
+                                        <span className="result-badge result-badge--gray">16+</span>
+                                    </div>
+                                </div>
+                                <div className="result-card animate-slide-in-3">
+                                    <div className="result-card__title">Aquafit — Seniors</div>
+                                    <div className="result-card__meta">📍 Richview Pool · Tue 11:00am</div>
+                                    <div className="result-card__badges">
+                                        <span className="result-badge result-badge--teal">Drop-in</span>
+                                        <span className="result-badge result-badge--green">Open</span>
+                                        <span className="result-badge result-badge--gray">55+</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="landing-alt-row landing-alt-row--reversed">
+                        <div className="landing-alt-content">
+                            <div className="landing-alt-eyebrow">Registered programs</div>
+                            <h2 className="landing-alt-title">See what's open<br />for registration now</h2>
+                            <p className="landing-alt-description">Multi-week courses fill up fast. See registration status at a glance — open, limited spots, or waitlist — and link straight to the city portal to sign up.</p>
+                        </div>
+
+                        <div className="landing-alt-visual">
+                            <div className="reg-preview">
+                                <div className="reg-preview-card">
+                                    <div className="reg-preview-card__top">
+                                        <div className="reg-preview-card__title">Learn to Skate — Beginner</div>
+                                        <span className="reg-preview-badge">Open</span>
+                                    </div>
+                                    <div className="reg-preview-card__meta">📍 North York Civic · Starts Jan 13 · 8 weeks</div>
+                                    <div className="reg-preview-bar">
+                                        <div className="reg-preview-bar__fill" style={{width: '55%'}}></div>
+                                    </div>
+                                </div>
+
+                                <div className="reg-preview-card">
+                                    <div className="reg-preview-card__top">
+                                        <div className="reg-preview-card__title">Youth Basketball — U12</div>
+                                        <span className="reg-preview-badge reg-preview-badge--amber">2 spots left</span>
+                                    </div>
+                                    <div className="reg-preview-card__meta">📍 Scarborough Village · Starts Jan 20 · 10 weeks</div>
+                                    <div className="reg-preview-bar">
+                                        <div className="reg-preview-bar__fill" style={{width: '88%'}}></div>
+                                    </div>
+                                </div>
+
+                                <div className="reg-preview-card">
+                                    <div className="reg-preview-card__top">
+                                        <div className="reg-preview-card__title">Pottery — Intermediate</div>
+                                        <span className="reg-preview-badge">Open</span>
+                                    </div>
+                                    <div className="reg-preview-card__meta">📍 Swansea Memorial · Starts Feb 3 · 6 weeks</div>
+                                    <div className="reg-preview-bar">
+                                        <div className="reg-preview-bar__fill" style={{width: '30%'}}></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="landing-how-it-works">
+                <div className="landing-how-it-works__container">
+                    <div className="landing-how-it-works__eyebrow">How it works</div>
+                    <h2 className="landing-how-it-works__title">Find a program in three steps</h2>
+                    <p className="landing-how-it-works__description">No account needed. No setup. Just pick your filters and go.</p>
+
+                    <div className="landing-steps-grid">
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-1">
+                                🔍
+                            </div>
+                            <div className="landing-step-card__number">STEP 01</div>
+                            <h3 className="landing-step-card__title">Pick your city & filters</h3>
+                            <p className="landing-step-card__desc">Select your city, then choose activity, district, day of week, and age group.</p>
+                        </div>
+
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-2">
+                                📋
+                            </div>
+                            <div className="landing-step-card__number">STEP 02</div>
+                            <h3 className="landing-step-card__title">Browse results</h3>
+                            <p className="landing-step-card__desc">See matching sessions in a day-by-day schedule alongside a live map of centres.</p>
+                        </div>
+
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-3">
+                                🏃
+                            </div>
+                            <div className="landing-step-card__number">STEP 03</div>
+                            <h3 className="landing-step-card__title">Show up or register</h3>
+                            <p className="landing-step-card__desc">Drop-ins need no booking — just show up. Registered programs link straight to the city portal.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="landing-map-section">
+                <div className="landing-map-section__container">
+                    <div className="landing-map-section__header">
+                        <div className="landing-map-section__eyebrow">Interactive map</div>
+                        <h2 className="landing-map-section__title">Every centre on a map — click to explore</h2>
+                        <p className="landing-map-section__description">Click any pin to see that centre's programs. Click a session to jump to its location. The map and schedule panel are always in sync.</p>
+                    </div>
+
+                    <div className="landing-map-full">
+                        <div className="landing-map-full__grid"></div>
+
+                        <div className="landing-map-line landing-map-line--h" style={{top: '35%'}}></div>
+                        <div className="landing-map-line landing-map-line--h" style={{top: '62%'}}></div>
+                        <div className="landing-map-line landing-map-line--v" style={{left: '25%'}}></div>
+                        <div className="landing-map-line landing-map-line--v" style={{left: '58%'}}></div>
+
+                    <div className="landing-map-marker" style={{left: '25%', top: '20%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.5s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">North Toronto Memorial Community Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '58%', top: '27%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.2s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">Milliken Park Community Recreation Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '40%', top: '52%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.3s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">O'Connor Community Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '68%', top: '57%'}}>
+                        <div className="landing-map-marker__pin landing-map-marker__pin--dim" style={{animationDelay: '0.4s'}}></div>
+                        <div className="landing-map-marker__label landing-map-marker__label--dim">Toronto Pan Am Sports Centre</div>
+                    </div>
+
+                    <div className="landing-map-marker" style={{left: '15%', top: '60%'}}>
+                        <div className="landing-map-marker__pin-wrap">
+                            <div className="landing-map-marker__ring"></div>
+                            <div className="landing-map-marker__pin landing-map-marker__pin--active" style={{animationDelay: '0.1s'}}></div>
+                        </div>
+                        <div className="landing-map-marker__label landing-map-marker__label--active">Trinity Community Recreation Centre</div>
+                    </div>
+
+                    <div className="landing-map-counter">5 centres found</div>
+                </div>
+
+                <div className="landing-map-stats">
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">100+</div>
+                        <div className="landing-map-stat__label">Centres on the map</div>
+                    </div>
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">4</div>
+                        <div className="landing-map-stat__label">Districts covered</div>
+                    </div>
+                    <div className="landing-map-stat">
+                        <div className="landing-map-stat__number">Weekly</div>
+                        <div className="landing-map-stat__label">Data updates</div>
+                    </div>
+                </div>
+                </div>
+            </section>
+
             <section className="landing-cities">
                 <div className="landing-cities__container">
                     <h2 className="landing-cities__title">Available Cities</h2>
