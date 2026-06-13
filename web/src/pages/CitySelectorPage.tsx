@@ -419,6 +419,43 @@ export default function CitySelectorPage() {
                 </div>
             </section>
 
+            <section className="landing-how-it-works">
+                <div className="landing-how-it-works__container">
+                    <div className="landing-how-it-works__eyebrow">How it works</div>
+                    <h2 className="landing-how-it-works__title">Find a program in three steps</h2>
+                    <p className="landing-how-it-works__description">No account needed. No setup. Just pick your filters and go.</p>
+
+                    <div className="landing-steps-grid">
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-1">
+                                🔍
+                            </div>
+                            <div className="landing-step-card__number">STEP 01</div>
+                            <h3 className="landing-step-card__title">Pick your city & filters</h3>
+                            <p className="landing-step-card__desc">Select your city, then choose activity, district, day of week, and age group.</p>
+                        </div>
+
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-2">
+                                📋
+                            </div>
+                            <div className="landing-step-card__number">STEP 02</div>
+                            <h3 className="landing-step-card__title">Browse results</h3>
+                            <p className="landing-step-card__desc">See matching sessions in a day-by-day schedule alongside a live map of centres.</p>
+                        </div>
+
+                        <div className="landing-step-card">
+                            <div className="landing-step-card__icon-wrap animate-step-bounce-3">
+                                🏃
+                            </div>
+                            <div className="landing-step-card__number">STEP 03</div>
+                            <h3 className="landing-step-card__title">Show up or register</h3>
+                            <p className="landing-step-card__desc">Drop-ins need no booking — just show up. Registered programs link straight to the city portal.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 
             <section className="landing-cities">
                 <div className="landing-cities__container">
