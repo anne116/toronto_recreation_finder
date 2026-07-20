@@ -3,7 +3,7 @@ import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, P
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 
-type Filters = { category: string; activity: string; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
+type Filters = { category: string; activity: string; activities?: string[]; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
 
 type Props = {
   programType: ProgramType;
@@ -48,7 +48,7 @@ export default function FiltersPanel({
   }, [programType]);
 
   const update = (patch: Partial<Filters>) => {
-    onChange({ ...value, ...patch });
+    onChange({ ...value, activities: undefined, ...patch });
   };
   const categoryActivities = useMemo(() => {
     if (!value.category) return [];
@@ -135,11 +135,19 @@ export default function FiltersPanel({
           <option value="">
             All Activities
           </option>
-          {visibleActivities.map(a => 
+          {visibleActivities.map(a =>
             <option key={a.activity} value={a.activity}>
               {a.activity}
             </option>)}
         </select>
+        {value.activities && value.activities.length > 0 && (
+          <div
+            className="filter-multi-activity-note"
+            title={value.activities.join(', ')}
+          >
+            Showing {value.activities.length} related activities
+          </div>
+        )}
       </div>
 
       <div className="filter-group">

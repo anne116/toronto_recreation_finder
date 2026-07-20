@@ -7,6 +7,7 @@ import { trackEvent } from "../../../shared/lib/analytics";
 type Props = {
   category?: string;
   activity?: string;
+  activities?: string[];
   age?: RegisteredAgeFilter;
   startMonth?: string;
   district?: string;
@@ -62,6 +63,7 @@ function formatPeriodRange(startDate?: string | null, endDate?: string | null): 
 export default function RegisteredProgramsPanel({
   category,
   activity,
+  activities,
   age,
   startMonth,
   district,
@@ -97,6 +99,7 @@ export default function RegisteredProgramsPanel({
         const resp = await searchRegisteredPrograms({
           category,
           activity: activity ?? "",
+          activities,
           age,
           start_month: startMonth,
           district,
@@ -122,7 +125,7 @@ export default function RegisteredProgramsPanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, age, startMonth, district, isVisible, hasSearchCriteria]);
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria]);
 
   const sortedPrograms = useMemo(() => {
     if (!highlightedLocationIdStr) {
