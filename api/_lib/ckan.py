@@ -186,14 +186,18 @@ def activity_matches_filters(
     raw_title: str,
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
 ) -> bool:
     canonical_title = canonicalize_activity_title(raw_title)
     if canonical_title is None:
         return False
-    
-    if activity:
-        if raw_title not in raw_titles_for_activity(activity):
+
+    activities = [activity] if isinstance(activity, str) else (activity or [])
+    if activities:
+        allowed_raw_titles: set[str] = set()
+        for name in activities:
+            allowed_raw_titles |= raw_titles_for_activity(name)
+        if raw_title not in allowed_raw_titles:
             return False
 
     normalized_category = normalize_category(category)
@@ -413,10 +417,12 @@ def is_registered_current(end_date_value: str | None) -> bool:
     return end_date >= date.today()
 
 
-def registered_row_matches_activity(course_title: str | None, activity: str | None) -> bool:
+def registered_row_matches_activity(course_title: str | None, activity: str | list[str] | None) -> bool:
     if not activity:
         return True
-    return activity == course_title
+    if isinstance(activity, str):
+        return activity == course_title
+    return course_title in activity
 
 def load_location_cache() -> dict[int, dict]:
     global LOCATION_CACHE
@@ -740,7 +746,7 @@ def build_registered_filter_options_response() -> dict:
 def collect_registered_program_groups(
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
@@ -881,7 +887,7 @@ def format_registered_summary_range(start_date: str | None, end_date: str | None
 def build_registered_program_search_response(
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
@@ -912,7 +918,7 @@ def build_registered_program_search_response(
 def build_registered_centres_geojson_response(
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
@@ -990,7 +996,7 @@ def build_registered_centres_geojson_response(
 def build_program_search_response(
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
     district: str | None = None,
     age: str | None = None,
     time_of_day: str | None = None,
@@ -1093,7 +1099,7 @@ def build_program_search_response(
 def build_centres_geojson_response(
     *,
     category: str | None = None,
-    activity: str | None = None,
+    activity: str | list[str] | None = None,
     district: str | None = None,
     age: str | None = None,
     facility_type: str | None = None,

@@ -8,6 +8,7 @@ import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import MapView from '../features/map/ui/MapView';
 import SchedulePanel from '../features/centres/ui/SchedulePanel';
 import ResizablePanel from '../shared/ui/ResizablePanel';
+import Navbar from '../shared/ui/Navbar';
 import '../App.css';
 import type { WeekdayName } from '../shared/lib/weekday';
 import RegisteredProgramsPanel from '../features/centres/ui/RegisteredProgramsPanel';
@@ -17,6 +18,7 @@ import { trackEvent } from '../shared/lib/analytics';
   type Filters = {
     category: string;
     activity: string;
+    activities?: string[];
     district: string;
     weekday: WeekdayName | null;
     startMonth?: string;
@@ -34,6 +36,7 @@ function hasAnySelectedFilter(filters: Filters): boolean {
   return Boolean(
     filters.category ||
     filters.activity ||
+    (filters.activities && filters.activities.length > 0) ||
     filters.district ||
     filters.weekday ||
     filters.startMonth ||
@@ -85,10 +88,12 @@ function buildPageMetadata(programType: ProgramType, activeFilters: Filters | nu
 export default function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const programTypeFromURL = (searchParams.get('programType') as ProgramType) || 'dropin';
+  const activityParamsFromURL = searchParams.getAll('activity');
   const [programType, setProgramType] = useState<ProgramType>(programTypeFromURL);
   const [filters, setFilters] = useState<Filters>({
     category: searchParams.get('category') || '',
-    activity: searchParams.get('activity') || '',
+    activity: activityParamsFromURL.length === 1 ? activityParamsFromURL[0] : '',
+    activities: activityParamsFromURL.length > 1 ? activityParamsFromURL : undefined,
     district: searchParams.get('district') || '',
     weekday: (searchParams.get('weekday') as WeekdayName) || null,
     startMonth: searchParams.get('startMonth') || undefined,
@@ -108,12 +113,13 @@ export default function App() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
   );
   const { data: centres, loading: centresLoading } = useCentres({
     programType,
     category: activeFilters?.category ?? '',
     activity: activeFilters?.activity ?? '',
+    activities: activeFilters?.activities,
     district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? null,
     startMonth: activeFilters?.startMonth,
@@ -181,7 +187,11 @@ export default function App() {
     const params = new URLSearchParams();
     params.set('programType', programType);
     if (filters.category) params.set('category', filters.category);
-    if (filters.activity) params.set('activity', filters.activity);
+    if (filters.activity) {
+      params.set('activity', filters.activity);
+    } else if (filters.activities?.length) {
+      filters.activities.forEach((item) => params.append('activity', item));
+    }
     if (filters.district) params.set('district', filters.district);
     if (filters.weekday) params.set('weekday', filters.weekday);
     if (filters.startMonth) params.set('startMonth', filters.startMonth);
@@ -308,7 +318,10 @@ export default function App() {
         <meta property="og:url" content={pageMetadata.canonicalUrl} />
         <meta property="og:type" content="website" />
       </Helmet>
-    
+
+      <div className="app-shell">
+      <Navbar variant="search" city="Toronto" />
+
       <div className = "app-layout">
         {!isFiltersOpen && (
           <button
@@ -363,6 +376,7 @@ export default function App() {
                     <SchedulePanel
                       category={activeFilters?.category ?? ''}
                       activity={activeFilters?.activity ?? ''}
+                      activities={activeFilters?.activities}
                       age={activeFilters?.age as DropInAgeFilter | undefined}
                       weekday={activeFilters?.weekday}
                       district={activeFilters?.district ?? ''}
@@ -376,6 +390,7 @@ export default function App() {
                     <RegisteredProgramsPanel
                       category={activeFilters?.category ?? ''}
                       activity={activeFilters?.activity ?? ''}
+                      activities={activeFilters?.activities}
                       age={activeFilters?.age as RegisteredAgeFilter | undefined}
                       startMonth={activeFilters?.startMonth}
                       district={activeFilters?.district ?? ''}
@@ -413,6 +428,7 @@ export default function App() {
                   <SchedulePanel
                     category={activeFilters?.category ?? ''}
                     activity={activeFilters?.activity ?? ''}
+                      activities={activeFilters?.activities}
                     age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
                     district={activeFilters?.district ?? ''}
@@ -426,6 +442,7 @@ export default function App() {
                   <RegisteredProgramsPanel
                     category={activeFilters?.category ?? ''}
                     activity={activeFilters?.activity ?? ''}
+                      activities={activeFilters?.activities}
                     age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
                     district={activeFilters?.district ?? ''}
@@ -470,8 +487,9 @@ export default function App() {
           <div className = "page-loading">
             Loading centres...
           </div>
-        )}    
+        )}
 
+      </div>
       </div>
     </>
   );

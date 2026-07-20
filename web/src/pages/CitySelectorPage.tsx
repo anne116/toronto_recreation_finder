@@ -1,20 +1,97 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { FaSwimmer, FaTableTennis } from 'react-icons/fa';
-import { BiSwim } from "react-icons/bi";
 import { LiaDumbbellSolid } from "react-icons/lia";
 import { GiCampingTent } from "react-icons/gi";
 import { TbYoga } from 'react-icons/tb';
 import { GrYoga } from "react-icons/gr";
-import { MdOutlineSportsBasketball, MdChevronRight, MdOutlineFamilyRestroom, MdOutlineCastForEducation, MdOutlinePalette } from 'react-icons/md';
+import { MdChevronRight, MdOutlineSportsBasketball, MdOutlineFamilyRestroom, MdOutlineCastForEducation, MdOutlinePalette } from 'react-icons/md';
 import { GiShuttlecock, GiTennisRacket } from 'react-icons/gi';
 import { HiOutlineMapPin } from 'react-icons/hi2';
 import { generateWebApplicationSchema } from '../shared/lib/schema';
+import Navbar from '../shared/ui/Navbar';
 import './CitySelectorPage.css';
 import { trackEvent } from '../shared/lib/analytics';
 
+// Activity names must exactly match api/_lib/data.py (drop-in) and
+// api/_lib/registered_taxonomy.py (registered).
+const DROPIN_SPORT_ACTIVITIES: Record<string, string[]> = {
+    'Table Tennis': ['Table Tennis', 'Table Tennis (Women)', 'Table Tennis with Family'],
+    'Badminton': ['Badminton', 'Badminton (Women)', 'Badminton - Court', 'Badminton with Caregiver', 'Badminton with Family'],
+    'Basketball': ['Basketball', 'Basketball (Girls)', 'Basketball (Men)', 'Basketball (Women)', 'Basketball with Family', 'Parasport: Wheelchair Basketball'],
+};
+
+const REGISTERED_TENNIS_ACTIVITIES = [
+    'CampTO Plus: Tennis',
+    'Clinic: Tennis - Hitting Spin Shots',
+    'Clinic: Tennis - Reading Plays & Ball Direction',
+    'Philpott Tennis',
+    'Tennis - Private',
+    'Tennis - Semi Private',
+    'Tennis - Small Group',
+    'Tennis: Instructional',
+    'Tennis: Instructional - Advanced',
+    'Tennis: Instructional - Advanced - Small Group',
+    'Tennis: Instructional - Beginner',
+    'Tennis: Instructional - Intermediate',
+    'Tennis: Instructional - Intermediate - Small Group',
+    'Tennis: Instructional with Caregiver',
+    'Tennis: Recreational',
+];
+
+type ProgramTypeParam = 'dropin' | 'registered';
+
+function torontoSearchPath(
+    programType: ProgramTypeParam,
+    opts: { category?: string; activities?: string[] } = {}
+) {
+    const params = new URLSearchParams();
+    params.set('programType', programType);
+    if (opts.category) params.set('category', opts.category);
+    for (const activity of opts.activities ?? []) {
+        params.append('activity', activity);
+    }
+    return `/toronto?${params.toString()}`;
+}
+
+function handleActivityCardClick(card: string, programType: ProgramTypeParam) {
+    trackEvent('landing_activity_card_clicked', {
+        card,
+        program_type: programType,
+    });
+}
+
+function SectionCta({ label, source }: { label?: string; source: string }) {
+    const handleClick = () => {
+        trackEvent('city_selected', {
+            city: 'Toronto',
+            source: `landing_${source}`,
+        });
+    };
+
+    return (
+        <div className="landing-section-cta">
+            <Link to="/toronto" className="landing-section-cta__pill" onClick={handleClick}>
+                <HiOutlineMapPin size={16} />
+                <span>{label ?? 'Find Toronto drop-in & registered programs now'}</span>
+                <MdChevronRight size={16} />
+            </Link>
+        </div>
+    );
+}
+
 export default function CitySelectorPage() {
     const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe5OWlVTy9aLpPP4DZWO3JHgkJP8Kwyi9DH0B5Xs6u_9m8Wxg/viewform?embedded=true';
+    const { hash } = useLocation();
+
+    useEffect(() => {
+        if (!hash) return;
+        const target = document.getElementById(hash.slice(1));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [hash]);
 
     const pageTitle = 'Find Drop-in & Registered Programs in Toronto | City Recreation Finder';
     const pageDescription = 'Search Drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule.'
@@ -53,24 +130,7 @@ export default function CitySelectorPage() {
                 </script>
             </Helmet>
 
-            <nav className="landing-navbar">
-                <div className="landing-navbar__content">
-                    <img
-                        src="/logo.png"
-                        alt="City Recreation Finder"
-                        className="landing-navbar__logo"
-                    />
-                    <Link
-                        to="/toronto"
-                        className="landing-navbar__city-pill"
-                        onClick={() => handleCityCardClick('Toronto')}
-                    >
-                        <HiOutlineMapPin size={14} />
-                        <span>Toronto</span>
-                        <MdChevronRight size={14}/>
-                    </Link>
-                </div>
-            </nav>
+            <Navbar variant="home" />
 
             <section className="landing-hero">
                 <div className="landing-hero__container">
@@ -93,15 +153,25 @@ export default function CitySelectorPage() {
                         </p>
 
                         <div className="landing-hero__buttons animate-fade-up-5">
-                            <Link to="/toronto"
-                            className="landing-hero__button--primary">
-                                Browse programs
+                            <Link
+                                to={torontoSearchPath('dropin')}
+                                className="landing-hero__button--primary"
+                                onClick={() => trackEvent('city_selected', { city: 'Toronto', source: 'landing_hero_dropin' })}
+                            >
+                                Find Toronto drop-in programs
                             </Link>
-                            <Link to="/toronto"
-                            className="landing-hero__button--outline">
-                                Drop-in today
+                            <Link
+                                to={torontoSearchPath('registered')}
+                                className="landing-hero__button--outline"
+                                onClick={() => trackEvent('city_selected', { city: 'Toronto', source: 'landing_hero_registered' })}
+                            >
+                                Find Toronto registered programs
                             </Link>
                         </div>
+
+                        <p className="landing-hero__caption animate-fade-up-5">
+                            Currently serving Toronto · More cities coming — <a href="#request-city">request yours</a>
+                        </p>
                     </div>
                 </div>
             </section>
@@ -110,54 +180,80 @@ export default function CitySelectorPage() {
                 <div className="landing-programs__container">
                     <h2 className="landing-programs__title">Drop-in Programs</h2>
                     <div className="landing-programs__grid">
-                        <div className="landing-activity-card animate-float-1">
+                        <Link
+                            to={torontoSearchPath('dropin', { category: 'Swimming' })}
+                            className="landing-activity-card animate-float-1"
+                            onClick={() => handleActivityCardClick('Swimming', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <FaSwimmer size={24}/>
                             </div>
                             <div className="landing-activity-card__name">Swimming</div>
                             <div className="landing-activity-card__subtitle">All ages · Skill levels</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-float-2">
+                        <Link
+                            to={torontoSearchPath('dropin', { category: 'Fitness & Workout' })}
+                            className="landing-activity-card animate-float-2"
+                            onClick={() => handleActivityCardClick('Gym', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <LiaDumbbellSolid size={24}/>
                             </div>
                             <div className="landing-activity-card__name">Gym</div>
                             <div className="landing-activity-card__subtitle">Cardio · Weights</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-float-3">
+                        <Link
+                            to={torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Table Tennis'] })}
+                            className="landing-activity-card animate-float-3"
+                            onClick={() => handleActivityCardClick('Table Tennis', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <FaTableTennis size={24}/>
                             </div>
                             <div className="landing-activity-card__name">Table Tennis</div>
                             <div className="landing-activity-card__subtitle">All Levels · Indoor Courts</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-float-4">
+                        <Link
+                            to={torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Badminton'] })}
+                            className="landing-activity-card animate-float-4"
+                            onClick={() => handleActivityCardClick('Badminton', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <GiShuttlecock size={24}/>
                             </div>
                             <div className="landing-activity-card__name">Badminton</div>
                             <div className="landing-activity-card__subtitle">All Levels · Casual Play</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-float-5">
+                        <Link
+                            to={torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Basketball'] })}
+                            className="landing-activity-card animate-float-5"
+                            onClick={() => handleActivityCardClick('Basketball', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <MdOutlineSportsBasketball size={24} />
                             </div>
                             <div className="landing-activity-card__name">Basketball</div>
                             <div className="landing=activity-card__subtitle">Pick-up Games · Hardwood Courts</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-float-6">
+                        <Link
+                            to={torontoSearchPath('dropin', { category: 'Yoga, Pilates & Wellness' })}
+                            className="landing-activity-card animate-float-6"
+                            onClick={() => handleActivityCardClick('Yoga & Pilates', 'dropin')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <GrYoga size={24} />
                             </div>
                             <div className="landing-activity-card__name">Yoga & Pilates</div>
                             <div className="landing-actiivty-card__subtitle">All Levels · Mind & Body</div>
-                        </div>
+                        </Link>
                     </div>
+
+                    <SectionCta label="Find Toronto drop-in programs now" source="dropin_programs" />
                 </div>
             </section>
 
@@ -165,54 +261,80 @@ export default function CitySelectorPage() {
                 <div className="landing-programs__container">
                     <h2 className="landing-programs__title">Registered Programs</h2>
                     <div className="landing-programs__grid">
-                        <div className="landing-activity-card animate-fade-up-1">
+                        <Link
+                            to={torontoSearchPath('registered', { category: 'Early Childhood & Family Programs' })}
+                            className="landing-activity-card animate-fade-up-1"
+                            onClick={() => handleActivityCardClick('Family & Caregiver Programs', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
-                                <BiSwim size={24} />
+                                <MdOutlineFamilyRestroom size={24} />
                             </div>
-                            <div className="landing-activity-card__name">Swimming Lessons</div>
-                            <div className="landing-activity-card_subtitle">All Ages · Skill Levels</div>
-                        </div>
+                            <div className="landing-activity-card__name">Family & Caregiver Programs</div>
+                            <div className="landing-activity-card_subtitle">Parent-Child · Toddler · Family Activities</div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-fade-up-2">
+                        <Link
+                            to={torontoSearchPath('registered', { activities: REGISTERED_TENNIS_ACTIVITIES })}
+                            className="landing-activity-card animate-fade-up-2"
+                            onClick={() => handleActivityCardClick('Tennis Classes', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <GiTennisRacket size={24} />
                             </div>
                             <div className="landing-activity-card__name">Tennis Classes</div>
                             <div className="landing-activity-card__subtitle">All Ages · Private · Small Group · Instructional</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-fade-up-3">
+                        <Link
+                            to={torontoSearchPath('registered', { category: 'Camps & School Break Programs' })}
+                            className="landing-activity-card animate-fade-up-3"
+                            onClick={() => handleActivityCardClick('Camps & School Break Programs', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <GiCampingTent size={24} />
                             </div>
                             <div className="landing-activity-card__name">Camps & School Break Programs</div>
                             <div className="landing-activity-card__subtitle">After-School · Summer Camps</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-fade-up-4">
+                        <Link
+                            to={torontoSearchPath('registered', { category: 'Education & Life Skills' })}
+                            className="landing-activity-card animate-fade-up-4"
+                            onClick={() => handleActivityCardClick('Education & Life Skills Workshops', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <MdOutlineCastForEducation size={24} />
                             </div>
                             <div className="landing-activity-card__name">Education & Life Skills Workshops</div>
                             <div className="landing-activity-card_subtitle">Financial Literacy · Leadership · Tech</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-fade-up-5">
+                        <Link
+                            to={torontoSearchPath('registered', { category: 'Arts & Crafts' })}
+                            className="landing-activity-card animate-fade-up-5"
+                            onClick={() => handleActivityCardClick('Arts & Crafts Lessons', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <MdOutlinePalette size={24} />
                             </div>
                             <div className="landing-activity-card__name">Arts & Crafts Lessons</div>
                             <div className="landing-activity-card__subtitle">Pottery · Painting · Sculpting</div>
-                        </div>
+                        </Link>
 
-                        <div className="landing-activity-card animate-fade-up-6">
+                        <Link
+                            to={torontoSearchPath('registered', { category: 'Fitness & Wellness' })}
+                            className="landing-activity-card animate-fade-up-6"
+                            onClick={() => handleActivityCardClick('Fitness & Wellness Classes', 'registered')}
+                        >
                             <div className="landing-activity-card__icon">
                                 <TbYoga size={24} />
                             </div>
                             <div className="landing-activity-card__name">Fitness & Wellness Classes</div>
                             <div className="landing-activity-card__subtitle">Yoga · HIIT · Beginner to Advanced</div>
-                        </div>
+                        </Link>
                     </div>
+
+                    <SectionCta label="Find Toronto registered programs now" source="registered_programs" />
                 </div>
             </section>
 
@@ -307,6 +429,8 @@ export default function CitySelectorPage() {
                             </div>
                         </div>
                     </div>
+
+                    <SectionCta source="features" />
                 </div>
             </section>
 
@@ -415,9 +539,10 @@ export default function CitySelectorPage() {
                         </div>
                     </div>
                 </div>
+                <SectionCta source="alternating_showcase" />
             </section>
 
-            <section className="landing-how-it-works">
+            <section id="how-it-works" className="landing-how-it-works">
                 <div className="landing-how-it-works__container">
                     <div className="landing-how-it-works__eyebrow">How it works</div>
                     <h2 className="landing-how-it-works__title">Find a program in three steps</h2>
@@ -451,6 +576,8 @@ export default function CitySelectorPage() {
                             <p className="landing-step-card__desc">Drop-ins need no booking — just show up. Registered programs link straight to the city portal.</p>
                         </div>
                     </div>
+
+                    <SectionCta label="Try it now — find Toronto programs" source="how_it_works" />
                 </div>
             </section>
 
@@ -515,46 +642,49 @@ export default function CitySelectorPage() {
                         <div className="landing-map-stat__label">Data updates</div>
                     </div>
                 </div>
+
+                <SectionCta label="Explore Toronto centres on the map" source="map_section" />
                 </div>
             </section>
 
             <section className="landing-cities">
                 <div className="landing-cities__container">
                     <h2 className="landing-cities__title">Available Cities</h2>
-                        <div className="landing-cities__grid">
-                            <Link 
-                                to="/toronto"
-                                className="landing-city-card"
-                                onClick={() => handleCityCardClick('Toronto')}
+                    <div className="landing-cities__grid">
+                        <Link
+                            to="/toronto"
+                            className="landing-city-card"
+                            onClick={() => handleCityCardClick('Toronto')}
+                        >
+                            <div className="landing-city-card__icon">🏙️</div>
+                            <h3 className="landing-city-card__name">Toronto</h3>
+                            <p className="landing-city-card__description">Browse 150+ recreation centres</p>
+                        </Link>
+
+                        <div id="request-city" className="landing-city-card landing-city-card--request">
+                            <div className="landing-city-card__icon">🌆</div>
+                            <h3 className="landing-city-card__name">Don't see your city?</h3>
+                            <p className="landing-city-card__description">Let us know which city you'd like us to add next!</p>
+                            <div
+                                className="landing-city-card__form"
+                                onClick={handleFormInteraction}
                             >
-                                <div className="landing-city-card__icon">🏙️</div>
-                                <h3 className="landing-city-card__name">Toronto</h3>
-                                <p className="landing-city-card__description">Browse 150+ recreation centres</p>
-                            </Link>
+                                <iframe
+                                    src={GOOGLE_FORM_EMBED_URL}
+                                    width="100%"
+                                    height="380"
+                                    frameBorder="0"
+                                    marginHeight={0}
+                                    marginWidth={0}
+                                    title="City Request Form"
+                                >
+                                    Loading form...
+                                </iframe>
+                            </div>
                         </div>
                     </div>
-            </section>
 
-            <section className="landing-request">
-                <div className="landing-request__container">
-                    <h2 className="landing-request__title">Don't see your city?</h2>
-                    <p className="landing-request__description">Let us know which city you'd like us to add next!</p>
-                    <div 
-                        className="landing-request__form"
-                        onClick={handleFormInteraction}
-                    >
-                        <iframe
-                            src={GOOGLE_FORM_EMBED_URL}
-                            width="100%"
-                            height="600"
-                            frameBorder="0"
-                            marginHeight={0}
-                            marginWidth={0}
-                            title="City Request Form"
-                        >
-                            Loading form...
-                        </iframe>
-                    </div>
+                    <SectionCta label="Meanwhile, explore Toronto programs" source="request_city" />
                 </div>
             </section>
 

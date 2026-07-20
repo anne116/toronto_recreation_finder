@@ -794,42 +794,33 @@
   margin: 0;
 }
 
-/* City Request Form Section */
-.landing-request {
-  background: var(--color-page-bg);
-  padding: var(--space-12) 0;
+/* City request card (inside Available Cities) */
+.landing-cities__grid {
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
-.landing-request__container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 var(--space-6);
+.landing-city-card--request {
+  max-width: 460px;
+  scroll-margin-top: 120px;
 }
 
-.landing-request__title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
-  text-align: center;
+.landing-city-card--request:hover {
+  border-color: var(--color-border-default);
+  box-shadow: var(--shadow-card-rest);
+  transform: none;
 }
 
-.landing-request__description {
-  font-size: var(--font-size-body);
-  color: var(--color-text-secondary);
-  text-align: center;
-  margin-bottom: var(--space-6);
-}
-
-.landing-request__form {
+.landing-city-card__form {
+  width: 100%;
+  margin-top: var(--space-2);
   border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: var(--shadow-card-rest);
-  background: var(--color-surface);
+  background: var(--color-page-bg);
   border: 1px solid var(--color-border-default);
 }
 
-.landing-request__form iframe {
+.landing-city-card__form iframe {
   display: block;
   border: none;
 }
@@ -854,32 +845,24 @@
   margin: 0;
 }
 
-/* Navbar */
-.landing-navbar {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border-default);
-  padding: var(--space-4) 0;
+/* Anchored sections: keep headings clear of the sticky navbar */
+#how-it-works,
+#request-city {
+  scroll-margin-top: 120px;
 }
 
-.landing-navbar__content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--space-6);
+/* Per-section CTA back to the search page */
+.landing-section-cta {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  margin-top: var(--space-8);
 }
 
-.landing-navbar__logo {
-  height: 70px;
-  width: auto;
-}
-
-.landing-navbar__city-pill {
+.landing-section-cta__pill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-primary-light);
   color: var(--color-primary);
   border-radius: var(--radius-badge);
@@ -889,9 +872,10 @@
   transition: all var(--transition-base);
 }
 
-.landing-navbar__city-pill:hover {
+.landing-section-cta__pill:hover {
   background: var(--color-primary);
   color: var(--color-surface);
+  transform: translateY(-1px);
 }
 
 /* Hero Section */
@@ -1048,6 +1032,13 @@
   transform: translateY(-2px);
 }
 
+/* Activity cards render as links; keep the card look */
+a.landing-activity-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .landing-activity-card__icon {
   width: 48px;
   height: 48px;
@@ -1123,7 +1114,24 @@
     width: 100%;
   }
 
-  .landing-request__form iframe {
-    height: 500px;
+  .landing-city-card--request {
+    max-width: none;
   }
+}
+
+/* Hero caption under CTA buttons */
+.landing-hero__caption {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}
+
+.landing-hero__caption a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.landing-hero__caption a:hover {
+  text-decoration: underline;
 }

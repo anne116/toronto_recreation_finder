@@ -8,6 +8,7 @@ import type { WeekdayName } from "../../../shared/lib/weekday";
 type Props = {
   category?: string;
   activity?: string;
+  activities?: string[];
   age?: AgeFilter;
   weekday?: WeekdayName | null;
   district?: string;
@@ -35,6 +36,7 @@ function normalizeProgram(p: any): DropInProgram {
 export default function SchedulePanel({
   category,
   activity,
+  activities,
   age,
   weekday,
   district,
@@ -67,6 +69,7 @@ export default function SchedulePanel({
         const resp = await searchProgramsAggregated({
           category,
           activity: activity ?? '',
+          activities,
           age,
           weekday: weekday ?? undefined,
           district,
@@ -94,7 +97,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, age, district, time_of_day, weekday, isVisible, hasSearchCriteria]);
+  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria]);
 
   if (!isVisible) return null;
 

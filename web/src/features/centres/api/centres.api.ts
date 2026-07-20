@@ -22,10 +22,19 @@ function appendIfPresent(qs: URLSearchParams, key: string, val: unknown) {
   else if (typeof val === "string" && val !== "") qs.append(key, val);
 }
 
+function appendActivityParams(qs: URLSearchParams, activity?: string, activities?: string[]) {
+  if (activities && activities.length > 0) {
+    for (const item of activities) appendIfPresent(qs, "activity", item);
+    return;
+  }
+  appendIfPresent(qs, "activity", activity);
+}
+
 
 export type SearchProgramsParams = {
   category?: string;
   activity: string;
+  activities?: string[];
   age?: ProgramAgeFilter;
   weekday?: WeekdayName;
   start_month?: string;
@@ -67,7 +76,7 @@ export async function searchProgramsAggregated(
 ): Promise<SearchProgramsResponse> {
   const qs = new URLSearchParams();
   appendIfPresent(qs, "category", params.category);
-  appendIfPresent(qs, "activity", params.activity);
+  appendActivityParams(qs, params.activity, params.activities);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "time_of_day", params.time_of_day);
@@ -81,7 +90,7 @@ export async function searchRegisteredPrograms(
 ): Promise<RegisteredProgramsResponse> {
   const qs = new URLSearchParams();
   appendIfPresent(qs, "category", params.category);
-  appendIfPresent(qs, "activity", params.activity);
+  appendActivityParams(qs, params.activity, params.activities);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "limit", params.limit);
@@ -92,18 +101,19 @@ export async function searchRegisteredPrograms(
 }
 
 export async function getCentres(
-  params: { 
+  params: {
     category?: string;
-    activity?: string; 
-    district?: string; 
+    activity?: string;
+    activities?: string[];
+    district?: string;
     age?: DropInAgeFilter;
-    facility_type?: string; 
-    weekday?: WeekdayName 
+    facility_type?: string;
+    weekday?: WeekdayName
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();
   appendIfPresent(qs, "category", params.category);
-  appendIfPresent(qs, "activity", params.activity);
+  appendActivityParams(qs, params.activity, params.activities);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "facility_type", params.facility_type);
@@ -113,17 +123,18 @@ export async function getCentres(
 }
 
 export async function getRegisteredCentres(
-  params: { 
+  params: {
     category?: string;
-    activity?: string; 
-    district?: string; 
+    activity?: string;
+    activities?: string[];
+    district?: string;
     age?: ProgramAgeFilter;
     start_month?: string;
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();
   appendIfPresent(qs, "category", params.category);
-  appendIfPresent(qs, "activity", params.activity);
+  appendActivityParams(qs, params.activity, params.activities);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "start_month", params.start_month);

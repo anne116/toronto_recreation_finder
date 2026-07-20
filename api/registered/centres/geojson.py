@@ -14,9 +14,12 @@ class handler(BaseHTTPRequestHandler):
 
         start_month = params.get("start_month", [None])[0] or None
 
+        activity_values = [value for value in params.get("activity", []) if value]
+        activity = activity_values[0] if len(activity_values) == 1 else (activity_values or None)
+
         payload = build_registered_centres_geojson_response(
             category=params.get("category", [None])[0],
-            activity=params.get("activity", [None])[0],
+            activity=activity,
             district=params.get("district", [None])[0],
             age=params.get("age", [None])[0],
             start_month=start_month,

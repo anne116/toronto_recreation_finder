@@ -7,6 +7,7 @@ type CentresFilters = {
   programType: ProgramType;
   category?: string;
   activity?: string;
+  activities?: string[];
   district?: string;
   weekday?: WeekdayName | null;
   startMonth?: string;
@@ -28,7 +29,8 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
       return;
     }
 
-    if (!filters.category && !filters.activity && !filters.district && !filters.weekday && !filters.age && !filters.startMonth) {
+    const hasActivities = Boolean(filters.activities && filters.activities.length > 0);
+    if (!filters.category && !filters.activity && !hasActivities && !filters.district && !filters.weekday && !filters.age && !filters.startMonth) {
       setData(null);
       return;
     }
@@ -45,6 +47,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
             ? await getRegisteredCentres({
               category: filters.category,
               activity: filters.activity,
+              activities: filters.activities,
               district: filters.district,
               age: filters.age,
               start_month: filters.startMonth,
@@ -52,6 +55,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
             : await getCentres({
               category: filters.category,
               activity: filters.activity,
+              activities: filters.activities,
               district: filters.district,
               age: filters.age as DropInAgeFilter | undefined,
               weekday: filters.weekday ?? undefined,
@@ -73,7 +77,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.programType, filters.category, filters.activity, filters.district, filters.weekday, filters.startMonth, filters.age]);
+  }, [enabled, filters.programType, filters.category, filters.activity, filters.activities, filters.district, filters.weekday, filters.startMonth, filters.age]);
 
   return { data, loading, error };
 }
