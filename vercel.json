@@ -19,6 +19,18 @@
       "destination": "/api/toronto/locations/centres?resource=facility-types"
     },
     {
+      "source": "/api/toronto/drop-in-programs/search",
+      "destination": "/api/toronto/drop-in-programs?resource=search"
+    },
+    {
+      "source": "/api/toronto/drop-in-programs/geojson",
+      "destination": "/api/toronto/drop-in-programs?resource=geojson"
+    },
+    {
+      "source": "/api/toronto/drop-in-programs/filter-options",
+      "destination": "/api/toronto/drop-in-programs?resource=filter-options"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
