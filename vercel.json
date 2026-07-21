@@ -27,6 +27,18 @@
       "destination": "/api/toronto/drop-in-programs?resource=filter-options"
     },
     {
+      "source": "/api/toronto/registered-programs/search",
+      "destination": "/api/toronto/registered-programs?resource=search"
+    },
+    {
+      "source": "/api/toronto/registered-programs/geojson",
+      "destination": "/api/toronto/registered-programs?resource=geojson"
+    },
+    {
+      "source": "/api/toronto/registered-programs/filter-options",
+      "destination": "/api/toronto/registered-programs?resource=filter-options"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
