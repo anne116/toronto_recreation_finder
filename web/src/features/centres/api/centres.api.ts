@@ -143,7 +143,7 @@ export async function getRegisteredCentres(
 }
 
 export async function getWards(): Promise<WardFeatureCollection> {
-  return get<WardFeatureCollection>(`/api/wards/geojson`);
+  return get<WardFeatureCollection>(`/wards.geojson`);
 }
 
 
