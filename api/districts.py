@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_district_options
+from api._lib.cities.toronto.ckan import build_district_options
 
 
 class handler(BaseHTTPRequestHandler):

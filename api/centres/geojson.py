@@ -4,7 +4,7 @@ import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_centres_geojson_response
+from api._lib.cities.toronto.ckan import build_centres_geojson_response
 
 
 class handler(BaseHTTPRequestHandler):

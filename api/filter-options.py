@@ -4,8 +4,8 @@ import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_activity_options
-from api._lib.data import ACTIVITY_TAXONOMY, CATEGORY_DESCRIPTIONS
+from api._lib.cities.toronto.ckan import build_activity_options
+from api._lib.cities.toronto.data import ACTIVITY_TAXONOMY, CATEGORY_DESCRIPTIONS
 
 
 class handler(BaseHTTPRequestHandler):

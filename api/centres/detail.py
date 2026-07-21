@@ -4,7 +4,7 @@ import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 
-from api._lib.ckan import build_centre_detail
+from api._lib.cities.toronto.ckan import build_centre_detail
 
 
 class handler(BaseHTTPRequestHandler):
