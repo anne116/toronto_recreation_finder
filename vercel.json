@@ -3,10 +3,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/centres/geojson",
-      "destination": "/api/centres/geojson"
-    },
-    {
       "source": "/api/toronto/centres/:centre_id",
       "destination": "/api/toronto/locations/centres"
     },
