@@ -11,6 +11,18 @@
       "destination": "/api/centres/detail"
     },
     {
+      "source": "/api/toronto/centres/:centre_id",
+      "destination": "/api/toronto/locations/centres"
+    },
+    {
+      "source": "/api/toronto/districts",
+      "destination": "/api/toronto/locations/centres?resource=districts"
+    },
+    {
+      "source": "/api/toronto/facility-types",
+      "destination": "/api/toronto/locations/centres?resource=facility-types"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
