@@ -95,7 +95,7 @@ export async function searchRegisteredPrograms(
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "start_month", params.start_month);
-  return get<RegisteredProgramsResponse>(`/api/registered/programs/search?${qs.toString()}`, {
+  return get<RegisteredProgramsResponse>(`/api/toronto/registered-programs/search?${qs.toString()}`, {
     signal: params.signal,
   });
 }
@@ -139,7 +139,7 @@ export async function getRegisteredCentres(
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "start_month", params.start_month);
 
-  return get<CentresFeatureCollection>(`/api/registered/centres/geojson?${qs.toString()}`);
+  return get<CentresFeatureCollection>(`/api/toronto/registered-programs/geojson?${qs.toString()}`);
 }
 
 export async function getWards(): Promise<WardFeatureCollection> {
@@ -164,7 +164,7 @@ export type FilterOptionsResponse = {
 
 export async function getFilterOptions(programType: ProgramType): Promise<FilterOptionsResponse> {
   if (programType === "registered") {
-    return get<FilterOptionsResponse>(`/api/registered/filter-options`);
+    return get<FilterOptionsResponse>(`/api/toronto/registered-programs/filter-options`);
   }
 
   const [filterOptions, districts, facilityTypes] = await Promise.all([
