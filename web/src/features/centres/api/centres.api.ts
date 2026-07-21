@@ -82,7 +82,7 @@ export async function searchProgramsAggregated(
   appendIfPresent(qs, "time_of_day", params.time_of_day);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "weekday", params.weekday);
-  return get<SearchProgramsResponse>(`/api/programs/search?${qs.toString()}`);
+  return get<SearchProgramsResponse>(`/api/toronto/drop-in-programs/search?${qs.toString()}`);
 }
 
 export async function searchRegisteredPrograms(
@@ -119,7 +119,7 @@ export async function getCentres(
   appendIfPresent(qs, "facility_type", params.facility_type);
   appendIfPresent(qs, "weekday", params.weekday);
   
-  return get<CentresFeatureCollection>(`/api/centres/geojson?${qs.toString()}`);
+  return get<CentresFeatureCollection>(`/api/toronto/drop-in-programs/geojson?${qs.toString()}`);
 }
 
 export async function getRegisteredCentres(
@@ -168,7 +168,7 @@ export async function getFilterOptions(programType: ProgramType): Promise<Filter
   }
 
   const [filterOptions, districts, facilityTypes] = await Promise.all([
-    get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/filter-options`),
+    get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/toronto/drop-in-programs/filter-options`),
     get<DistrictOption[]>(`/api/toronto/districts`),
     get<FacilityTypeOption[]>(`/api/toronto/facility-types`),
   ]);
