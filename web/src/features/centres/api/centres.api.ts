@@ -151,7 +151,7 @@ export async function getCentreDetail(
   centreId: string | number,
   init?: RequestInit
 ): Promise<CentreDetail> {
-  return get<CentreDetail>(`/api/centres/${centreId}`, init);
+  return get<CentreDetail>(`/api/toronto/centres/${centreId}`, init);
 }
 
 export type FilterOptionsResponse = {
@@ -169,8 +169,8 @@ export async function getFilterOptions(programType: ProgramType): Promise<Filter
 
   const [filterOptions, districts, facilityTypes] = await Promise.all([
     get<{ categories: CategoryOption[]; activities: ActivityOption[] }>(`/api/filter-options`),
-    get<DistrictOption[]>(`/api/districts`),
-    get<FacilityTypeOption[]>(`/api/facility-types`),
+    get<DistrictOption[]>(`/api/toronto/districts`),
+    get<FacilityTypeOption[]>(`/api/toronto/facility-types`),
   ]);
   
   return {
