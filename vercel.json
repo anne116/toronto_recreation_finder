@@ -3,12 +3,40 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/centres/geojson",
-      "destination": "/api/centres/geojson"
+      "source": "/api/toronto/centres/:centre_id",
+      "destination": "/api/toronto/locations/centres"
     },
     {
-      "source": "/api/centres/:centre_id",
-      "destination": "/api/centres/detail"
+      "source": "/api/toronto/districts",
+      "destination": "/api/toronto/locations/centres?resource=districts"
+    },
+    {
+      "source": "/api/toronto/facility-types",
+      "destination": "/api/toronto/locations/centres?resource=facility-types"
+    },
+    {
+      "source": "/api/toronto/drop-in-programs/search",
+      "destination": "/api/toronto/drop-in-programs?resource=search"
+    },
+    {
+      "source": "/api/toronto/drop-in-programs/geojson",
+      "destination": "/api/toronto/drop-in-programs?resource=geojson"
+    },
+    {
+      "source": "/api/toronto/drop-in-programs/filter-options",
+      "destination": "/api/toronto/drop-in-programs?resource=filter-options"
+    },
+    {
+      "source": "/api/toronto/registered-programs/search",
+      "destination": "/api/toronto/registered-programs?resource=search"
+    },
+    {
+      "source": "/api/toronto/registered-programs/geojson",
+      "destination": "/api/toronto/registered-programs?resource=geojson"
+    },
+    {
+      "source": "/api/toronto/registered-programs/filter-options",
+      "destination": "/api/toronto/registered-programs?resource=filter-options"
     },
     {
       "source": "/api/(.*)",

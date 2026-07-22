@@ -112,8 +112,10 @@
 }
 
 .filters-fab {
+  /* top offset clears the compact navbar (~60px tall) added to this page;
+     the navbar's z-index is 100, so this stays above it as a backstop */
   position: fixed;
-  top: 12px;
+  top: 72px;
   left: 12px;
   display: inline-flex;
   align-items: center;
@@ -124,7 +126,7 @@
   background: white;
   box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   cursor: pointer;
-  z-index: 25;
+  z-index: 101;
 }
 
 .filters-fab-icon {
