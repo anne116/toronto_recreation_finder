@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Static fallback title/description/OG/Twitter tags specifically for the
+      /toronto route, for crawlers and link-preview bots that don't execute
+      JavaScript (social/messaging previews, and Googlebot's initial crawl
+      pass before its render pass catches up). Served here instead of the
+      generic index.html fallback via the vercel.json rewrite for /toronto.
+      react-helmet-async overrides these once React mounts in a real
+      browser - this is only the fallback seen before that happens.
+    -->
+    <title>Toronto Recreation Finder - Find Drop-in & Registered Programs</title>
+    <meta name="description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
+    <meta property="og:title" content="Toronto Recreation Finder - Find Drop-in & Registered Programs" />
+    <meta property="og:description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cityrecreationfinder.com/toronto" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Toronto Recreation Finder - Find Drop-in & Registered Programs" />
+    <meta name="twitter:description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MSNBCNZMXP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-MSNBCNZMXP');
+    </script>
+
+    <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x0vsf0irg8");
+    </script>
+
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "61775a79db5e4a5f981e9fbb09d44f59"}'></script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

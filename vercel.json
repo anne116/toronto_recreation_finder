@@ -43,6 +43,14 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/toronto",
+      "destination": "/toronto.html"
+    },
+    {
+      "source": "/toronto/",
+      "destination": "/toronto.html"
+    },
+    {
       "source": "/toronto/:path*",
       "destination": "/index.html"
     },
