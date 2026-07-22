@@ -6,20 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!--
-      Static fallback title/description/OG tags for crawlers and link-preview
-      bots that don't execute JavaScript (social/messaging previews, and
-      Googlebot's initial crawl pass before its render pass catches up).
-      react-helmet-async overrides these per-route once React mounts in a
-      real browser - this is only the fallback seen before that happens.
+      Static fallback title/description/OG/Twitter tags specifically for the
+      /toronto route, for crawlers and link-preview bots that don't execute
+      JavaScript (social/messaging previews, and Googlebot's initial crawl
+      pass before its render pass catches up). Served here instead of the
+      generic index.html fallback via the vercel.json rewrite for /toronto.
+      react-helmet-async overrides these once React mounts in a real
+      browser - this is only the fallback seen before that happens.
     -->
-    <title>City Recreation Finder - Find Drop-in & Registered Programs in Toronto</title>
+    <title>Toronto Recreation Finder - Find Drop-in & Registered Programs</title>
     <meta name="description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
-    <meta property="og:title" content="City Recreation Finder - Toronto drop-in & registered programs" />
+    <meta property="og:title" content="Toronto Recreation Finder - Find Drop-in & Registered Programs" />
     <meta property="og:description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://cityrecreationfinder.com" />
+    <meta property="og:url" content="https://cityrecreationfinder.com/toronto" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="City Recreation Finder - Toronto drop-in & registered programs" />
+    <meta name="twitter:title" content="Toronto Recreation Finder - Find Drop-in & Registered Programs" />
     <meta name="twitter:description" content="Search drop-in and registered recreation programs across Toronto recreation centres. Filter by location, activity, age, and schedule." />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">

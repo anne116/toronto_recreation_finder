@@ -9,7 +9,7 @@ import { GrYoga } from "react-icons/gr";
 import { MdChevronRight, MdOutlineSportsBasketball, MdOutlineFamilyRestroom, MdOutlineCastForEducation, MdOutlinePalette } from 'react-icons/md';
 import { GiShuttlecock, GiTennisRacket } from 'react-icons/gi';
 import { HiOutlineMapPin } from 'react-icons/hi2';
-import { generateWebApplicationSchema } from '../shared/lib/schema';
+import { generateWebApplicationSchema, generatedItemListedSchema } from '../shared/lib/schema';
 import Navbar from '../shared/ui/Navbar';
 import './CitySelectorPage.css';
 import { trackEvent } from '../shared/lib/analytics';
@@ -103,6 +103,34 @@ export default function CitySelectorPage() {
         description: 'Find drop-in and registered programs at recreation centres across Toronto',
     });
 
+    const absoluteUrl = (path: string) => `${canonicalUrl}${path}`;
+
+    const dropInProgramsSchema = generatedItemListedSchema({
+        name: 'Drop-in Programs in Toronto',
+        description: 'Popular Toronto drop-in recreation activities you can search for right now.',
+        items: [
+            { position: 1, name: 'Swimming', url: absoluteUrl(torontoSearchPath('dropin', { category: 'Swimming' })) },
+            { position: 2, name: 'Gym', url: absoluteUrl(torontoSearchPath('dropin', { category: 'Fitness & Workout' })) },
+            { position: 3, name: 'Table Tennis', url: absoluteUrl(torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Table Tennis'] })) },
+            { position: 4, name: 'Badminton', url: absoluteUrl(torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Badminton'] })) },
+            { position: 5, name: 'Basketball', url: absoluteUrl(torontoSearchPath('dropin', { activities: DROPIN_SPORT_ACTIVITIES['Basketball'] })) },
+            { position: 6, name: 'Yoga & Pilates', url: absoluteUrl(torontoSearchPath('dropin', { category: 'Yoga, Pilates & Wellness' })) },
+        ],
+    });
+
+    const registeredProgramsSchema = generatedItemListedSchema({
+        name: 'Registered Programs in Toronto',
+        description: 'Popular Toronto registered recreation programs you can search for right now.',
+        items: [
+            { position: 1, name: 'Family & Caregiver Programs', url: absoluteUrl(torontoSearchPath('registered', { category: 'Early Childhood & Family Programs' })) },
+            { position: 2, name: 'Tennis Classes', url: absoluteUrl(torontoSearchPath('registered', { activities: REGISTERED_TENNIS_ACTIVITIES })) },
+            { position: 3, name: 'Camps & School Break Programs', url: absoluteUrl(torontoSearchPath('registered', { category: 'Camps & School Break Programs' })) },
+            { position: 4, name: 'Education & Life Skills Workshops', url: absoluteUrl(torontoSearchPath('registered', { category: 'Education & Life Skills' })) },
+            { position: 5, name: 'Arts & Crafts Lessons', url: absoluteUrl(torontoSearchPath('registered', { category: 'Arts & Crafts' })) },
+            { position: 6, name: 'Fitness & Wellness Classes', url: absoluteUrl(torontoSearchPath('registered', { category: 'Fitness & Wellness' })) },
+        ],
+    });
+
     const handleCityCardClick = (cityName: string) => {
         trackEvent('city_selected', {
             city: cityName,
@@ -127,6 +155,12 @@ export default function CitySelectorPage() {
                 <meta property="og:type" content="website" />
                 <script type="application/ld+json">
                   {JSON.stringify(webAppSchema)}
+                </script>
+                <script type="application/ld+json">
+                  {JSON.stringify(dropInProgramsSchema)}
+                </script>
+                <script type="application/ld+json">
+                  {JSON.stringify(registeredProgramsSchema)}
                 </script>
             </Helmet>
 
