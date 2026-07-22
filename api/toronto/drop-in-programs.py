@@ -8,7 +8,7 @@ from api._lib.cities.toronto.ckan import (
     build_centres_geojson_response,
     build_program_search_response,
 )
-from api._lib.cities.toronto.data import ACTIVITY_TAXONOMY, CATEGORY_DESCRIPTIONS
+from api._lib.cities.toronto.drop_in_taxonomy import ACTIVITY_TAXONOMY, CATEGORY_DESCRIPTIONS
 from api._lib.http import send_json
 
 

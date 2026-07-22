@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime
 
-from api._lib.cities.toronto.data import ACTIVITY_TAXONOMY, RAW_TO_CANONICAL_ACTIVITY
+from api._lib.cities.toronto.drop_in_taxonomy import ACTIVITY_TAXONOMY, RAW_TO_CANONICAL_ACTIVITY
 from api._lib.cities.toronto.registered_taxonomy import (
     REGISTERED_CATEGORY_TO_TITLES,
     REGISTERED_TITLE_TO_CATEGORY,
