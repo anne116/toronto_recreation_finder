@@ -6,9 +6,26 @@ import type { CentresFeatureCollection, WardFeatureCollection } from '../../../s
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
 import '../../../shared/ui/Spinner.css';
+import '../../../shared/ui/RunnerMarker.css';
 
 const PIN_COLOR = '#2A9D8F';
 const SELECTED_PIN_COLOR = '#1F7A6E';
+
+function createRunnerElement(): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'runner-marker';
+  el.innerHTML = `
+    <svg class="runner-svg" viewBox="0 0 40 40" width="26" height="26">
+      <circle class="runner-head" cx="20" cy="8" r="4.5" />
+      <line class="runner-torso" x1="20" y1="12" x2="20" y2="24" />
+      <line class="runner-arm-back" x1="20" y1="15" x2="14" y2="21" />
+      <line class="runner-arm-front" x1="20" y1="15" x2="26" y2="19" />
+      <line class="runner-leg-back" x1="20" y1="24" x2="14" y2="34" />
+      <line class="runner-leg-front" x1="20" y1="24" x2="27" y2="32" />
+    </svg>
+  `;
+  return el;
+}
 
 function normalizeCentres(
   centres: CentresFeatureCollection | null | undefined
@@ -47,6 +64,7 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedPopupRef = useRef<maplibregl.Popup | null>(null);
+  const runnerMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -73,6 +91,10 @@ export default function MapView({
       if (selectedPopupRef.current) {
         selectedPopupRef.current.remove();
         selectedPopupRef.current = null;
+      }
+      if (runnerMarkerRef.current) {
+        runnerMarkerRef.current.remove();
+        runnerMarkerRef.current = null;
       }
       map.remove();
       mapRef.current = null;
@@ -167,6 +189,10 @@ export default function MapView({
         selectedPopupRef.current.remove();
         selectedPopupRef.current = null;
       }
+      if (runnerMarkerRef.current) {
+        runnerMarkerRef.current.remove();
+        runnerMarkerRef.current = null;
+      }
       return;
     }
 
@@ -206,6 +232,16 @@ export default function MapView({
 
     const coords = selectedFeature.geometry.coordinates as [number, number];
 
+    if (runnerMarkerRef.current) {
+      runnerMarkerRef.current.setLngLat(coords);
+    } else {
+      runnerMarkerRef.current = new maplibregl.Marker({
+        element: createRunnerElement(),
+        offset: [0, -18],
+      })
+        .setLngLat(coords)
+        .addTo(map);
+    }
 
     map.flyTo({
       center: coords,

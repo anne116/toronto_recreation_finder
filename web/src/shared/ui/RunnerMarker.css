@@ -1,0 +1,65 @@
+.runner-marker {
+  pointer-events: none;
+}
+
+.runner-svg {
+  overflow: visible;
+  animation: runner-bob 0.4s ease-in-out infinite;
+}
+
+.runner-svg circle,
+.runner-svg line {
+  stroke: var(--color-primary-hover, #1F7A6E);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.runner-head {
+  fill: #ffffff;
+  stroke-width: 2;
+}
+
+.runner-arm-back {
+  transform-origin: 20px 15px;
+  animation: runner-arm-back 0.4s ease-in-out infinite;
+}
+
+.runner-arm-front {
+  transform-origin: 20px 15px;
+  animation: runner-arm-front 0.4s ease-in-out infinite;
+}
+
+.runner-leg-back {
+  transform-origin: 20px 24px;
+  animation: runner-leg-back 0.4s ease-in-out infinite;
+}
+
+.runner-leg-front {
+  transform-origin: 20px 24px;
+  animation: runner-leg-front 0.4s ease-in-out infinite;
+}
+
+@keyframes runner-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes runner-leg-back {
+  0%, 100% { transform: rotate(28deg); }
+  50% { transform: rotate(-28deg); }
+}
+
+@keyframes runner-leg-front {
+  0%, 100% { transform: rotate(-28deg); }
+  50% { transform: rotate(28deg); }
+}
+
+@keyframes runner-arm-back {
+  0%, 100% { transform: rotate(-22deg); }
+  50% { transform: rotate(22deg); }
+}
+
+@keyframes runner-arm-front {
+  0%, 100% { transform: rotate(22deg); }
+  50% { transform: rotate(-22deg); }
+}
