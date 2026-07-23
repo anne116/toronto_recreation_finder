@@ -78,7 +78,7 @@ export default function ResizablePanel({
                     className="resizable-panel__close"
                     aria-label="Close panel"
                 >
-                    x
+                    ✕
                 </button>
             </div>
 

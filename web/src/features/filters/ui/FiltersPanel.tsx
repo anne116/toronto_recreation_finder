@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { MdOutlineDirectionsWalk, MdOutlineEventAvailable } from 'react-icons/md';
+import Spinner from '../../../shared/ui/Spinner';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
@@ -12,9 +14,9 @@ type Props = {
   onChange: (v: Filters) => void;
   onSearch: () => void;
   onReset: () => void;
-  status?: string;
   isOpen: boolean;
   onToggle: () => void;
+  isSearching?: boolean;
 };
 
 export default function FiltersPanel({ 
@@ -22,11 +24,11 @@ export default function FiltersPanel({
   onProgramTypeChange,
   value, 
   onChange, 
-  onSearch, 
-  onReset, 
-  status, 
-  isOpen, 
-  onToggle
+  onSearch,
+  onReset,
+  isOpen,
+  onToggle,
+  isSearching = false
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
@@ -63,52 +65,44 @@ export default function FiltersPanel({
   return (
     <div className="filters-panel">
 
-      <div className="filters-panel__header">
-        <div className="filters-panel__title-wrap">
-          <a className="filters-panel__brand" href="/" aria-label="Reload Toronto Recreation Finder">
-            <img src="/trf-logo.svg" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
-            <div className="filters-panel__brand-copy">
-              <h3>Toronto Recreation Finder</h3>
-              <div className="quick-intro">
-                Find drop-in / registered programs at Toronto rec centres — fast.
-              </div>
-            </div>
-          </a>
+      <div className="program-type-group">
+        <div className="program-type-group__row">
+          <label className="program-type-group__label">Program Type</label>
+          <button
+            type="button"
+            className="filters-panel__toggle"
+            onClick={onToggle}
+            aria-label={isOpen ? 'Close filters' : 'Open filters'}
+            aria-expanded={isOpen}
+            title={isOpen ? 'Close filters' : 'Open filters'}
+          >
+            <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="filters-panel__toggle"
-          onClick={onToggle}
-          aria-label={isOpen ? 'Close filters' : 'Open filters'}
-          aria-expanded={isOpen}
-          title={isOpen ? 'Close filters' : 'Open filters'}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+          }}
         >
-          <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
-        </button>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1.1fr',
-          gap: '8px',
-          marginBottom: '20px',
-        }}
-      >
-        <button
-          type="button"
-          className={programType === 'dropin' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => onProgramTypeChange('dropin')}
-        >
-          Drop-in Programs
-        </button>
-        <button
-          type="button"
-          className={programType === 'registered' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => onProgramTypeChange('registered')}
-        >
-          Registered Programs
-        </button>
+          <button
+            type="button"
+            className={programType === 'dropin' ? 'btn btn-primary' : 'btn btn-secondary'}
+            onClick={() => onProgramTypeChange('dropin')}
+          >
+            <MdOutlineDirectionsWalk size={18} />
+            Drop-in
+          </button>
+          <button
+            type="button"
+            className={programType === 'registered' ? 'btn btn-primary' : 'btn btn-secondary'}
+            onClick={() => onProgramTypeChange('registered')}
+          >
+            <MdOutlineEventAvailable size={18} />
+            Registered
+          </button>
+        </div>
       </div>
 
       <div className="filter-group">
@@ -229,11 +223,11 @@ export default function FiltersPanel({
       </div>
 
       <div className="filter-group">
-        <button className="btn btn-primary" onClick={onSearch}>Search</button>
+        <button className="btn btn-primary" onClick={onSearch} disabled={isSearching}>
+          {isSearching ? <Spinner size={16} onDark label="Searching" /> : 'Search'}
+        </button>
         <button className="btn btn-secondary" onClick={onReset}>Reset Filters</button>
       </div>
-
-      <div id="status">{status}</div>
     </div>
   );
 }

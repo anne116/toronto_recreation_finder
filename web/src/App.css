@@ -1,9 +1,23 @@
 .app-shell {
+  --navbar-compact-height: 56px;
   display: flex;
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    --navbar-compact-height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    --navbar-compact-height: 50px;
+  }
 }
 
 .app-layout {
@@ -50,43 +64,6 @@
   transform: translateX(-100%);
 }
 
-.filters-panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.filters-panel__title-wrap {
-  min-width: 0;
-  flex: 1;
-}
-
-.filters-panel__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.filters-panel__brand:hover .filters-panel__brand-logo {
-  transform: translateY(-1px);
-}
-
-.filters-panel__brand-logo {
-  width: 48px;
-  height: 48px;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
-  flex: 0 0 48px;
-}
-
-.filters-panel__brand-copy {
-  min-width: 0;
-}
-
 .filters-panel__toggle {
   flex-shrink: 0;
   border: 1px solid rgba(148, 163, 184, 0.4);
@@ -112,10 +89,12 @@
 }
 
 .filters-fab {
-  /* top offset clears the compact navbar (~60px tall) added to this page;
-     the navbar's z-index is 100, so this stays above it as a backstop */
+  /* top offset clears the compact navbar via the shared
+     --navbar-compact-height variable (defined on .app-shell), plus a
+     12px gap; the navbar's z-index is 100, so this stays above it as a
+     backstop */
   position: fixed;
-  top: 72px;
+  top: calc(var(--navbar-compact-height) + 12px);
   left: 12px;
   display: inline-flex;
   align-items: center;
@@ -176,27 +155,13 @@
   }
 }
 
-.filters-panel h3 {
-  font-size: 18px;
-  color: #1e293b;
-  padding: 10px 10px 0px 0px;
-  margin: 0;
-}
-
-.quick-intro {
-  font-size: 14px;
-  color: #1e40af;
-  padding: 0px;
-}
-
 .filter-group {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   min-width: 0;
 }
 
 .filter-group label {
   display: block;
-  margin-bottom: 6px;
   font-weight: 600;
   font-size: 14px;
   color: #334155;
@@ -215,7 +180,7 @@
 .filter-group select:focus,
 .filter-group input[type="text"]:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .btn {
@@ -227,15 +192,43 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.program-type-group {
+  margin-bottom: 1px;
+}
+
+.program-type-group__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.program-type-group__label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #334155;
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: var(--color-primary-hover);
 }
 
 .btn-secondary {
@@ -249,19 +242,9 @@
 
 .btn-link {
   background: transparent;
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: underline;
   padding: 8px;
-}
-
-#status {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #0c4a6e;
 }
 
 .schedule-desktop {
@@ -273,8 +256,11 @@
 }
 
 .schedule-toggle {
+  /* sits 44px below .filters-fab's own top (its height + a gap) so both
+     can be visible at once (closing both panels) without overlapping,
+     and clears the compact navbar the same way .filters-fab does */
   position: fixed;
-  top: 64px;
+  top: calc(var(--navbar-compact-height) + 12px + 44px);
   left: 12px;
   display: inline-flex;
   align-items: center;
@@ -306,6 +292,30 @@
   z-index: 1;
 }
 
+/* Override maplibre-gl's default popup close button to match the
+   filters-panel toggle's style. Compound selector (2 classes) beats
+   maplibre-gl.css's single-class rule regardless of stylesheet order. */
+.map-panel .maplibregl-popup-close-button {
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.map-panel .maplibregl-popup-close-button:hover {
+  background: #f8fafc;
+}
+
 #map {
   position: absolute;
   top: 0;
@@ -332,6 +342,7 @@
   right: 0;
   width: 550px;
   height: 100vh;
+  height: 100dvh;
   background: white;
   box-shadow: -4px 0 12px rgba(0,0,0,0.15);
   z-index: 20;
@@ -356,7 +367,7 @@
   height: 100%;
   cursor: col-resize;
   background: transparent;
-  z-index: 9999;
+  z-index: var(--z-overlay);
   pointer-events: all;
 }
 
@@ -372,25 +383,25 @@
 }
 
 .sidebar-resizer:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(42, 157, 143, 0.1);
 }
 
 .sidebar-resizer:hover::before {
-  background: rgba(59, 130, 246, 0.5);
+  background: rgba(42, 157, 143, 0.5);
 }
 
 .sidebar-resizer:active {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(42, 157, 143, 0.2);
 }
 
 .sidebar-resizer:active::before {
-  background: #3b82f6;
+  background: var(--color-primary);
   width: 3px;
 }
 
 .sidebar-header {
   padding: 20px;
-  background: #0a5df7;
+  background: var(--color-primary);
   color: white;
   position: sticky;
   top: 0;
@@ -469,8 +480,8 @@
 }
 
 .badge-blue {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
 }
 
 .badge-green {
@@ -499,7 +510,7 @@
 }
 
 .dropdown-toggle.open {
-  background: #dbeafe;
+  background: var(--color-primary-light);
 }
 
 .dropdown-arrow {
@@ -518,7 +529,7 @@
   padding: 12px;
   background: #f8fafc;
   border-radius: 6px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary);
   margin-bottom: 16px;
   max-height: 100px;
   overflow-y: auto;
@@ -555,7 +566,7 @@
   background: #f8fafc;
   border-radius: 8px;
   margin-bottom: 8px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary);
 }
 
 .program-title {
@@ -573,7 +584,7 @@
   display: inline-block;
   margin-top: 16px;
   padding: 12px 20px;
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   text-decoration: none;
   border-radius: 8px;
@@ -582,7 +593,7 @@
 }
 
 .external-link:hover {
-  background: #2563eb;
+  background: var(--color-primary-hover);
 }
 
 .loading {
@@ -601,6 +612,7 @@
 .resizable-panel {
   flex-shrink: 0;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #e2e8f0;
@@ -613,14 +625,14 @@
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-primary);
   color: #ffffff;
 }
 
 .resizable-panel__title {
   flex: 1;
   font-weight: 600;
-  font-size: 16;
+  font-size: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -628,13 +640,24 @@
 }
 
 .resizable-panel__close {
+  flex-shrink: 0;
   border: none;
-  background: transparent;
+  background: var(--color-primary-light);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 20;
+  font-size: 14px;
   line-height: 1;
-  color: #ffffff;
-  margin-left: 8;
+  color: var(--color-primary-hover);
+  margin-left: 8px;
+}
+
+.resizable-panel__close:hover {
+  background: #ffffff;
 }
 
 .resizable-panel__body {
@@ -691,10 +714,10 @@
 
   .schedule-mobile-header {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 28px 1fr 28px;
     align-items: center;
     padding: 10px 12px;
-    background: #2563eb;
+    background: var(--color-primary);
     border-bottom: 1px solid rgba(148, 163, 184, 0.25);
     flex-shrink: 0;
     column-gap: 8px;
@@ -706,20 +729,31 @@
     font-weight: 600;
     font-size: 14px;
     color: #ffffff;
-    transform: translateX(10px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .schedule-mobile-close {
     grid-column: 3;
     justify-self: end;
+    flex-shrink: 0;
     border: none;
-    background: transparent;
-    color: #ffffff;
-    font-weight: 500;
+    background: var(--color-primary-light);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 14px;
     line-height: 1;
-    padding: 4px;
+    color: var(--color-primary-hover);
+  }
+
+  .schedule-mobile-close:hover {
+    background: #ffffff;
   }
 
   .schedule-mobile-body {
@@ -730,13 +764,17 @@
   .filters-panel {
     position: fixed;
     left: 0;
-    top: 0;
-    height: 100vh;
-    max-height: 100vh;
+    top: var(--navbar-compact-height);
+    height: calc(100vh - var(--navbar-compact-height));
+    max-height: calc(100vh - var(--navbar-compact-height));
     width: min(92vw, 360px);
     border-radius: 0 12px 12px 0;
     padding-right: 15px;
     z-index: 15;
+  }
+
+  .filters-panel.open {
+    transform: none;
   }
 
   .filters-panel.closed {
@@ -759,6 +797,7 @@
   .filters-panel {
     width: clamp(280px, 30vw, 360px);
     max-height: 100vh;
+    max-height: 100dvh;
     border-right: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 0;
     padding-right: 20px;
@@ -786,5 +825,6 @@
   .map-panel {
     flex: 1;
     height: 100vh;
+    height: 100dvh;
   }
 }

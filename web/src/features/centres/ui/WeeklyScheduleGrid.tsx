@@ -1,5 +1,6 @@
 import type { DropInProgram } from '../../../shared/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MdChevronRight } from 'react-icons/md';
 
 type ScheduleProgram = DropInProgram & {
   occurrence_count?: number;
@@ -220,9 +221,9 @@ export default function WeeklyScheduleGrid({
           display: 'flex',
           gap: 0,
           padding: '8px 12px 0',
-          borderBottom: '3px solid #3b82f6',
+          borderBottom: '3px solid var(--color-primary)',
           borderRadius: '12px 12px 0px 0px',
-          background: '#e5f0ff',
+          background: 'var(--color-primary-light)',
           position: 'sticky',
           top: 0,
           zIndex: 5,
@@ -243,30 +244,30 @@ export default function WeeklyScheduleGrid({
                 setSelectedDay(key)}
               }
               style={{
-                border: isActive 
-                ? '2px solid #3b82f6'
+                border: isActive
+                ? '2px solid var(--color-primary)'
                 : isMatchingDay
                 ? `2px solid ${MATCH_TAB_TINT}`
                 : hasPrograms
-                ? '1.5px solid #bfdbfe'
+                ? '1.5px solid var(--color-border-hover)'
                 : '1px dashed #cbd5f5',
                 padding: '8px 12px',
                 borderRadius: '12px 12px 0px 0px',
                 fontSize: 13,
                 cursor: hasPrograms ? 'pointer' : 'default',
-                background: isActive 
-                ? '#4d95f7' 
+                background: isActive
+                ? 'var(--color-primary)'
                 : isMatchingDay
                 ? MATCH_TAB_TINT
                 : hasPrograms
-                ? '#e5f0ff'
+                ? 'var(--color-primary-light)'
                 : '#f8fafc',
-                color: isActive 
-                ? '#ffffff' 
+                color: isActive
+                ? '#ffffff'
                 : isMatchingDay
                 ? '#134e4a'
                 : hasPrograms
-                ? '#1d4ed8'
+                ? 'var(--color-primary-hover)'
                 : '#94a3b8',
                 fontWeight: isActive ? 700 : 500,
                 whiteSpace: 'nowrap',
@@ -376,18 +377,17 @@ export default function WeeklyScheduleGrid({
               <div
                 style={{
                   fontSize: '13px',
-                  color: '#3b82f6',
+                  color: 'var(--color-primary)',
                   marginBottom: '4px',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '4px',
                 }}
               >
-                📍{locationName}
+                <span>📍{locationName}</span>
                 {onLocationClick && locationId && (
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>
-                    (click to view)
-                  </span>
+                  <MdChevronRight size={16} color="#94a3b8" />
                 )}
               </div>
 
