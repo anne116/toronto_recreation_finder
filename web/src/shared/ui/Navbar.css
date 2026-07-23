@@ -40,11 +40,16 @@
 
   /* Compact variant (search page) */
   .navbar--compact {
-    padding: var(--space-2) 0;
+    padding: 0;
   }
 
   .navbar--compact .navbar__logo {
-    height: 44px;
+    height: var(--navbar-compact-height, 56px);
+  }
+
+  .navbar--compact .navbar__content {
+    max-width: none;
+    padding: 0 var(--space-2);
   }
   
   /* Right side container */
@@ -185,10 +190,6 @@
       font-size: 12px;
       padding: 6px 10px;
     }
-
-    .navbar--compact .navbar__logo {
-      height: 40px;
-    }
   }
 
   @media (max-width: 480px) {
@@ -198,10 +199,6 @@
 
     .navbar__link {
       font-size: 13px;
-    }
-
-    .navbar--compact .navbar__logo {
-      height: 36px;
     }
   }
   

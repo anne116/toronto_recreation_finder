@@ -12,7 +12,6 @@ type Props = {
   onChange: (v: Filters) => void;
   onSearch: () => void;
   onReset: () => void;
-  status?: string;
   isOpen: boolean;
   onToggle: () => void;
 };
@@ -22,10 +21,9 @@ export default function FiltersPanel({
   onProgramTypeChange,
   value, 
   onChange, 
-  onSearch, 
-  onReset, 
-  status, 
-  isOpen, 
+  onSearch,
+  onReset,
+  isOpen,
   onToggle
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -64,17 +62,6 @@ export default function FiltersPanel({
     <div className="filters-panel">
 
       <div className="filters-panel__header">
-        <div className="filters-panel__title-wrap">
-          <a className="filters-panel__brand" href="/" aria-label="Reload Toronto Recreation Finder">
-            <img src="/trf-logo.svg" alt="Toronto Recreation Finder logo" className="filters-panel__brand-logo" /> 
-            <div className="filters-panel__brand-copy">
-              <h3>Toronto Recreation Finder</h3>
-              <div className="quick-intro">
-                Find drop-in / registered programs at Toronto rec centres — fast.
-              </div>
-            </div>
-          </a>
-        </div>
         <button
           type="button"
           className="filters-panel__toggle"
@@ -232,8 +219,6 @@ export default function FiltersPanel({
         <button className="btn btn-primary" onClick={onSearch}>Search</button>
         <button className="btn btn-secondary" onClick={onReset}>Reset Filters</button>
       </div>
-
-      <div id="status">{status}</div>
     </div>
   );
 }

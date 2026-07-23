@@ -101,7 +101,6 @@ export default function App() {
   });
 
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
-  const [status, setStatus] = useState<string>('Pick a filter above and hit Search');
   const [searchNotice, setSearchNotice] = useState<string | null>(null);
   const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -170,7 +169,6 @@ export default function App() {
   function handleSearch() {
     if (!hasAnySelectedFilter(filters)) {
       setSearchNotice('Select at least one filter to search.');
-      setStatus('Select at least one filter to search.');
       return;
     }
 
@@ -198,7 +196,6 @@ export default function App() {
     if (filters.age) params.set('age', filters.age);
     setSearchParams(params);
 
-    setStatus('Searching...');
     setHasSearched(true);
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
@@ -206,13 +203,6 @@ export default function App() {
     setIsFiltersOpen(false);
 
     setShowSchedulePanel(true);
-    setStatus(
-      filters.activity
-        ? `Showing ${filters.activity} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-        : filters.category
-          ? `Showing ${filters.category} ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-          : `Showing matching ${programType === 'dropin' ? 'programs' : 'registered programs'}`
-    );
     setIsScheduleOpen(true);
   }
   
@@ -232,7 +222,6 @@ export default function App() {
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
     setHasSearched(false);
-    setStatus('Filters reset');
     setActiveFilters(null);
     setIsScheduleOpen(false);
   }
@@ -258,7 +247,6 @@ export default function App() {
     setHasSearched(false);
     setActiveFilters(null);
     setIsScheduleOpen(false);
-    setStatus(nextType === 'dropin' ? 'Ready to search drop-in' : 'Ready to search registered programs')
   }
 
   function handleCentreMarkerClick(locationId: string | number) {
@@ -276,7 +264,6 @@ export default function App() {
     if (showSchedulePanel) {
       setIsScheduleOpen(true);
     }
-    setStatus('Viewing centre details');
   }
 
   function handleScheduleLocationClick(
@@ -301,7 +288,6 @@ export default function App() {
     
     setHighlightedLocationId(null);
     setSelectedLocationId(locationId);
-    setStatus('Viewing centre details');
   }
  
   const pageMetadata = buildPageMetadata(programType, activeFilters);
@@ -355,7 +341,6 @@ export default function App() {
             onChange={setFilters}
             onSearch={handleSearch}
             onReset={handleReset}
-            status={status}
             isOpen={isFiltersOpen}
             onToggle={() => setIsFiltersOpen(prev => !prev)}
           />

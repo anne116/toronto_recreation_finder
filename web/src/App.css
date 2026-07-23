@@ -1,9 +1,22 @@
 .app-shell {
+  --navbar-compact-height: 56px;
   display: flex;
   flex-direction: column;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    --navbar-compact-height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    --navbar-compact-height: 50px;
+  }
 }
 
 .app-layout {
@@ -53,38 +66,8 @@
 .filters-panel__header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-end;
   margin-bottom: 12px;
-}
-
-.filters-panel__title-wrap {
-  min-width: 0;
-  flex: 1;
-}
-
-.filters-panel__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.filters-panel__brand:hover .filters-panel__brand-logo {
-  transform: translateY(-1px);
-}
-
-.filters-panel__brand-logo {
-  width: 48px;
-  height: 48px;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
-  flex: 0 0 48px;
-}
-
-.filters-panel__brand-copy {
-  min-width: 0;
 }
 
 .filters-panel__toggle {
@@ -112,10 +95,12 @@
 }
 
 .filters-fab {
-  /* top offset clears the compact navbar (~60px tall) added to this page;
-     the navbar's z-index is 100, so this stays above it as a backstop */
+  /* top offset clears the compact navbar via the shared
+     --navbar-compact-height variable (defined on .app-shell), plus a
+     12px gap; the navbar's z-index is 100, so this stays above it as a
+     backstop */
   position: fixed;
-  top: 72px;
+  top: calc(var(--navbar-compact-height) + 12px);
   left: 12px;
   display: inline-flex;
   align-items: center;
@@ -174,19 +159,6 @@
     opacity: 1;
     transform: translate(-50%, -50%);
   }
-}
-
-.filters-panel h3 {
-  font-size: 18px;
-  color: #1e293b;
-  padding: 10px 10px 0px 0px;
-  margin: 0;
-}
-
-.quick-intro {
-  font-size: 14px;
-  color: #1e40af;
-  padding: 0px;
 }
 
 .filter-group {
@@ -254,16 +226,6 @@
   padding: 8px;
 }
 
-#status {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #0c4a6e;
-}
-
 .schedule-desktop {
   display: none;
 }
@@ -273,8 +235,11 @@
 }
 
 .schedule-toggle {
+  /* sits 44px below .filters-fab's own top (its height + a gap) so both
+     can be visible at once (closing both panels) without overlapping,
+     and clears the compact navbar the same way .filters-fab does */
   position: fixed;
-  top: 64px;
+  top: calc(var(--navbar-compact-height) + 12px + 44px);
   left: 12px;
   display: inline-flex;
   align-items: center;
