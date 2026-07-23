@@ -407,7 +407,7 @@ export default function App() {
                   onClick={() => setIsScheduleOpen(false)}
                   aria-label="Close schedule"
                 >
-                  x
+                  ✕
                 </button>
               </div>
               <div className="schedule-mobile-body">

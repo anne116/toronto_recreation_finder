@@ -1,5 +1,6 @@
 import type { DropInProgram } from '../../../shared/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MdChevronRight } from 'react-icons/md';
 
 type ScheduleProgram = DropInProgram & {
   occurrence_count?: number;
@@ -380,14 +381,13 @@ export default function WeeklyScheduleGrid({
                   marginBottom: '4px',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '4px',
                 }}
               >
-                📍{locationName}
+                <span>📍{locationName}</span>
                 {onLocationClick && locationId && (
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>
-                    (click to view)
-                  </span>
+                  <MdChevronRight size={16} color="#94a3b8" />
                 )}
               </div>
 

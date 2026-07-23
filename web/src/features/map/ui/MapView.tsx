@@ -7,9 +7,8 @@ import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
 import '../../../shared/ui/Spinner.css';
 
-// MapLibre paint properties can't read CSS custom properties, so this
-// mirrors --color-primary from design-tokens.css as a literal value.
 const PIN_COLOR = '#2A9D8F';
+const SELECTED_PIN_COLOR = '#1F7A6E';
 
 function normalizeCentres(
   centres: CentresFeatureCollection | null | undefined
@@ -162,6 +161,8 @@ export default function MapView({
 
     if (!selectedLocationId) {
       map.setPaintProperty('centres-circle', 'circle-color', PIN_COLOR);
+      map.setPaintProperty('centres-circle', 'circle-radius', 7);
+      map.setPaintProperty('centres-circle', 'circle-stroke-width', 2);
       if (selectedPopupRef.current) {
         selectedPopupRef.current.remove();
         selectedPopupRef.current = null;
@@ -170,11 +171,24 @@ export default function MapView({
     }
 
     const selectedIdStr = String(selectedLocationId);
+    const isSelected = ['==', ['to-string', ['get', 'id']], selectedIdStr];
     map.setPaintProperty('centres-circle', 'circle-color', [
       'case',
-      ['==', ['to-string', ['get', 'id']], selectedIdStr],
-      '#ff000d',
+      isSelected,
+      SELECTED_PIN_COLOR,
       PIN_COLOR,
+    ]);
+    map.setPaintProperty('centres-circle', 'circle-radius', [
+      'case',
+      isSelected,
+      10,
+      7,
+    ]);
+    map.setPaintProperty('centres-circle', 'circle-stroke-width', [
+      'case',
+      isSelected,
+      3,
+      2,
     ]);
 
     if (!centres || !centres.features?.length) return;
