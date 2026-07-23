@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MdOutlineDirectionsWalk, MdOutlineEventAvailable } from 'react-icons/md';
+import Spinner from '../../../shared/ui/Spinner';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
@@ -15,6 +16,7 @@ type Props = {
   onReset: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  isSearching?: boolean;
 };
 
 export default function FiltersPanel({ 
@@ -25,7 +27,8 @@ export default function FiltersPanel({
   onSearch,
   onReset,
   isOpen,
-  onToggle
+  onToggle,
+  isSearching = false
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
@@ -220,7 +223,9 @@ export default function FiltersPanel({
       </div>
 
       <div className="filter-group">
-        <button className="btn btn-primary" onClick={onSearch}>Search</button>
+        <button className="btn btn-primary" onClick={onSearch} disabled={isSearching}>
+          {isSearching ? <Spinner size={16} onDark label="Searching" /> : 'Search'}
+        </button>
         <button className="btn btn-secondary" onClick={onReset}>Reset Filters</button>
       </div>
     </div>

@@ -198,6 +198,11 @@
   margin-bottom: 5px;
 }
 
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .program-type-group {
   margin-bottom: 1px;
 }

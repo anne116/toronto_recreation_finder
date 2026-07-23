@@ -5,6 +5,7 @@ import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
+import '../../../shared/ui/Spinner.css';
 
 function normalizeCentres(
   centres: CentresFeatureCollection | null | undefined
@@ -38,7 +39,7 @@ export default function MapView({
   userLocation, 
   selectedLocationId, 
 }: Props) {
-  const { detail } = useCentreDetails(selectedLocationId ?? null);
+  const { detail, loading: detailLoading } = useCentreDetails(selectedLocationId ?? null);
   const mapRef = useRef<MaplibreMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -204,7 +205,13 @@ export default function MapView({
     const address = detail?.address ?? '';
     const phone = detail?.phone ?? '';
     const url = detail?.url && detail.url !== "None" ? detail.url : undefined;
-    const popupHtml = `
+    const popupHtml = (detailLoading && !detail)
+      ? `
+        <div style="display: flex; align-items: center; justify-content: center; padding: 12px 20px;">
+          <span class="spinner" role="status"><span class="sr-only">Loading centre details</span></span>
+        </div>
+      `
+      : `
       <div style="font-size: 13px; line-height: 1.4;">
         <div style="font-weight: 600; margin-bottom: 4px;">
           ${name}
@@ -212,7 +219,7 @@ export default function MapView({
         ${district ? `<div>District: ${district}</div>` : '' }
         ${address ? `<div>Address: ${address}</div>` : '' }
         ${phone ? `<div>Phone: ${phone}</div>` : ''}
-        ${url ? `<div>Visit their <a id="centre-website-link" href="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }      
+        ${url ? `<div>Visit their <a id="centre-website-link" href="${url}" target="_blank" rel="noopener noreferrer">website</a></div>` : '' }
       </div>
     `;
 
@@ -249,7 +256,7 @@ export default function MapView({
     });
 
     selectedPopupRef.current = popup;
-  }, [selectedLocationId, mapReady, centres, detail]);
+  }, [selectedLocationId, mapReady, centres, detail, detailLoading]);
 
   useEffect(() => {
     const map = mapRef.current;

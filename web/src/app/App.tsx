@@ -13,6 +13,7 @@ import '../App.css';
 import type { WeekdayName } from '../shared/lib/weekday';
 import RegisteredProgramsPanel from '../features/centres/ui/RegisteredProgramsPanel';
 import { trackEvent } from '../shared/lib/analytics';
+import Spinner from '../shared/ui/Spinner';
 
 
   type Filters = {
@@ -343,6 +344,7 @@ export default function App() {
             onReset={handleReset}
             isOpen={isFiltersOpen}
             onToggle={() => setIsFiltersOpen(prev => !prev)}
+            isSearching={centresLoading}
           />
         </aside>
 
@@ -469,8 +471,8 @@ export default function App() {
 
 
         {hasSearched && centresLoading && (
-          <div className = "page-loading">
-            Loading centres...
+          <div className="page-loading">
+            <Spinner size={32} label="Loading centres" />
           </div>
         )}
 

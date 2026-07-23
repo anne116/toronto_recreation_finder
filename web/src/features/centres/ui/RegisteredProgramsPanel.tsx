@@ -3,6 +3,7 @@ import { searchRegisteredPrograms } from "../api/centres.api";
 import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
+import Spinner from "../../../shared/ui/Spinner";
 
 type Props = {
   category?: string;
@@ -188,8 +189,8 @@ export default function RegisteredProgramsPanel({
         )}
 
         {hasSearchCriteria && loading && (
-          <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
-            Loading registered programs…
+          <div style={{ padding: "40px 20px", textAlign: "center" }}>
+            <Spinner label="Loading registered programs" />
           </div>
         )}
 

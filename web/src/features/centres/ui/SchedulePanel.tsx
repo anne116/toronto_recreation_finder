@@ -3,6 +3,7 @@ import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
 import type { AgeFilter, DropInProgram } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
+import Spinner from "../../../shared/ui/Spinner";
 
 
 type Props = {
@@ -123,8 +124,8 @@ export default function SchedulePanel({
         )}
   
         {hasSearchCriteria && loading && (
-          <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
-            Loading schedules…
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <Spinner label="Loading schedules" />
           </div>
         )}
   
