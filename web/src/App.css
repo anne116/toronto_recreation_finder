@@ -4,6 +4,7 @@
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -341,6 +342,7 @@
   right: 0;
   width: 550px;
   height: 100vh;
+  height: 100dvh;
   background: white;
   box-shadow: -4px 0 12px rgba(0,0,0,0.15);
   z-index: 20;
@@ -610,6 +612,7 @@
 .resizable-panel {
   flex-shrink: 0;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #e2e8f0;
@@ -629,7 +632,7 @@
 .resizable-panel__title {
   flex: 1;
   font-weight: 600;
-  font-size: 16;
+  font-size: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -794,6 +797,7 @@
   .filters-panel {
     width: clamp(280px, 30vw, 360px);
     max-height: 100vh;
+    max-height: 100dvh;
     border-right: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 0;
     padding-right: 20px;
@@ -821,5 +825,6 @@
   .map-panel {
     flex: 1;
     height: 100vh;
+    height: 100dvh;
   }
 }
