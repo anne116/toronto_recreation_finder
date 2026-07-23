@@ -179,7 +179,7 @@
 .filter-group select:focus,
 .filter-group input[type="text"]:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .btn {
@@ -222,12 +222,12 @@
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: var(--color-primary-hover);
 }
 
 .btn-secondary {
@@ -241,7 +241,7 @@
 
 .btn-link {
   background: transparent;
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: underline;
   padding: 8px;
 }
@@ -341,7 +341,7 @@
   height: 100%;
   cursor: col-resize;
   background: transparent;
-  z-index: 9999;
+  z-index: var(--z-overlay);
   pointer-events: all;
 }
 
@@ -357,25 +357,25 @@
 }
 
 .sidebar-resizer:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(42, 157, 143, 0.1);
 }
 
 .sidebar-resizer:hover::before {
-  background: rgba(59, 130, 246, 0.5);
+  background: rgba(42, 157, 143, 0.5);
 }
 
 .sidebar-resizer:active {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(42, 157, 143, 0.2);
 }
 
 .sidebar-resizer:active::before {
-  background: #3b82f6;
+  background: var(--color-primary);
   width: 3px;
 }
 
 .sidebar-header {
   padding: 20px;
-  background: #0a5df7;
+  background: var(--color-primary);
   color: white;
   position: sticky;
   top: 0;
@@ -454,8 +454,8 @@
 }
 
 .badge-blue {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
 }
 
 .badge-green {
@@ -484,7 +484,7 @@
 }
 
 .dropdown-toggle.open {
-  background: #dbeafe;
+  background: var(--color-primary-light);
 }
 
 .dropdown-arrow {
@@ -503,7 +503,7 @@
   padding: 12px;
   background: #f8fafc;
   border-radius: 6px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary);
   margin-bottom: 16px;
   max-height: 100px;
   overflow-y: auto;
@@ -540,7 +540,7 @@
   background: #f8fafc;
   border-radius: 8px;
   margin-bottom: 8px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary);
 }
 
 .program-title {
@@ -558,7 +558,7 @@
   display: inline-block;
   margin-top: 16px;
   padding: 12px 20px;
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   text-decoration: none;
   border-radius: 8px;
@@ -567,7 +567,7 @@
 }
 
 .external-link:hover {
-  background: #2563eb;
+  background: var(--color-primary-hover);
 }
 
 .loading {
@@ -598,7 +598,7 @@
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-primary);
   color: #ffffff;
 }
 
@@ -679,7 +679,7 @@
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     padding: 10px 12px;
-    background: #2563eb;
+    background: var(--color-primary);
     border-bottom: 1px solid rgba(148, 163, 184, 0.25);
     flex-shrink: 0;
     column-gap: 8px;
