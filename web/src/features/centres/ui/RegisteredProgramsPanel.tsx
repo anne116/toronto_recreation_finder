@@ -249,7 +249,7 @@ export default function RegisteredProgramsPanel({
                   <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
                     📅 {collapsedDateRange}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#2563eb", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "14px", color: "var(--color-primary-hover)", marginBottom: "4px" }}>
                     📍 {program.location_name}
                   </div>
                   <div style={{ fontSize: "14px", color: "#475569", marginBottom: "10px" }}>
@@ -277,7 +277,7 @@ export default function RegisteredProgramsPanel({
                           justifyContent: "center",
                           padding: "8px 12px",
                           borderRadius: "999px",
-                          background: "#2563eb",
+                          background: "var(--color-primary-hover)",
                           color: "#ffffff",
                           fontSize: "13px",
                           fontWeight: 600,
@@ -299,7 +299,7 @@ export default function RegisteredProgramsPanel({
                       style={{
                         border: "none",
                         background: "transparent",
-                        color: "#0f766e",
+                        color: "var(--color-primary-hover)",
                         fontSize: "13px",
                         fontWeight: 600,
                         padding: 0,
@@ -315,7 +315,7 @@ export default function RegisteredProgramsPanel({
                       style={{
                         marginTop: "12px",
                         paddingTop: "12px",
-                        borderTop: "1px solid #dbeafe",
+                        borderTop: "1px solid var(--color-primary-light)",
                         display: "grid",
                         gap: "10px",
                       }}
@@ -351,7 +351,7 @@ export default function RegisteredProgramsPanel({
                                 })
                               }}
                               style={{
-                                color: "#1d4ed8",
+                                color: "var(--color-primary-hover)",
                                 fontSize: "13px",
                                 fontWeight: 600,
                                 textDecoration: "none",
