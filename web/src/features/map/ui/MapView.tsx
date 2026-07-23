@@ -205,7 +205,7 @@ export default function MapView({
     const address = detail?.address ?? '';
     const phone = detail?.phone ?? '';
     const url = detail?.url && detail.url !== "None" ? detail.url : undefined;
-    const popupHtml = (detailLoading && !detail)
+    const popupHtml = detailLoading
       ? `
         <div style="display: flex; align-items: center; justify-content: center; padding: 12px 20px;">
           <span class="spinner" role="status"><span class="sr-only">Loading centre details</span></span>
