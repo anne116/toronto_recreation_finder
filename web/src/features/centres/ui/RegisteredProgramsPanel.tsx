@@ -4,6 +4,7 @@ import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../share
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
 import Spinner from "../../../shared/ui/Spinner";
+import { MdChevronRight } from "react-icons/md";
 
 type Props = {
   category?: string;
@@ -249,8 +250,19 @@ export default function RegisteredProgramsPanel({
                   <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
                     📅 {collapsedDateRange}
                   </div>
-                  <div style={{ fontSize: "14px", color: "var(--color-primary-hover)", marginBottom: "4px" }}>
-                    📍 {program.location_name}
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "var(--color-primary-hover)",
+                      marginBottom: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "4px",
+                    }}
+                  >
+                    <span>📍 {program.location_name}</span>
+                    <MdChevronRight size={16} color="#94a3b8" />
                   </div>
                   <div style={{ fontSize: "14px", color: "#475569", marginBottom: "10px" }}>
                     👥 {formatAgeRange(program.age_min, program.age_max)}
