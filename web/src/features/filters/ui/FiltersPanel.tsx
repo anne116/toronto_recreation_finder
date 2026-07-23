@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { MdOutlineDirectionsWalk, MdOutlineEventAvailable } from 'react-icons/md';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
@@ -61,41 +62,44 @@ export default function FiltersPanel({
   return (
     <div className="filters-panel">
 
-      <div className="filters-panel__header">
-        <button
-          type="button"
-          className="filters-panel__toggle"
-          onClick={onToggle}
-          aria-label={isOpen ? 'Close filters' : 'Open filters'}
-          aria-expanded={isOpen}
-          title={isOpen ? 'Close filters' : 'Open filters'}
+      <div className="program-type-group">
+        <div className="program-type-group__row">
+          <label className="program-type-group__label">Program Type</label>
+          <button
+            type="button"
+            className="filters-panel__toggle"
+            onClick={onToggle}
+            aria-label={isOpen ? 'Close filters' : 'Open filters'}
+            aria-expanded={isOpen}
+            title={isOpen ? 'Close filters' : 'Open filters'}
+          >
+            <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
+          </button>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+          }}
         >
-          <span className="filters-panel__toggle-icon">{isOpen ? '✕' : '☰'}</span>
-        </button>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1.1fr',
-          gap: '8px',
-          marginBottom: '20px',
-        }}
-      >
-        <button
-          type="button"
-          className={programType === 'dropin' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => onProgramTypeChange('dropin')}
-        >
-          Drop-in Programs
-        </button>
-        <button
-          type="button"
-          className={programType === 'registered' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => onProgramTypeChange('registered')}
-        >
-          Registered Programs
-        </button>
+          <button
+            type="button"
+            className={programType === 'dropin' ? 'btn btn-primary' : 'btn btn-secondary'}
+            onClick={() => onProgramTypeChange('dropin')}
+          >
+            <MdOutlineDirectionsWalk size={18} />
+            Drop-in
+          </button>
+          <button
+            type="button"
+            className={programType === 'registered' ? 'btn btn-primary' : 'btn btn-secondary'}
+            onClick={() => onProgramTypeChange('registered')}
+          >
+            <MdOutlineEventAvailable size={18} />
+            Registered
+          </button>
+        </div>
       </div>
 
       <div className="filter-group">
