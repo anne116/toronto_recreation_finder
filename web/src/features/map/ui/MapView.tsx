@@ -7,6 +7,10 @@ import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
 import '../../../shared/ui/Spinner.css';
 
+// MapLibre paint properties can't read CSS custom properties, so this
+// mirrors --color-primary from design-tokens.css as a literal value.
+const PIN_COLOR = '#2A9D8F';
+
 function normalizeCentres(
   centres: CentresFeatureCollection | null | undefined
 ): any {
@@ -107,7 +111,7 @@ export default function MapView({
       source: 'centres',
       paint: {
         'circle-radius': 7,
-        'circle-color': '#3b82f6',
+        'circle-color': PIN_COLOR,
         'circle-opacity': 0.9,
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
@@ -157,7 +161,7 @@ export default function MapView({
     if (!map.getLayer('centres-circle')) return;
 
     if (!selectedLocationId) {
-      map.setPaintProperty('centres-circle', 'circle-color', '#3b82f6');
+      map.setPaintProperty('centres-circle', 'circle-color', PIN_COLOR);
       if (selectedPopupRef.current) {
         selectedPopupRef.current.remove();
         selectedPopupRef.current = null;
@@ -170,7 +174,7 @@ export default function MapView({
       'case',
       ['==', ['to-string', ['get', 'id']], selectedIdStr],
       '#ff000d',
-      '#3b82f6',
+      PIN_COLOR,
     ]);
 
     if (!centres || !centres.features?.length) return;
