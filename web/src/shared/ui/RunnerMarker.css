@@ -1,5 +1,6 @@
 .runner-marker {
   pointer-events: none;
+  z-index: 5;
 }
 
 .runner-svg {
@@ -9,7 +10,7 @@
 
 .runner-svg circle,
 .runner-svg line {
-  stroke: var(--color-primary-hover, #1F7A6E);
+  stroke: var(--color-status-limited, #D97706);
   stroke-width: 2.5;
   stroke-linecap: round;
 }

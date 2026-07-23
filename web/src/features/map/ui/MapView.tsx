@@ -237,7 +237,7 @@ export default function MapView({
     } else {
       runnerMarkerRef.current = new maplibregl.Marker({
         element: createRunnerElement(),
-        offset: [0, -18],
+        offset: [26, 0],
       })
         .setLngLat(coords)
         .addTo(map);
