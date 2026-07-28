@@ -15,16 +15,14 @@ function createRunnerElement(): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'runner-marker';
   el.innerHTML = `
-    <div class="runner-badge">
-      <svg class="runner-svg" viewBox="0 0 40 40" width="18" height="18">
-        <circle class="runner-head" cx="20" cy="8" r="4.5" />
-        <line class="runner-torso" x1="20" y1="12" x2="20" y2="24" />
-        <line class="runner-arm-back" x1="20" y1="15" x2="14" y2="21" />
-        <line class="runner-arm-front" x1="20" y1="15" x2="26" y2="19" />
-        <line class="runner-leg-back" x1="20" y1="24" x2="14" y2="34" />
-        <line class="runner-leg-front" x1="20" y1="24" x2="27" y2="32" />
-      </svg>
-    </div>
+    <svg class="runner-svg" viewBox="0 0 40 40" width="26" height="26">
+      <circle class="runner-head" cx="20" cy="8" r="4.5" />
+      <line class="runner-torso" x1="20" y1="12" x2="20" y2="24" />
+      <line class="runner-arm-back" x1="20" y1="15" x2="14" y2="21" />
+      <line class="runner-arm-front" x1="20" y1="15" x2="26" y2="19" />
+      <line class="runner-leg-back" x1="20" y1="24" x2="14" y2="34" />
+      <line class="runner-leg-front" x1="20" y1="24" x2="27" y2="32" />
+    </svg>
   `;
   return el;
 }
@@ -239,7 +237,8 @@ export default function MapView({
     } else {
       runnerMarkerRef.current = new maplibregl.Marker({
         element: createRunnerElement(),
-        offset: [0, 0],
+        anchor: 'bottom',
+        offset: [0, -10],
       })
         .setLngLat(coords)
         .addTo(map);
