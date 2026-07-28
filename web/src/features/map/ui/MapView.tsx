@@ -15,16 +15,14 @@ function createRunnerElement(): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'runner-marker';
   el.innerHTML = `
-    <div class="runner-badge">
-      <svg class="runner-svg" viewBox="0 0 40 40" width="26" height="26">
-        <circle class="runner-head" cx="20" cy="8" r="4.5" />
-        <line class="runner-torso" x1="20" y1="12" x2="20" y2="24" />
-        <line class="runner-arm-back" x1="20" y1="15" x2="14" y2="21" />
-        <line class="runner-arm-front" x1="20" y1="15" x2="26" y2="19" />
-        <line class="runner-leg-back" x1="20" y1="24" x2="14" y2="34" />
-        <line class="runner-leg-front" x1="20" y1="24" x2="27" y2="32" />
-      </svg>
-    </div>
+    <svg class="runner-svg" viewBox="0 0 40 40" width="26" height="26">
+      <circle class="runner-head" cx="20" cy="8" r="4.5" />
+      <line class="runner-torso" x1="20" y1="12" x2="20" y2="24" />
+      <line class="runner-arm-back" x1="20" y1="15" x2="14" y2="21" />
+      <line class="runner-arm-front" x1="20" y1="15" x2="26" y2="19" />
+      <line class="runner-leg-back" x1="20" y1="24" x2="14" y2="34" />
+      <line class="runner-leg-front" x1="20" y1="24" x2="27" y2="32" />
+    </svg>
   `;
   return el;
 }
@@ -50,16 +48,18 @@ type Props = {
   centres: CentresFeatureCollection | null;
   wards: WardFeatureCollection | null;
   onCentreClick: (id: string | number) => void;
+  onCentreClose?: () => void;
   userLocation?: [number, number] | null;
   selectedLocationId?: string | number | null;
 };
 
-export default function MapView({ 
-  centres, 
-  wards, 
-  onCentreClick, 
-  userLocation, 
-  selectedLocationId, 
+export default function MapView({
+  centres,
+  wards,
+  onCentreClick,
+  onCentreClose,
+  userLocation,
+  selectedLocationId,
 }: Props) {
   const { detail, loading: detailLoading } = useCentreDetails(selectedLocationId ?? null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -67,7 +67,17 @@ export default function MapView({
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedPopupRef = useRef<maplibregl.Popup | null>(null);
   const runnerMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const onCentreClickRef = useRef(onCentreClick);
+  const onCentreCloseRef = useRef(onCentreClose);
   const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    onCentreClickRef.current = onCentreClick;
+  }, [onCentreClick]);
+
+  useEffect(() => {
+    onCentreCloseRef.current = onCentreClose;
+  }, [onCentreClose]);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -144,7 +154,12 @@ export default function MapView({
     map.on('click', 'centres-circle', (e) => {
       const feature = e.features?.[0];
       const id = feature?.properties?.id;
-      if (id != null) onCentreClick(id);
+      if (id != null) onCentreClickRef.current(id);
+    });
+
+    map.on('click', (e) => {
+      const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle'] });
+      if (hitPin.length === 0) onCentreCloseRef.current?.();
     });
 
     map.on('mouseenter', 'centres-circle', () => {
@@ -175,7 +190,7 @@ export default function MapView({
     });
     map.fitBounds(b, { padding: 100, maxZoom: 13 });
   }
-}, [centres, mapReady, onCentreClick]);
+}, [centres, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -239,7 +254,8 @@ export default function MapView({
     } else {
       runnerMarkerRef.current = new maplibregl.Marker({
         element: createRunnerElement(),
-        offset: [40, 0],
+        anchor: 'bottom',
+        offset: [0, -10],
       })
         .setLngLat(coords)
         .addTo(map);
@@ -281,17 +297,22 @@ export default function MapView({
 
     const popup = new maplibregl.Popup({
       closeButton: true,
-      closeOnClick: true,
+      closeOnClick: false,
       offset: 16,
     })
       .setLngLat(coords)
       .setHTML(popupHtml)
       .addTo(map);
-    
+
+    popup
+      .getElement()
+      ?.querySelector('.maplibregl-popup-close-button')
+      ?.addEventListener('click', () => onCentreClose?.());
+
     if (url) {
       setTimeout(() => {
         const popupElement = popup.getElement();
-        const linkElement = popupElement?.querySelector('centre-website-link');
+        const linkElement = popupElement?.querySelector('#centre-website-link');
         if (linkElement) {
           linkElement.addEventListener('click', () => {
             trackEvent('external_link_clicked', {
@@ -312,7 +333,7 @@ export default function MapView({
     });
 
     selectedPopupRef.current = popup;
-  }, [selectedLocationId, mapReady, centres, detail, detailLoading]);
+  }, [selectedLocationId, mapReady, centres, detail, detailLoading, onCentreClose]);
 
   useEffect(() => {
     const map = mapRef.current;

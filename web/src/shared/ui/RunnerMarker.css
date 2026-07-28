@@ -1,14 +1,6 @@
 .runner-marker {
   pointer-events: none;
   z-index: 5;
-}
-
-.runner-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,18 +9,19 @@
 .runner-svg {
   overflow: visible;
   animation: runner-bob 0.4s ease-in-out infinite;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 
 .runner-svg circle,
 .runner-svg line {
-  stroke: var(--color-status-limited, #D97706);
-  stroke-width: 3;
+  stroke: var(--color-status-limited, #000000);
+  stroke-width: 2.5;
   stroke-linecap: round;
 }
 
 .runner-head {
-  fill: #ffffff;
-  stroke-width: 2;
+  fill: none;
+  stroke-width: 1.5;
 }
 
 .runner-arm-back {
