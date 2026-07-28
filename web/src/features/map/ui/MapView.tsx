@@ -67,7 +67,17 @@ export default function MapView({
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedPopupRef = useRef<maplibregl.Popup | null>(null);
   const runnerMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const onCentreClickRef = useRef(onCentreClick);
+  const onCentreCloseRef = useRef(onCentreClose);
   const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    onCentreClickRef.current = onCentreClick;
+  }, [onCentreClick]);
+
+  useEffect(() => {
+    onCentreCloseRef.current = onCentreClose;
+  }, [onCentreClose]);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -144,12 +154,12 @@ export default function MapView({
     map.on('click', 'centres-circle', (e) => {
       const feature = e.features?.[0];
       const id = feature?.properties?.id;
-      if (id != null) onCentreClick(id);
+      if (id != null) onCentreClickRef.current(id);
     });
 
     map.on('click', (e) => {
       const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle'] });
-      if (hitPin.length === 0) onCentreClose?.();
+      if (hitPin.length === 0) onCentreCloseRef.current?.();
     });
 
     map.on('mouseenter', 'centres-circle', () => {
@@ -180,7 +190,7 @@ export default function MapView({
     });
     map.fitBounds(b, { padding: 100, maxZoom: 13 });
   }
-}, [centres, mapReady, onCentreClick, onCentreClose]);
+}, [centres, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
