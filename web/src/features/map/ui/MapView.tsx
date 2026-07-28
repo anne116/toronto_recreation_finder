@@ -48,16 +48,18 @@ type Props = {
   centres: CentresFeatureCollection | null;
   wards: WardFeatureCollection | null;
   onCentreClick: (id: string | number) => void;
+  onCentreClose?: () => void;
   userLocation?: [number, number] | null;
   selectedLocationId?: string | number | null;
 };
 
-export default function MapView({ 
-  centres, 
-  wards, 
-  onCentreClick, 
-  userLocation, 
-  selectedLocationId, 
+export default function MapView({
+  centres,
+  wards,
+  onCentreClick,
+  onCentreClose,
+  userLocation,
+  selectedLocationId,
 }: Props) {
   const { detail, loading: detailLoading } = useCentreDetails(selectedLocationId ?? null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -145,6 +147,11 @@ export default function MapView({
       if (id != null) onCentreClick(id);
     });
 
+    map.on('click', (e) => {
+      const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle'] });
+      if (hitPin.length === 0) onCentreClose?.();
+    });
+
     map.on('mouseenter', 'centres-circle', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
@@ -173,7 +180,7 @@ export default function MapView({
     });
     map.fitBounds(b, { padding: 100, maxZoom: 13 });
   }
-}, [centres, mapReady, onCentreClick]);
+}, [centres, mapReady, onCentreClick, onCentreClose]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -280,17 +287,22 @@ export default function MapView({
 
     const popup = new maplibregl.Popup({
       closeButton: true,
-      closeOnClick: true,
+      closeOnClick: false,
       offset: 16,
     })
       .setLngLat(coords)
       .setHTML(popupHtml)
       .addTo(map);
-    
+
+    popup
+      .getElement()
+      ?.querySelector('.maplibregl-popup-close-button')
+      ?.addEventListener('click', () => onCentreClose?.());
+
     if (url) {
       setTimeout(() => {
         const popupElement = popup.getElement();
-        const linkElement = popupElement?.querySelector('centre-website-link');
+        const linkElement = popupElement?.querySelector('#centre-website-link');
         if (linkElement) {
           linkElement.addEventListener('click', () => {
             trackEvent('external_link_clicked', {
@@ -311,7 +323,7 @@ export default function MapView({
     });
 
     selectedPopupRef.current = popup;
-  }, [selectedLocationId, mapReady, centres, detail, detailLoading]);
+  }, [selectedLocationId, mapReady, centres, detail, detailLoading, onCentreClose]);
 
   useEffect(() => {
     const map = mapRef.current;

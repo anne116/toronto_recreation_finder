@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import { getWards } from '../features/centres/api/centres.api';
@@ -267,6 +267,11 @@ export default function App() {
     }
   }
 
+  const handleCentreClose = useCallback(() => {
+    setSelectedLocationId(null);
+    setHighlightedLocationId(null);
+  }, []);
+
   function handleScheduleLocationClick(
     locationId: string | number,
     programDetails?: {
@@ -465,6 +470,7 @@ export default function App() {
             centres = {centres}
             wards = {wards}
             onCentreClick = {handleCentreMarkerClick}
+            onCentreClose = {handleCentreClose}
             selectedLocationId = {selectedLocationId}
           />
         </main>

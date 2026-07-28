@@ -14,7 +14,7 @@
 
 .runner-svg circle,
 .runner-svg line {
-  stroke: var(--color-status-limited, #D97706);
+  stroke: var(--color-status-limited, #000000);
   stroke-width: 2.5;
   stroke-linecap: round;
 }
