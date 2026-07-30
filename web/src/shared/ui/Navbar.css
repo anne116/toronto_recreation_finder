@@ -41,6 +41,9 @@
   /* Compact variant (search page) */
   .navbar--compact {
     padding: 0;
+    height: var(--navbar-compact-height, 56px);
+    overflow: hidden;
+    transition: height 0.25s ease, border-color 0.25s ease;
   }
 
   .navbar--compact .navbar__logo {

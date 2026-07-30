@@ -311,7 +311,7 @@ export default function App() {
         <meta property="og:type" content="website" />
       </Helmet>
 
-      <div className="app-shell">
+      <div className={`app-shell${isFiltersOpen ? '' : ' navbar-collapsed'}`}>
       <Navbar variant="search" city="Toronto" />
 
       <div className = "app-layout">

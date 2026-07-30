@@ -106,6 +106,7 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   cursor: pointer;
   z-index: 101;
+  transition: top 0.25s ease;
 }
 
 .filters-fab-icon {
@@ -272,6 +273,7 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   cursor: pointer;
   z-index: 25;
+  transition: top 0.25s ease;
 }
 
 .schedule-toggle-icon {
@@ -771,6 +773,7 @@
     border-radius: 0 12px 12px 0;
     padding-right: 15px;
     z-index: 15;
+    transition: transform 0.2s ease, top 0.25s ease, height 0.25s ease, max-height 0.25s ease;
   }
 
   .filters-panel.open {
@@ -779,6 +782,14 @@
 
   .filters-panel.closed {
     transform: translateX(-100%);
+  }
+
+  .app-shell.navbar-collapsed {
+    --navbar-compact-height: 0px;
+  }
+
+  .app-shell.navbar-collapsed .navbar--compact {
+    border-bottom-color: transparent;
   }
 }
 
