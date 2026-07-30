@@ -699,68 +699,15 @@
     background: white;
     border-top: 1px solid rgba(148, 163, 184, 0.25);
     z-index: 5;
-    transition: height 0.2s ease, max-height 0.2s ease, opacity 0.2s ease;
-  }
-
-  .schedule-mobile.open {
-    opacity: 1;
-  }
-
-  .schedule-mobile.closed {
-    height: 0;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    border-top: none;
-  }
-
-  .schedule-mobile-header {
-    display: grid;
-    grid-template-columns: 28px 1fr 28px;
-    align-items: center;
-    padding: 10px 12px;
-    background: var(--color-primary);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    flex-shrink: 0;
-    column-gap: 8px;
-  }
-
-  .schedule-mobile-title {
-    grid-column: 2;
-    justify-self: center;
-    font-weight: 600;
-    font-size: 14px;
-    color: #ffffff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .schedule-mobile-close {
-    grid-column: 3;
-    justify-self: end;
-    flex-shrink: 0;
-    border: none;
-    background: var(--color-primary-light);
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    color: var(--color-primary-hover);
-  }
-
-  .schedule-mobile-close:hover {
-    background: #ffffff;
   }
 
   .schedule-mobile-body {
     flex: 1;
     overflow: auto;
+  }
+
+  .schedule-toggle {
+    display: none;
   }
 
   .filters-panel {

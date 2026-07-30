@@ -398,23 +398,7 @@ export default function App() {
               </div>
             )}
 
-            <section 
-              className={`schedule-mobile ${isScheduleOpen ? 'open' : 'closed'}`}
-              aria-hidden={!isScheduleOpen}
-            >
-              <div className="schedule-mobile-header">
-                <div className="schedule-mobile-title">
-                  {buildPanelTitle(programType, activeFilters)}
-                </div>
-                <button
-                  type="button"
-                  className="schedule-mobile-close"
-                  onClick={() => setIsScheduleOpen(false)}
-                  aria-label="Close schedule"
-                >
-                  ✕
-                </button>
-              </div>
+            <section className="schedule-mobile">
               <div className="schedule-mobile-body">
                 {programType === 'dropin' ? (
                   <SchedulePanel
@@ -425,7 +409,7 @@ export default function App() {
                     weekday={activeFilters?.weekday}
                     district={activeFilters?.district ?? ''}
                     hasSearchCriteria={hasScheduleFilters}
-                    isVisible={isScheduleOpen}
+                    isVisible={true}
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
@@ -439,7 +423,7 @@ export default function App() {
                     startMonth={activeFilters?.startMonth}
                     district={activeFilters?.district ?? ''}
                     hasSearchCriteria={hasScheduleFilters}
-                    isVisible={isScheduleOpen}
+                    isVisible={true}
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
