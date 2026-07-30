@@ -33,6 +33,18 @@ function buildPanelTitle(programType: ProgramType, filters: Filters | null): str
   return suffix;
 }
 
+function buildFilterPills(filters: Filters | null): string[] {
+  if (!filters) return [];
+  const pills: string[] = [];
+  if (filters.category) pills.push(filters.category);
+  if (filters.activities && filters.activities.length > 0) {
+    pills.push(filters.activities.join(', '));
+  } else if (filters.activity) {
+    pills.push(filters.activity);
+  }
+  return pills;
+}
+
 function hasAnySelectedFilter(filters: Filters): boolean {
   return Boolean(
     filters.category ||
@@ -138,6 +150,7 @@ export default function App() {
   const hasScheduleFilters = Boolean(
     activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
   );
+  const filterPills = buildFilterPills(activeFilters);
   const { data: centres, loading: centresLoading } = useCentres({
     programType,
     category: activeFilters?.category ?? '',
@@ -385,6 +398,7 @@ export default function App() {
               <div className = "schedule-desktop">
                 <ResizablePanel
                   title={buildPanelTitle(programType, activeFilters)}
+                  pills={filterPills}
                   initialWidth={400}
                   minWidth={300}
                   maxWidth={640}
@@ -428,6 +442,15 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
+              {filterPills.length > 0 && (
+                <div className="schedule-mobile-pills filter-pill-row">
+                  {filterPills.map((pill) => (
+                    <span key={pill} className="filter-pill">
+                      {pill}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="schedule-mobile-body">
                 {programType === 'dropin' ? (
                   <SchedulePanel

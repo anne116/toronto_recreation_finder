@@ -40,6 +40,29 @@
   cursor: help;
 }
 
+.filter-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.resizable-panel__header .filter-pill {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 .filters-panel {
   width: 95%;
   max-height: 65vh;
@@ -625,10 +648,16 @@
 
 .resizable-panel__header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px 16px;
   background: var(--color-primary);
   color: #ffffff;
+}
+
+.resizable-panel__header-row {
+  display: flex;
+  align-items: center;
 }
 
 .resizable-panel__title {
@@ -699,6 +728,11 @@
     background: white;
     border-top: 1px solid rgba(148, 163, 184, 0.25);
     z-index: 5;
+  }
+
+  .schedule-mobile-pills {
+    flex-shrink: 0;
+    padding: 8px 12px 0;
   }
 
   .schedule-mobile-body {

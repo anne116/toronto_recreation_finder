@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type ReactNode, type MouseEvent as ReactMo
 
 type ResizablePanelProps = {
     title: string;
+    pills?: string[];
     initialWidth?: number;
     minWidth?: number;
     maxWidth?: number;
@@ -10,7 +11,8 @@ type ResizablePanelProps = {
 };
 
 export default function ResizablePanel({
-    title, 
+    title,
+    pills = [],
     initialWidth = 400,
     minWidth = 280,
     maxWidth = 640,
@@ -70,16 +72,27 @@ export default function ResizablePanel({
               className="resizable-panel__header"
               style={{ cursor: isDragging ? "col-resize" : "default"}}
             >
-                <div className="resizable-panel__title">
-                    {title}
+                <div className="resizable-panel__header-row">
+                    <div className="resizable-panel__title">
+                        {title}
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="resizable-panel__close"
+                        aria-label="Close panel"
+                    >
+                        ✕
+                    </button>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="resizable-panel__close"
-                    aria-label="Close panel"
-                >
-                    ✕
-                </button>
+                {pills.length > 0 && (
+                    <div className="filter-pill-row">
+                        {pills.map((pill) => (
+                            <span key={pill} className="filter-pill">
+                                {pill}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="resizable-panel__body">
