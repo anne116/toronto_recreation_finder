@@ -76,7 +76,7 @@ export default function RegisteredProgramsPanel({
   isVisible,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -107,9 +107,24 @@ export default function RegisteredProgramsPanel({
   }, [openMenuId]);
 
   useEffect(() => {
+    if (!sessionsModalProgramId) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSessionsModalProgramId(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [sessionsModalProgramId]);
+
+  useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
       setPrograms([]);
-      setExpandedIds(new Set());
+      setSessionsModalProgramId(null);
       setError(null);
       setLoading(false);
       return;
@@ -135,7 +150,7 @@ export default function RegisteredProgramsPanel({
 
         if (!abortController.signal.aborted) {
           setPrograms(resp?.programs ?? []);
-          setExpandedIds(new Set());
+          setSessionsModalProgramId(null);
         }
       } catch (e) {
         if (!abortController.signal.aborted) {
@@ -182,18 +197,6 @@ export default function RegisteredProgramsPanel({
     });
   }, [sortedPrograms, highlightedLocationIdStr, focusToken]);
 
-  function toggleExpanded(programId: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(programId)) {
-        next.delete(programId);
-      } else {
-        next.add(programId);
-      }
-      return next;
-    });
-  }
-
   if (!isVisible) return null;
 
   return (
@@ -235,7 +238,6 @@ export default function RegisteredProgramsPanel({
           <div style={{ display: "grid", gap: "6px" }}>
             {sortedPrograms.map((program) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
-              const isExpanded = expandedIds.has(program.id);
               const primaryPeriod = program.periods[0];
               const collapsedDays = primaryPeriod?.days_of_week ?? program.days_of_week;
               const collapsedStartDate = primaryPeriod?.start_date ?? program.start_date;
@@ -348,11 +350,11 @@ export default function RegisteredProgramsPanel({
                                   role="menuitem"
                                   className="registered-program-menu-item"
                                   onClick={() => {
-                                    toggleExpanded(program.id);
+                                    setSessionsModalProgramId(program.id);
                                     setOpenMenuId(null);
                                   }}
                                 >
-                                  {isExpanded ? "Hide sessions" : "View more sessions"}
+                                  View more sessions
                                 </button>
                               </div>
                             )}
@@ -384,68 +386,84 @@ export default function RegisteredProgramsPanel({
                   <div style={{ fontSize: "12px", color: "#475569", marginBottom: "1px" }}>
                     👥 {formatAgeRange(program.age_min, program.age_max)}
                   </div>
-
-                  {isExpanded && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        paddingTop: "12px",
-                        borderTop: "1px solid var(--color-primary-light)",
-                        display: "grid",
-                        gap: "10px",
-                      }}
-                    >
-                      {program.periods.map((period) => (
-                        <div
-                          key={period.id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "12px",
-                            alignItems: "flex-start",
-                          }}
-                        >
-                          <div style={{ fontSize: "13px", color: "#334155", lineHeight: 1.5 }}>
-                            <div>{formatPeriodRange(period.start_date, period.end_date)}</div>
-                            <div>
-                              ({formatDays(period.days_of_week)}) {formatTime(period.start_time)}–{formatTime(period.end_time)}
-                            </div>
-                          </div>
-                          {period.activity_url && (
-                            <a
-                              href={period.activity_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                trackEvent('external_link_clicked', {
-                                  location_name: program.location_name,
-                                  link_type: 'registration',
-                                  activity: program.course_title,
-                                  url: period.activity_url,
-                                })
-                              }}
-                              style={{
-                                color: "var(--color-primary-hover)",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                textDecoration: "none",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              Register
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </article>
               );
             })}
           </div>
         )}
       </div>
+
+      {sessionsModalProgramId && (() => {
+        const modalProgram = sortedPrograms.find((p) => p.id === sessionsModalProgramId);
+        if (!modalProgram) return null;
+
+        return (
+          <div
+            className="registered-sessions-modal-backdrop"
+            onClick={() => setSessionsModalProgramId(null)}
+          >
+            <div
+              className="registered-sessions-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Registration periods for ${modalProgram.course_title}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="registered-sessions-modal-header">
+                <div className="registered-sessions-modal-title">
+                  {modalProgram.course_title}
+                </div>
+                <button
+                  type="button"
+                  className="registered-sessions-modal-close"
+                  aria-label="Close"
+                  onClick={() => setSessionsModalProgramId(null)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="registered-sessions-modal-body">
+                {modalProgram.periods.map((period) => (
+                  <div key={period.id} className="registered-sessions-modal-row">
+                    <div style={{ fontSize: "13px", color: "#334155", lineHeight: 1.5 }}>
+                      <div>{formatPeriodRange(period.start_date, period.end_date)}</div>
+                      <div>
+                        ({formatDays(period.days_of_week)}) {formatTime(period.start_time)}–{formatTime(period.end_time)}
+                      </div>
+                    </div>
+                    {period.activity_url && (
+                      <a
+                        href={period.activity_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          trackEvent('external_link_clicked', {
+                            location_name: modalProgram.location_name,
+                            link_type: 'registration',
+                            activity: modalProgram.course_title,
+                            url: period.activity_url,
+                          })
+                        }}
+                        style={{
+                          color: "var(--color-primary-hover)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Register
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
