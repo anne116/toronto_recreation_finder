@@ -241,30 +241,30 @@ export default function RegisteredProgramsPanel({
                     cursor: "pointer",
                   }}
                 >
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b", marginBottom: "2px" }}>
                     {program.course_title}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "2px" }}>
+                  <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     🕒 {formatDays(collapsedDays)}, {formatTime(collapsedStartTime)}–{formatTime(collapsedEndTime)}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "2px" }}>
+                  <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     📅 {collapsedDateRange}
                   </div>
                   <div
                     style={{
-                      fontSize: "14px",
+                      fontSize: "12px",
                       color: "var(--color-primary-hover)",
-                      marginBottom: "2px",
+                      marginBottom: "1px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      gap: "4px",
+                      gap: "2px",
                     }}
                   >
                     <span>📍 {program.location_name}</span>
                     <MdChevronRight size={16} color="#94a3b8" />
                   </div>
-                  <div style={{ fontSize: "14px", color: "#475569", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "12px", color: "#475569", marginBottom: "1px" }}>
                     👥 {formatAgeRange(program.age_min, program.age_max)}
                   </div>
 
