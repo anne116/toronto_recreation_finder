@@ -341,7 +341,7 @@ export default function WeeklyScheduleGrid({
                 {shouldShowCourseTitle && (
                   <div
                     style={{
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: 700,
                       color: '#334155',
                       marginBottom: '3px',
@@ -353,7 +353,7 @@ export default function WeeklyScheduleGrid({
 
                 <div
                 style={{
-                  fontSize: '15px',
+                  fontSize: '12px',
                   fontWeight: 600,
                   color: '#1e293b',
                   marginBottom: '2px',
@@ -376,7 +376,7 @@ export default function WeeklyScheduleGrid({
 
               <div
                 style={{
-                  fontSize: '13px',
+                  fontSize: '12px',
                   color: 'var(--color-primary)',
                   marginBottom: '2px',
                   display: 'flex',
