@@ -4,7 +4,7 @@ import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../share
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
 import Spinner from "../../../shared/ui/Spinner";
-import { MdChevronRight } from "react-icons/md";
+import { MdChevronRight, MdExpandMore } from "react-icons/md";
 
 type Props = {
   category?: string;
@@ -76,16 +76,55 @@ export default function RegisteredProgramsPanel({
   isVisible,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const highlightedLocationIdStr = highlightedLocationId != null ? String(highlightedLocationId) : null;
   const cardRefs = useRef(new Map<string, HTMLElement | null>());
+  const openMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenuRef.current && !openMenuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [openMenuId]);
+
+  useEffect(() => {
+    if (!sessionsModalProgramId) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSessionsModalProgramId(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [sessionsModalProgramId]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
       setPrograms([]);
-      setExpandedIds(new Set());
+      setSessionsModalProgramId(null);
       setError(null);
       setLoading(false);
       return;
@@ -111,7 +150,7 @@ export default function RegisteredProgramsPanel({
 
         if (!abortController.signal.aborted) {
           setPrograms(resp?.programs ?? []);
-          setExpandedIds(new Set());
+          setSessionsModalProgramId(null);
         }
       } catch (e) {
         if (!abortController.signal.aborted) {
@@ -158,18 +197,6 @@ export default function RegisteredProgramsPanel({
     });
   }, [sortedPrograms, highlightedLocationIdStr, focusToken]);
 
-  function toggleExpanded(programId: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(programId)) {
-        next.delete(programId);
-      } else {
-        next.add(programId);
-      }
-      return next;
-    });
-  }
-
   if (!isVisible) return null;
 
   return (
@@ -182,7 +209,7 @@ export default function RegisteredProgramsPanel({
         background: "white",
       }}
     >
-      <div style={{ flex: 1, padding: "16px", overflowY: "auto" }}>
+      <div style={{ flex: 1, minHeight: 0, padding: "10px", overflowY: "auto" }}>
         {!hasSearchCriteria && (
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             Select filters to view registered programs
@@ -208,10 +235,9 @@ export default function RegisteredProgramsPanel({
         )}
 
         {hasSearchCriteria && !loading && !error && sortedPrograms.length > 0 && (
-          <div style={{ display: "grid", gap: "12px" }}>
+          <div style={{ display: "grid", gap: "6px" }}>
             {sortedPrograms.map((program) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
-              const isExpanded = expandedIds.has(program.id);
               const primaryPeriod = program.periods[0];
               const collapsedDays = primaryPeriod?.days_of_week ?? program.days_of_week;
               const collapsedStartDate = primaryPeriod?.start_date ?? program.start_date;
@@ -235,154 +261,209 @@ export default function RegisteredProgramsPanel({
                   style={{
                     border: "1px solid #e2e8f0",
                     borderRadius: "14px",
-                    padding: "14px",
+                    padding: "8px 10px",
                     background: isHighlighted ? MATCH_CARD_HIGHLIGHT : "#ffffff",
                     boxShadow: isHighlighted ? "0 0 0 1px #9bd5c6 inset" : "0 1px 3px rgba(15,23,42,0.06)",
                     cursor: "pointer",
                   }}
                 >
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "8px" }}>
-                    {program.course_title}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: "8px",
+                      marginBottom: "2px",
+                    }}
+                  >
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b" }}>
+                      {program.course_title}{' '}
+                      <span style={{ fontWeight: 400, color: "#475569" }}>
+                        (👥 {formatAgeRange(program.age_min, program.age_max)})
+                      </span>
+                    </div>
+
+                    {(primaryRegisterUrl || program.periods.length > 1) && (
+                      <div
+                        style={{ position: "relative", flexShrink: 0 }}
+                        ref={openMenuId === program.id ? openMenuRef : undefined}
+                      >
+                        {primaryRegisterUrl && program.periods.length <= 1 ? (
+                          <a
+                            href={primaryRegisterUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              trackEvent('external_link_clicked', {
+                                location_name: program.location_name,
+                                link_type: 'registration',
+                                activity: program.course_title,
+                                url: primaryRegisterUrl,
+                              });
+                            }}
+                            className="registered-program-pill"
+                          >
+                            Register
+                          </a>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="registered-program-pill"
+                              aria-haspopup="menu"
+                              aria-expanded={openMenuId === program.id}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setOpenMenuId(openMenuId === program.id ? null : program.id);
+                              }}
+                            >
+                              {primaryRegisterUrl ? "Register" : "Sessions"}
+                              <MdExpandMore size={14} className="registered-program-pill-chevron" />
+                            </button>
+
+                            {openMenuId === program.id && (
+                              <div
+                                className="registered-program-menu"
+                                role="menu"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {primaryRegisterUrl && (
+                                  <a
+                                    href={primaryRegisterUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    role="menuitem"
+                                    className="registered-program-menu-item"
+                                    onClick={() => {
+                                      trackEvent('external_link_clicked', {
+                                        location_name: program.location_name,
+                                        link_type: 'registration',
+                                        activity: program.course_title,
+                                        url: primaryRegisterUrl,
+                                      });
+                                      setOpenMenuId(null);
+                                    }}
+                                  >
+                                    Register
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  className="registered-program-menu-item"
+                                  onClick={() => {
+                                    setSessionsModalProgramId(program.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  View more sessions
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     🕒 {formatDays(collapsedDays)}, {formatTime(collapsedStartTime)}–{formatTime(collapsedEndTime)}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     📅 {collapsedDateRange}
                   </div>
                   <div
                     style={{
-                      fontSize: "14px",
+                      fontSize: "12px",
                       color: "var(--color-primary-hover)",
-                      marginBottom: "4px",
+                      marginBottom: "1px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      gap: "4px",
+                      gap: "2px",
                     }}
                   >
                     <span>📍 {program.location_name}</span>
                     <MdChevronRight size={16} color="#94a3b8" />
                   </div>
-                  <div style={{ fontSize: "14px", color: "#475569", marginBottom: "10px" }}>
-                    👥 {formatAgeRange(program.age_min, program.age_max)}
-                  </div>
-
-                  {primaryRegisterUrl && (
-                    <div style={{ marginBottom: "10px" }}>
-                      <a
-                        href={primaryRegisterUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          trackEvent('external_link_clicked', {
-                            location_name: program.location_name,
-                            link_type: 'registration',
-                            activity: program.course_title,
-                            url: primaryRegisterUrl,
-                          });
-                        }}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "8px 12px",
-                          borderRadius: "999px",
-                          background: "var(--color-primary-hover)",
-                          color: "#ffffff",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          textDecoration: "none",
-                        }}
-                      >
-                        Register
-                      </a>
-                    </div>
-                  )}
-
-                  {program.periods.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleExpanded(program.id);
-                      }}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: "var(--color-primary-hover)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        padding: 0,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {isExpanded ? "Hide registration periods" : "View all registration periods"}
-                    </button>
-                  )}
-
-                  {isExpanded && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        paddingTop: "12px",
-                        borderTop: "1px solid var(--color-primary-light)",
-                        display: "grid",
-                        gap: "10px",
-                      }}
-                    >
-                      {program.periods.map((period) => (
-                        <div
-                          key={period.id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "12px",
-                            alignItems: "flex-start",
-                          }}
-                        >
-                          <div style={{ fontSize: "13px", color: "#334155", lineHeight: 1.5 }}>
-                            <div>{formatPeriodRange(period.start_date, period.end_date)}</div>
-                            <div>
-                              ({formatDays(period.days_of_week)}) {formatTime(period.start_time)}–{formatTime(period.end_time)}
-                            </div>
-                          </div>
-                          {period.activity_url && (
-                            <a
-                              href={period.activity_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                trackEvent('external_link_clicked', {
-                                  location_name: program.location_name,
-                                  link_type: 'registration',
-                                  activity: program.course_title,
-                                  url: period.activity_url,
-                                })
-                              }}
-                              style={{
-                                color: "var(--color-primary-hover)",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                textDecoration: "none",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              Register
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </article>
               );
             })}
           </div>
         )}
       </div>
+
+      {sessionsModalProgramId && (() => {
+        const modalProgram = sortedPrograms.find((p) => p.id === sessionsModalProgramId);
+        if (!modalProgram) return null;
+
+        return (
+          <div
+            className="registered-sessions-modal-backdrop"
+            onClick={() => setSessionsModalProgramId(null)}
+          >
+            <div
+              className="registered-sessions-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Registration periods for ${modalProgram.course_title}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="registered-sessions-modal-header">
+                <div className="registered-sessions-modal-title">
+                  {modalProgram.course_title}
+                </div>
+                <button
+                  type="button"
+                  className="registered-sessions-modal-close"
+                  aria-label="Close"
+                  onClick={() => setSessionsModalProgramId(null)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="registered-sessions-modal-body">
+                {modalProgram.periods.map((period) => (
+                  <div key={period.id} className="registered-sessions-modal-row">
+                    <div style={{ fontSize: "13px", color: "#334155", lineHeight: 1.5 }}>
+                      <div>{formatPeriodRange(period.start_date, period.end_date)}</div>
+                      <div>
+                        ({formatDays(period.days_of_week)}) {formatTime(period.start_time)}–{formatTime(period.end_time)}
+                      </div>
+                    </div>
+                    {period.activity_url && (
+                      <a
+                        href={period.activity_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          trackEvent('external_link_clicked', {
+                            location_name: modalProgram.location_name,
+                            link_type: 'registration',
+                            activity: modalProgram.course_title,
+                            url: period.activity_url,
+                          })
+                        }}
+                        style={{
+                          color: "var(--color-primary-hover)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Register
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
