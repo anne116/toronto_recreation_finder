@@ -277,7 +277,10 @@ export default function RegisteredProgramsPanel({
                     }}
                   >
                     <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b" }}>
-                      {program.course_title}
+                      {program.course_title}{' '}
+                      <span style={{ fontWeight: 400, color: "#475569" }}>
+                        (👥 {formatAgeRange(program.age_min, program.age_max)})
+                      </span>
                     </div>
 
                     {(primaryRegisterUrl || program.periods.length > 1) && (
@@ -382,9 +385,6 @@ export default function RegisteredProgramsPanel({
                   >
                     <span>📍 {program.location_name}</span>
                     <MdChevronRight size={16} color="#94a3b8" />
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#475569", marginBottom: "1px" }}>
-                    👥 {formatAgeRange(program.age_min, program.age_max)}
                   </div>
                 </article>
               );

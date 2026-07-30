@@ -338,18 +338,27 @@ export default function WeeklyScheduleGrid({
                   e.currentTarget.style.background = isHighlightedMatch ? MATCH_ROW_HIGHLIGHT : '#ffffff';
                 }}
               >
-                {shouldShowCourseTitle && (
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#334155',
-                      marginBottom: '3px',
-                    }}
-                  >
-                    {program.course_title}
-                  </div>
-                )}
+                <div
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#334155',
+                    marginBottom: '3px',
+                  }}
+                >
+                  {shouldShowCourseTitle ? (
+                    <>
+                      {program.course_title}{' '}
+                      <span style={{ fontWeight: 400, color: '#64748b' }}>
+                        (👥 {formatAgeRange(program.age_min, program.age_max)})
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ fontWeight: 400, color: '#64748b' }}>
+                      👥 {formatAgeRange(program.age_min, program.age_max)}
+                    </span>
+                  )}
+                </div>
 
                 <div
                 style={{
@@ -389,15 +398,6 @@ export default function WeeklyScheduleGrid({
                 {onLocationClick && locationId && (
                   <MdChevronRight size={16} color="#94a3b8" />
                 )}
-              </div>
-
-              <div
-                style={{
-                  fontSize: '12px',
-                  color: '#64748b',
-                }}
-              >
-                👥 {formatAgeRange(program.age_min, program.age_max)}
               </div>
             </div>
           );
