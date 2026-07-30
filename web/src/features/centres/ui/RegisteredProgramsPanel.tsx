@@ -182,7 +182,7 @@ export default function RegisteredProgramsPanel({
         background: "white",
       }}
     >
-      <div style={{ flex: 1, padding: "16px", overflowY: "auto" }}>
+      <div style={{ flex: 1, padding: "10px", overflowY: "auto" }}>
         {!hasSearchCriteria && (
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             Select filters to view registered programs
@@ -208,7 +208,7 @@ export default function RegisteredProgramsPanel({
         )}
 
         {hasSearchCriteria && !loading && !error && sortedPrograms.length > 0 && (
-          <div style={{ display: "grid", gap: "12px" }}>
+          <div style={{ display: "grid", gap: "6px" }}>
             {sortedPrograms.map((program) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
               const isExpanded = expandedIds.has(program.id);
@@ -235,26 +235,26 @@ export default function RegisteredProgramsPanel({
                   style={{
                     border: "1px solid #e2e8f0",
                     borderRadius: "14px",
-                    padding: "14px",
+                    padding: "8px 10px",
                     background: isHighlighted ? MATCH_CARD_HIGHLIGHT : "#ffffff",
                     boxShadow: isHighlighted ? "0 0 0 1px #9bd5c6 inset" : "0 1px 3px rgba(15,23,42,0.06)",
                     cursor: "pointer",
                   }}
                 >
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "8px" }}>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "4px" }}>
                     {program.course_title}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "2px" }}>
                     🕒 {formatDays(collapsedDays)}, {formatTime(collapsedStartTime)}–{formatTime(collapsedEndTime)}
                   </div>
-                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "14px", color: "#334155", marginBottom: "2px" }}>
                     📅 {collapsedDateRange}
                   </div>
                   <div
                     style={{
                       fontSize: "14px",
                       color: "var(--color-primary-hover)",
-                      marginBottom: "4px",
+                      marginBottom: "2px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
@@ -264,12 +264,12 @@ export default function RegisteredProgramsPanel({
                     <span>📍 {program.location_name}</span>
                     <MdChevronRight size={16} color="#94a3b8" />
                   </div>
-                  <div style={{ fontSize: "14px", color: "#475569", marginBottom: "10px" }}>
+                  <div style={{ fontSize: "14px", color: "#475569", marginBottom: "4px" }}>
                     👥 {formatAgeRange(program.age_min, program.age_max)}
                   </div>
 
                   {primaryRegisterUrl && (
-                    <div style={{ marginBottom: "10px" }}>
+                    <div style={{ marginBottom: "6px" }}>
                       <a
                         href={primaryRegisterUrl}
                         target="_blank"

@@ -289,7 +289,7 @@ export default function WeeklyScheduleGrid({
             border: '1px solid #e2e8f0',
             borderRadius: 6,
             overflow: 'hidden',
-            marginTop: 8,
+            marginTop: 4,
           }}
         >
           {dayPrograms.map((program, idx) => {
@@ -313,7 +313,7 @@ export default function WeeklyScheduleGrid({
                   }
                 }}
                 style={{
-                  padding: '12px',
+                  padding: '2px 8px 2px 12px',
                   borderBottom:
                     idx < dayPrograms.length - 1
                       ? '1px solid #f1f5f9'
@@ -344,7 +344,7 @@ export default function WeeklyScheduleGrid({
                       fontSize: '13px',
                       fontWeight: 700,
                       color: '#334155',
-                      marginBottom: '6px',
+                      marginBottom: '3px',
                     }}
                   >
                     {program.course_title}
@@ -356,7 +356,7 @@ export default function WeeklyScheduleGrid({
                   fontSize: '15px',
                   fontWeight: 600,
                   color: '#1e293b',
-                  marginBottom: '4px',
+                  marginBottom: '2px',
                 }}
               >
                  🕒 {formatTime(program.start_time)} - {formatTime(program.end_time)}
@@ -367,7 +367,7 @@ export default function WeeklyScheduleGrid({
                   style={{
                     fontSize: '12px',
                     color: '#64748b',
-                    marginBottom: '4px',
+                    marginBottom: '2px',
                   }}
                 >
                   📅 {formatScheduleLine(program)}
@@ -378,7 +378,7 @@ export default function WeeklyScheduleGrid({
                 style={{
                   fontSize: '13px',
                   color: 'var(--color-primary)',
-                  marginBottom: '4px',
+                  marginBottom: '2px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
