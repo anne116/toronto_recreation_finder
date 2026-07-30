@@ -182,7 +182,7 @@ export default function RegisteredProgramsPanel({
         background: "white",
       }}
     >
-      <div style={{ flex: 1, padding: "10px", overflowY: "auto" }}>
+      <div style={{ flex: 1, minHeight: 0, padding: "10px", overflowY: "auto" }}>
         {!hasSearchCriteria && (
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             Select filters to view registered programs
