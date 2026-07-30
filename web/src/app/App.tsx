@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import { getWards } from '../features/centres/api/centres.api';
@@ -112,6 +112,29 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
+  const [mobilePanelHeightPx, setMobilePanelHeightPx] = useState<number | null>(null);
+  const panelDragRef = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
+
+  function handlePanelHandlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const startHeight = mobilePanelHeightPx ?? window.innerHeight * 0.5;
+    panelDragRef.current = { pointerId: e.pointerId, startY: e.clientY, startHeight };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePanelHandlePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const drag = panelDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const deltaY = e.clientY - drag.startY;
+    const minHeight = window.innerHeight * 0.3;
+    const maxHeight = window.innerHeight * 0.7;
+    setMobilePanelHeightPx(Math.min(maxHeight, Math.max(minHeight, drag.startHeight + deltaY)));
+  }
+
+  function handlePanelHandlePointerUp(e: ReactPointerEvent<HTMLDivElement>) {
+    panelDragRef.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  }
   const hasScheduleFilters = Boolean(
     activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
   );
@@ -205,8 +228,9 @@ export default function App() {
 
     setShowSchedulePanel(true);
     setIsScheduleOpen(true);
+    setMobilePanelHeightPx(null);
   }
-  
+
 
   function handleReset() {
     setSearchParams({});
@@ -225,6 +249,7 @@ export default function App() {
     setHasSearched(false);
     setActiveFilters(null);
     setIsScheduleOpen(false);
+    setMobilePanelHeightPx(null);
   }
 
   function handleProgramTypeChange(nextType: ProgramType) {
@@ -248,6 +273,7 @@ export default function App() {
     setHasSearched(false);
     setActiveFilters(null);
     setIsScheduleOpen(false);
+    setMobilePanelHeightPx(null);
   }
 
   function handleCentreMarkerClick(locationId: string | number) {
@@ -398,7 +424,10 @@ export default function App() {
               </div>
             )}
 
-            <section className="schedule-mobile">
+            <section
+              className="schedule-mobile"
+              style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
+            >
               <div className="schedule-mobile-body">
                 {programType === 'dropin' ? (
                   <SchedulePanel
@@ -430,6 +459,18 @@ export default function App() {
                   />
                 )}
 
+              </div>
+              <div
+                className="schedule-mobile-handle"
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Resize schedule panel"
+                onPointerDown={handlePanelHandlePointerDown}
+                onPointerMove={handlePanelHandlePointerMove}
+                onPointerUp={handlePanelHandlePointerUp}
+                onPointerCancel={handlePanelHandlePointerUp}
+              >
+                <span className="schedule-mobile-handle-grip" aria-hidden="true" />
               </div>
             </section>
 
