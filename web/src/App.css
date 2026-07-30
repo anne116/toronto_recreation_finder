@@ -699,16 +699,6 @@
     background: white;
     border-top: 1px solid rgba(148, 163, 184, 0.25);
     z-index: 5;
-    transition: margin-top 0.25s ease;
-  }
-
-  /* when the navbar is collapsed, the filters-fab moves up to fill the
-     reclaimed space (see .filters-fab); the panel's sticky day-tab row
-     would otherwise sit in the exact same top-left corner, so reserve
-     the fab's own footprint (its 12px offset + ~44px clearance, matching
-     .schedule-toggle's established gap) only in that state */
-  .app-shell.navbar-collapsed .schedule-mobile {
-    margin-top: 56px;
   }
 
   .schedule-mobile-body {
