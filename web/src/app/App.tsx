@@ -312,9 +312,15 @@ export default function App() {
       program_type: programType,
     })
     setSelectedLocationId(locationId);
-    setScopedCentreId(locationId);
-    setHighlightedLocationId(locationId);
-    setScheduleFocusToken(prev => prev + 1);
+
+    const isAlreadyFilterScoped = activeFilters?.locationId != null
+      && String(activeFilters.locationId) === String(locationId);
+    if (!isAlreadyFilterScoped) {
+      setScopedCentreId(locationId);
+      setHighlightedLocationId(locationId);
+      setScheduleFocusToken(prev => prev + 1);
+    }
+
     if (showSchedulePanel) {
       setIsScheduleOpen(true);
     }
