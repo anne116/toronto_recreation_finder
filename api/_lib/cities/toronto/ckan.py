@@ -927,6 +927,7 @@ def build_registered_centres_geojson_response(
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
+    location_id: int | None = None,
 ) -> dict:
     groups = collect_registered_program_groups(
         category=category,
@@ -934,20 +935,21 @@ def build_registered_centres_geojson_response(
         district=district,
         age=age,
         start_month=start_month,
+        location_id=location_id,
     )
     coordinates = load_coordinate_cache()
 
     grouped_centres: dict[int, dict] = {}
     for group in groups:
-        location_id = int(group["location_id"])
-        coord = coordinates.get(location_id)
+        row_location_id = int(group["location_id"])
+        coord = coordinates.get(row_location_id)
         if not coord:
             continue
 
         bucket = grouped_centres.setdefault(
-            location_id,
+            row_location_id,
             {
-                "id": location_id,
+                "id": row_location_id,
                 "name": group["location_name"],
                 "district": group.get("district"),
                 "registered_count": 0,
@@ -1112,6 +1114,7 @@ def build_centres_geojson_response(
     age: str | None = None,
     facility_type: str | None = None,
     weekday: str | None = None,
+    location_id: int | None = None,
 ) -> dict:
     drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
     locations = load_location_cache()
@@ -1134,25 +1137,27 @@ def build_centres_geojson_response(
         if not matches_age(row.get("Age Min"), row.get("Age Max"), age):
             continue
 
-        location_id = parse_int(row.get("Location ID"))
-        if location_id is None:
+        row_location_id = parse_int(row.get("Location ID"))
+        if row_location_id is None:
+            continue
+        if location_id is not None and row_location_id != location_id:
             continue
 
-        location = locations.get(location_id)
-        coord = coordinates.get(location_id)
+        location = locations.get(row_location_id)
+        coord = coordinates.get(row_location_id)
         if not location or not coord:
             continue
 
         normalized_district = normalize_district(location.get("District"))
         if district and normalized_district != district:
             continue
-        if not location_matches_facility_type(location_id, facility_type):
+        if not location_matches_facility_type(row_location_id, facility_type):
             continue
 
         bucket = grouped.setdefault(
-            location_id,
+            row_location_id,
             {
-                "id": location_id,
+                "id": row_location_id,
                 "name": location_name(location),
                 "address": build_address(location) or clean_optional_string(coord.get("address")),
                 "district": normalized_district,

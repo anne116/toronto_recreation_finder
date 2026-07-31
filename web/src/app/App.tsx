@@ -24,6 +24,8 @@ import Spinner from '../shared/ui/Spinner';
     weekday: WeekdayName | null;
     startMonth?: string;
     age?: ProgramAgeFilter;
+    locationId?: string | number;
+    locationName?: string;
   };
 
 function buildPanelTitle(programType: ProgramType, filters: Filters | null): string {
@@ -42,6 +44,7 @@ function buildFilterPills(filters: Filters | null): string[] {
   } else if (filters.activity) {
     pills.push(filters.activity);
   }
+  if (filters.locationName) pills.push(filters.locationName);
   return pills;
 }
 
@@ -53,7 +56,8 @@ function hasAnySelectedFilter(filters: Filters): boolean {
     filters.district ||
     filters.weekday ||
     filters.startMonth ||
-    filters.age
+    filters.age ||
+    filters.locationId
   );
 }
 
@@ -149,7 +153,7 @@ export default function App() {
     e.currentTarget.releasePointerCapture(e.pointerId);
   }
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId
   );
   const filterPills = buildFilterPills(activeFilters);
   const { data: centres, loading: centresLoading } = useCentres({
@@ -161,6 +165,7 @@ export default function App() {
     weekday: activeFilters?.weekday ?? null,
     startMonth: activeFilters?.startMonth,
     age: activeFilters?.age,
+    locationId: activeFilters?.locationId,
   },
   { enabled: !!activeFilters }
 );
@@ -422,6 +427,7 @@ export default function App() {
                       age={activeFilters?.age as DropInAgeFilter | undefined}
                       weekday={activeFilters?.weekday}
                       district={activeFilters?.district ?? ''}
+                      locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
                       onLocationClick={handleScheduleLocationClick}
@@ -438,6 +444,7 @@ export default function App() {
                       age={activeFilters?.age as RegisteredAgeFilter | undefined}
                       startMonth={activeFilters?.startMonth}
                       district={activeFilters?.district ?? ''}
+                      locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
                       onLocationClick={handleScheduleLocationClick}
@@ -487,6 +494,7 @@ export default function App() {
                     age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
                     district={activeFilters?.district ?? ''}
+                    locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
                     onLocationClick={handleScheduleLocationClick}
@@ -503,6 +511,7 @@ export default function App() {
                     age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
                     district={activeFilters?.district ?? ''}
+                    locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
                     onLocationClick={handleScheduleLocationClick}

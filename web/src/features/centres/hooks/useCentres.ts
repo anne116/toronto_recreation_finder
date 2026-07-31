@@ -12,6 +12,7 @@ type CentresFilters = {
   weekday?: WeekdayName | null;
   startMonth?: string;
   age?: ProgramAgeFilter;
+  locationId?: string | number;
 };
 
 type UseCentresOptions = {
@@ -33,7 +34,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     }
 
     const hasActivities = Boolean(filters.activities && filters.activities.length > 0);
-    if (!filters.category && !filters.activity && !hasActivities && !filters.district && !filters.weekday && !filters.age && !filters.startMonth) {
+    if (!filters.category && !filters.activity && !hasActivities && !filters.district && !filters.weekday && !filters.age && !filters.startMonth && !filters.locationId) {
       setData(null);
       return;
     }
@@ -43,9 +44,9 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     (async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        const centres = 
+        const centres =
           filters.programType === 'registered'
             ? await getRegisteredCentres({
               category: filters.category,
@@ -54,6 +55,8 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
               district: filters.district,
               age: filters.age,
               start_month: filters.startMonth,
+              location_id: filters.locationId,
+              signal: abortController.signal,
               })
             : await getCentres({
               category: filters.category,
@@ -62,6 +65,8 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
               district: filters.district,
               age: filters.age as DropInAgeFilter | undefined,
               weekday: filters.weekday ?? undefined,
+              location_id: filters.locationId,
+              signal: abortController.signal,
               });
         if (!abortController.signal.aborted) {
           setData(centres);
@@ -80,7 +85,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.programType, filters.category, filters.activity, filters.activities, filters.district, filters.weekday, filters.startMonth, filters.age]);
+  }, [enabled, filters.programType, filters.category, filters.activity, filters.activities, filters.district, filters.weekday, filters.startMonth, filters.age, filters.locationId]);
 
   return { data, loading, error };
 }
