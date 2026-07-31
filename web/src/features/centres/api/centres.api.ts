@@ -9,6 +9,7 @@ import type {
   CentreDetail,
   DistrictOption,
   DropInAgeFilter,
+  DropInProgram,
   FacilityTypeOption,
   ProgramAgeFilter,
   ProgramType,
@@ -54,7 +55,7 @@ export type SearchProgramsResponse = {
     weekday?: WeekdayName;
     district?: string;
   };
-  programs: any[];
+  programs: DropInProgram[];
 };
 
 

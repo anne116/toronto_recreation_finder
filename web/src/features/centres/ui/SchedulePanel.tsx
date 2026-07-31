@@ -27,11 +27,11 @@ type Props = {
 };
 
 
-function normalizeProgram(p: any): DropInProgram {
+function normalizeProgram(p: DropInProgram): DropInProgram {
     return {
       ...p,
       course_title: p.course_title ?? "",
-    } as DropInProgram;
+    };
   }
 
 export default function SchedulePanel({
@@ -82,7 +82,7 @@ export default function SchedulePanel({
         if (!abortController.signal.aborted) {
           const raw = resp?.programs ?? [];
           const cleaned = raw
-            .filter((p: any) => p && p.course_title != null)
+            .filter((p) => p && p.course_title != null)
             .map(normalizeProgram);
           setPrograms(cleaned);
         }

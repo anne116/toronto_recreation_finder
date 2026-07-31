@@ -64,11 +64,8 @@ function groupRecurringPrograms(programs: DropInProgram[]): ScheduleProgram[] {
   const grouped = new Map<string, DropInProgram[]>();
 
   programs.forEach((program) => {
-    const locationId = (program as any).location_id ?? '';
-    const courseId = (program as any).course_id ?? '';
     const key = [
-      locationId,
-      courseId,
+      program.location_id,
       program.day_of_week ?? '',
       program.start_time ?? '',
       program.end_time ?? '',
@@ -152,7 +149,7 @@ export default function WeeklyScheduleGrid({
     if (!highlightedLocationIdStr) return days;
 
     programs.forEach((program) => {
-      const locationId = (program as any).location_id;
+      const locationId = program.location_id;
       if (locationId != null && String(locationId) === highlightedLocationIdStr && program.day_of_week) {
         days.add(program.day_of_week);
       }
@@ -210,7 +207,7 @@ export default function WeeklyScheduleGrid({
 
   const dayPrograms = grouped.get(selectedDay) ?? [];
   const firstMatchingIndex = dayPrograms.findIndex((program) => {
-    const locationId = (program as any).location_id;
+    const locationId = program.location_id;
     return highlightedLocationIdStr !== null && locationId != null && String(locationId) === highlightedLocationIdStr;
   });
   
@@ -293,11 +290,11 @@ export default function WeeklyScheduleGrid({
           }}
         >
           {dayPrograms.map((program, idx) => {
-            const locationName = 
-              (program as any).location_name ||
-              (program as any).asset_name ||
+            const locationName =
+              program.location_name ||
+              program.asset_name ||
               'Unknown Location';
-            const locationId = ((program as any).location_id);
+            const locationId = program.location_id;
             const shouldShowCourseTitle = !selectedActivity && Boolean(program.course_title);
             const isHighlightedMatch =
               highlightedLocationIdStr !== null &&
