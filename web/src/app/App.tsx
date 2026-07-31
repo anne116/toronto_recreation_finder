@@ -170,9 +170,10 @@ export default function App() {
   { enabled: !!activeFilters }
 );
 
-  const selectedCentreName = scopedCentreId != null
+  const pinScopedCentreName = scopedCentreId != null
     ? centres?.features?.find((f) => String(f.properties.id) === String(scopedCentreId))?.properties.name ?? null
     : null;
+  const selectedCentreName = pinScopedCentreName ?? activeFilters?.locationName ?? null;
 
   useEffect(() => {
     let mounted = true;
@@ -413,7 +414,7 @@ export default function App() {
                 <ResizablePanel
                   title={buildPanelTitle(programType, activeFilters)}
                   pills={filterPills}
-                  centrePill={selectedCentreName ? { label: selectedCentreName, onRemove: handleCentreClose } : undefined}
+                  centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
                   initialWidth={400}
                   minWidth={300}
                   maxWidth={640}
@@ -463,20 +464,20 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {(filterPills.length > 0 || selectedCentreName) && (
+              {(filterPills.length > 0 || pinScopedCentreName) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
                       {pill}
                     </span>
                   ))}
-                  {selectedCentreName && (
+                  {pinScopedCentreName && (
                     <span className="filter-pill filter-pill--centre">
-                      📍 {selectedCentreName}
+                      📍 {pinScopedCentreName}
                       <button
                         type="button"
                         className="filter-pill-remove"
-                        aria-label={`Clear selected centre: ${selectedCentreName}`}
+                        aria-label={`Clear selected centre: ${pinScopedCentreName}`}
                         onClick={handleCentreClose}
                       >
                         ✕
