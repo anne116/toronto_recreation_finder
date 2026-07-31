@@ -24,6 +24,8 @@ import Spinner from '../shared/ui/Spinner';
     weekday: WeekdayName | null;
     startMonth?: string;
     age?: ProgramAgeFilter;
+    locationId?: string | number;
+    locationName?: string;
   };
 
 function buildPanelTitle(programType: ProgramType, filters: Filters | null): string {
@@ -42,6 +44,7 @@ function buildFilterPills(filters: Filters | null): string[] {
   } else if (filters.activity) {
     pills.push(filters.activity);
   }
+  if (filters.locationName) pills.push(filters.locationName);
   return pills;
 }
 
@@ -53,7 +56,8 @@ function hasAnySelectedFilter(filters: Filters): boolean {
     filters.district ||
     filters.weekday ||
     filters.startMonth ||
-    filters.age
+    filters.age ||
+    filters.locationId
   );
 }
 
@@ -149,7 +153,7 @@ export default function App() {
     e.currentTarget.releasePointerCapture(e.pointerId);
   }
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId
   );
   const filterPills = buildFilterPills(activeFilters);
   const { data: centres, loading: centresLoading } = useCentres({
@@ -161,13 +165,15 @@ export default function App() {
     weekday: activeFilters?.weekday ?? null,
     startMonth: activeFilters?.startMonth,
     age: activeFilters?.age,
+    locationId: activeFilters?.locationId,
   },
   { enabled: !!activeFilters }
 );
 
-  const selectedCentreName = scopedCentreId != null
+  const pinScopedCentreName = scopedCentreId != null
     ? centres?.features?.find((f) => String(f.properties.id) === String(scopedCentreId))?.properties.name ?? null
     : null;
+  const selectedCentreName = pinScopedCentreName ?? activeFilters?.locationName ?? null;
 
   useEffect(() => {
     let mounted = true;
@@ -306,9 +312,15 @@ export default function App() {
       program_type: programType,
     })
     setSelectedLocationId(locationId);
-    setScopedCentreId(locationId);
-    setHighlightedLocationId(locationId);
-    setScheduleFocusToken(prev => prev + 1);
+
+    const isAlreadyFilterScoped = activeFilters?.locationId != null
+      && String(activeFilters.locationId) === String(locationId);
+    if (!isAlreadyFilterScoped) {
+      setScopedCentreId(locationId);
+      setHighlightedLocationId(locationId);
+      setScheduleFocusToken(prev => prev + 1);
+    }
+
     if (showSchedulePanel) {
       setIsScheduleOpen(true);
     }
@@ -408,7 +420,7 @@ export default function App() {
                 <ResizablePanel
                   title={buildPanelTitle(programType, activeFilters)}
                   pills={filterPills}
-                  centrePill={selectedCentreName ? { label: selectedCentreName, onRemove: handleCentreClose } : undefined}
+                  centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
                   initialWidth={400}
                   minWidth={300}
                   maxWidth={640}
@@ -422,6 +434,7 @@ export default function App() {
                       age={activeFilters?.age as DropInAgeFilter | undefined}
                       weekday={activeFilters?.weekday}
                       district={activeFilters?.district ?? ''}
+                      locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
                       onLocationClick={handleScheduleLocationClick}
@@ -438,6 +451,7 @@ export default function App() {
                       age={activeFilters?.age as RegisteredAgeFilter | undefined}
                       startMonth={activeFilters?.startMonth}
                       district={activeFilters?.district ?? ''}
+                      locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
                       onLocationClick={handleScheduleLocationClick}
@@ -456,20 +470,20 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {(filterPills.length > 0 || selectedCentreName) && (
+              {(filterPills.length > 0 || pinScopedCentreName) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
                       {pill}
                     </span>
                   ))}
-                  {selectedCentreName && (
+                  {pinScopedCentreName && (
                     <span className="filter-pill filter-pill--centre">
-                      📍 {selectedCentreName}
+                      📍 {pinScopedCentreName}
                       <button
                         type="button"
                         className="filter-pill-remove"
-                        aria-label={`Clear selected centre: ${selectedCentreName}`}
+                        aria-label={`Clear selected centre: ${pinScopedCentreName}`}
                         onClick={handleCentreClose}
                       >
                         ✕
@@ -487,6 +501,7 @@ export default function App() {
                     age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
                     district={activeFilters?.district ?? ''}
+                    locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
                     onLocationClick={handleScheduleLocationClick}
@@ -503,6 +518,7 @@ export default function App() {
                     age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
                     district={activeFilters?.district ?? ''}
+                    locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
                     onLocationClick={handleScheduleLocationClick}

@@ -52,6 +52,13 @@ class handler(BaseHTTPRequestHandler):
 
         if resource == "geojson":
             weekday = params.get("weekday", [None])[0] or None
+
+            location_id_value = params.get("location_id", [None])[0]
+            try:
+                location_id = int(location_id_value) if location_id_value not in (None, "") else None
+            except (TypeError, ValueError):
+                location_id = None
+
             payload = build_centres_geojson_response(
                 category=params.get("category", [None])[0],
                 activity=_parse_activity(params),
@@ -59,6 +66,7 @@ class handler(BaseHTTPRequestHandler):
                 age=params.get("age", [None])[0],
                 facility_type=params.get("facility_type", [None])[0],
                 weekday=weekday,
+                location_id=location_id,
             )
             send_json(self, payload)
             return

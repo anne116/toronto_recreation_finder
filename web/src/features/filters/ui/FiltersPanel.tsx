@@ -4,8 +4,9 @@ import Spinner from '../../../shared/ui/Spinner';
 import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
+import CentreSearchField from './CentreSearchField';
 
-type Filters = { category: string; activity: string; activities?: string[]; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter };
+type Filters = { category: string; activity: string; activities?: string[]; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string };
 
 type Props = {
   programType: ProgramType;
@@ -39,11 +40,14 @@ export default function FiltersPanel({
     (async () => {
       const { categories, activities, districts, startMonths } = await getFilterOptions(programType);
 
+      const sortedCategories = [...categories].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
       const sortedActivities = [...activities].sort((a, b) =>
         a.activity.localeCompare(b.activity)
       );
-      setCategories(categories);
-      setActivities(sortedActivities); 
+      setCategories(sortedCategories);
+      setActivities(sortedActivities);
       setDistricts(districts); 
       setStartMonths(startMonths ?? []);
     })();
@@ -104,6 +108,13 @@ export default function FiltersPanel({
           </button>
         </div>
       </div>
+
+      <CentreSearchField
+        programType={programType}
+        locationId={value.locationId}
+        locationName={value.locationName}
+        onChange={(centre) => update(centre)}
+      />
 
       <div className="filter-group">
         <label>Category</label>

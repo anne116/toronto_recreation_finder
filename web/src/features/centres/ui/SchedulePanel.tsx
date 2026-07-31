@@ -24,6 +24,7 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
 };
@@ -49,6 +50,7 @@ export default function SchedulePanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  locationId,
   scopedCentreId,
   selectedCentreName,
 }: Props) {
@@ -83,6 +85,7 @@ export default function SchedulePanel({
           weekday: weekday ?? undefined,
           district,
           time_of_day,
+          location_id: locationId,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -106,7 +109,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria]);
+  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, locationId]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {

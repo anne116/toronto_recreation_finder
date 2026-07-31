@@ -114,7 +114,9 @@ export async function getCentres(
     district?: string;
     age?: DropInAgeFilter;
     facility_type?: string;
-    weekday?: WeekdayName
+    weekday?: WeekdayName;
+    location_id?: string | number;
+    signal?: AbortSignal;
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();
@@ -124,8 +126,11 @@ export async function getCentres(
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "facility_type", params.facility_type);
   appendIfPresent(qs, "weekday", params.weekday);
-  
-  return get<CentresFeatureCollection>(`/api/toronto/drop-in-programs/geojson?${qs.toString()}`);
+  appendIfPresent(qs, "location_id", params.location_id);
+
+  return get<CentresFeatureCollection>(`/api/toronto/drop-in-programs/geojson?${qs.toString()}`, {
+    signal: params.signal,
+  });
 }
 
 export async function getRegisteredCentres(
@@ -136,6 +141,8 @@ export async function getRegisteredCentres(
     district?: string;
     age?: ProgramAgeFilter;
     start_month?: string;
+    location_id?: string | number;
+    signal?: AbortSignal;
   }
 ): Promise<CentresFeatureCollection> {
   const qs = new URLSearchParams();
@@ -144,8 +151,11 @@ export async function getRegisteredCentres(
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "start_month", params.start_month);
+  appendIfPresent(qs, "location_id", params.location_id);
 
-  return get<CentresFeatureCollection>(`/api/toronto/registered-programs/geojson?${qs.toString()}`);
+  return get<CentresFeatureCollection>(`/api/toronto/registered-programs/geojson?${qs.toString()}`, {
+    signal: params.signal,
+  });
 }
 
 export async function getWards(): Promise<WardFeatureCollection> {

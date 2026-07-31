@@ -23,6 +23,7 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
 };
@@ -76,6 +77,7 @@ export default function RegisteredProgramsPanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  locationId,
   scopedCentreId,
   selectedCentreName,
 }: Props) {
@@ -151,6 +153,7 @@ export default function RegisteredProgramsPanel({
           age,
           start_month: startMonth,
           district,
+          location_id: locationId,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -173,7 +176,7 @@ export default function RegisteredProgramsPanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria]);
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
