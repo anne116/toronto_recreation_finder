@@ -119,6 +119,7 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | number | null>(null);
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | number | null>(null);
+  const [scopedCentreId, setScopedCentreId] = useState<string | number | null>(null);
   const [scheduleFocusToken, setScheduleFocusToken] = useState(0);
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
@@ -164,8 +165,8 @@ export default function App() {
   { enabled: !!activeFilters }
 );
 
-  const selectedCentreName = selectedLocationId != null
-    ? centres?.features?.find((f) => String(f.properties.id) === String(selectedLocationId))?.properties.name ?? null
+  const selectedCentreName = scopedCentreId != null
+    ? centres?.features?.find((f) => String(f.properties.id) === String(scopedCentreId))?.properties.name ?? null
     : null;
 
   useEffect(() => {
@@ -239,6 +240,7 @@ export default function App() {
     setHasSearched(true);
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
+    setScopedCentreId(null);
     setActiveFilters(filters);
     setIsFiltersOpen(false);
 
@@ -262,6 +264,7 @@ export default function App() {
     setShowSchedulePanel(false);
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
+    setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
     setIsScheduleOpen(false);
@@ -286,6 +289,7 @@ export default function App() {
     });
     setShowSchedulePanel(false);
     setSelectedLocationId(null);
+    setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
     setIsScheduleOpen(false);
@@ -302,6 +306,7 @@ export default function App() {
       program_type: programType,
     })
     setSelectedLocationId(locationId);
+    setScopedCentreId(locationId);
     setHighlightedLocationId(locationId);
     setScheduleFocusToken(prev => prev + 1);
     if (showSchedulePanel) {
@@ -312,6 +317,7 @@ export default function App() {
   const handleCentreClose = useCallback(() => {
     setSelectedLocationId(null);
     setHighlightedLocationId(null);
+    setScopedCentreId(null);
   }, []);
 
   function handleScheduleLocationClick(
@@ -421,7 +427,7 @@ export default function App() {
                       onLocationClick={handleScheduleLocationClick}
                       highlightedLocationId={highlightedLocationId}
                       focusToken={scheduleFocusToken}
-                      selectedLocationId={selectedLocationId}
+                      scopedCentreId={scopedCentreId}
                       selectedCentreName={selectedCentreName}
                     />
                   ) : (
@@ -437,7 +443,7 @@ export default function App() {
                       onLocationClick={handleScheduleLocationClick}
                       highlightedLocationId={highlightedLocationId}
                       focusToken={scheduleFocusToken}
-                      selectedLocationId={selectedLocationId}
+                      scopedCentreId={scopedCentreId}
                       selectedCentreName={selectedCentreName}
                     />
                     )
@@ -486,7 +492,7 @@ export default function App() {
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
-                    selectedLocationId={selectedLocationId}
+                    scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
                   />
                 ) : (
@@ -502,7 +508,7 @@ export default function App() {
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
-                    selectedLocationId={selectedLocationId}
+                    scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
                   />
                 )}

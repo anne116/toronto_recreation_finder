@@ -23,7 +23,7 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
-  selectedLocationId?: string | number | null;
+  scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
 };
 
@@ -76,7 +76,7 @@ export default function RegisteredProgramsPanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
-  selectedLocationId,
+  scopedCentreId,
   selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
@@ -173,9 +173,9 @@ export default function RegisteredProgramsPanel({
   }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria]);
 
   const visiblePrograms = useMemo(() => {
-    if (selectedLocationId == null) return programs;
-    return programs.filter((p) => String(p.location_id) === String(selectedLocationId));
-  }, [programs, selectedLocationId]);
+    if (scopedCentreId == null) return programs;
+    return programs.filter((p) => String(p.location_id) === String(scopedCentreId));
+  }, [programs, scopedCentreId]);
 
   const sortedPrograms = useMemo(() => {
     if (!highlightedLocationIdStr) {

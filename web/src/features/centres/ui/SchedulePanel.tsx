@@ -24,7 +24,7 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
-  selectedLocationId?: string | number | null;
+  scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
 };
 
@@ -49,7 +49,7 @@ export default function SchedulePanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
-  selectedLocationId,
+  scopedCentreId,
   selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
@@ -57,9 +57,9 @@ export default function SchedulePanel({
   const [error, setError] = useState<string | null>(null);
 
   const displayedPrograms = useMemo(() => {
-    if (selectedLocationId == null) return programs;
-    return programs.filter((p) => String(p.location_id) === String(selectedLocationId));
-  }, [programs, selectedLocationId]);
+    if (scopedCentreId == null) return programs;
+    return programs.filter((p) => String(p.location_id) === String(scopedCentreId));
+  }, [programs, scopedCentreId]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
