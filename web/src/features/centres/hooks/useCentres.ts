@@ -26,6 +26,9 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
 
   useEffect(() => {
     if (!enabled) {
+      setData(null);
+      setLoading(false);
+      setError(null);
       return;
     }
 
