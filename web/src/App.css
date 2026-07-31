@@ -64,6 +64,41 @@
   color: #ffffff;
 }
 
+.filter-pill--centre {
+  gap: 4px;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.resizable-panel__header .filter-pill--centre {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--color-primary-hover);
+}
+
+.filter-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  color: inherit;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.resizable-panel__header .filter-pill--centre .filter-pill-remove {
+  background: var(--color-primary-light);
+}
+
+.filter-pill-remove:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .registered-program-pill {
   display: inline-flex;
   align-items: center;

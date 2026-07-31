@@ -23,6 +23,8 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  scopedCentreId?: string | number | null;
+  selectedCentreName?: string | null;
 };
 
 const MATCH_CARD_HIGHLIGHT = "#D8F3EE";
@@ -74,11 +76,16 @@ export default function RegisteredProgramsPanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  scopedCentreId,
+  selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
   const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scopedPrograms, setScopedPrograms] = useState<RegisteredProgramGroup[]>([]);
+  const [scopedLoading, setScopedLoading] = useState(false);
+  const [scopedError, setScopedError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const highlightedLocationIdStr = highlightedLocationId != null ? String(highlightedLocationId) : null;
   const cardRefs = useRef(new Map<string, HTMLElement | null>());
@@ -168,14 +175,65 @@ export default function RegisteredProgramsPanel({
     return () => abortController.abort();
   }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria]);
 
+  useEffect(() => {
+    if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
+      setScopedPrograms([]);
+      setScopedError(null);
+      setScopedLoading(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    (async () => {
+      try {
+        setScopedLoading(true);
+        setScopedError(null);
+
+        const resp = await searchRegisteredPrograms({
+          category,
+          activity: activity ?? "",
+          activities,
+          age,
+          start_month: startMonth,
+          district,
+          location_id: scopedCentreId,
+          limit: 2000,
+          signal: abortController.signal,
+        });
+
+        if (!abortController.signal.aborted) {
+          setScopedPrograms(resp?.programs ?? []);
+        }
+      } catch (e) {
+        if (!abortController.signal.aborted) {
+          console.error("Failed to load centre's registered programs:", e);
+          setScopedError("Failed to load programs for this centre. Please try again.");
+          setScopedPrograms([]);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setScopedLoading(false);
+        }
+      }
+    })();
+
+    return () => abortController.abort();
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, scopedCentreId]);
+
+  const isScoped = scopedCentreId != null;
+  const displayedLoading = isScoped ? scopedLoading : loading;
+  const displayedError = isScoped ? scopedError : error;
+  const displayedPrograms = isScoped ? scopedPrograms : programs;
+
   const sortedPrograms = useMemo(() => {
     if (!highlightedLocationIdStr) {
-      return programs;
+      return displayedPrograms;
     }
 
     const matches: RegisteredProgramGroup[] = [];
     const others: RegisteredProgramGroup[] = [];
-    programs.forEach((program) => {
+    displayedPrograms.forEach((program) => {
       if (String(program.location_id) === highlightedLocationIdStr) {
         matches.push(program);
       } else {
@@ -183,7 +241,7 @@ export default function RegisteredProgramsPanel({
       }
     });
     return [...matches, ...others];
-  }, [programs, highlightedLocationIdStr]);
+  }, [displayedPrograms, highlightedLocationIdStr]);
 
   useEffect(() => {
     if (!highlightedLocationIdStr) return;
@@ -216,25 +274,27 @@ export default function RegisteredProgramsPanel({
           </div>
         )}
 
-        {hasSearchCriteria && loading && (
+        {hasSearchCriteria && displayedLoading && (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <Spinner label="Loading registered programs" />
           </div>
         )}
 
-        {hasSearchCriteria && !loading && error && (
+        {hasSearchCriteria && !displayedLoading && displayedError && (
           <div className="text-sm text-red-600" style={{ padding: "20px", background: "#fee2e2", borderRadius: "8px" }}>
-            {error}
+            {displayedError}
           </div>
         )}
 
-        {hasSearchCriteria && !loading && !error && sortedPrograms.length === 0 && (
+        {hasSearchCriteria && !displayedLoading && !displayedError && sortedPrograms.length === 0 && (
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
-            No registered programs found for your search criteria
+            {selectedCentreName
+              ? `No matching programs from ${selectedCentreName} for your search criteria`
+              : "No registered programs found for your search criteria"}
           </div>
         )}
 
-        {hasSearchCriteria && !loading && !error && sortedPrograms.length > 0 && (
+        {hasSearchCriteria && !displayedLoading && !displayedError && sortedPrograms.length > 0 && (
           <div style={{ display: "grid", gap: "6px" }}>
             {sortedPrograms.map((program) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
@@ -259,6 +319,7 @@ export default function RegisteredProgramsPanel({
                     start_time: collapsedStartTime
                   })}
                   style={{
+                    position: "relative",
                     border: "1px solid #e2e8f0",
                     borderRadius: "14px",
                     padding: "8px 10px",
@@ -372,20 +433,28 @@ export default function RegisteredProgramsPanel({
                   <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     📅 {collapsedDateRange}
                   </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--color-primary-hover)",
-                      marginBottom: "1px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "2px",
-                    }}
-                  >
-                    <span>📍 {program.location_name}</span>
-                    <MdChevronRight size={16} color="#94a3b8" />
-                  </div>
+                  {selectedCentreName ? (
+                    <MdChevronRight
+                      size={16}
+                      color="#94a3b8"
+                      style={{ position: "absolute", bottom: "8px", right: "10px" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--color-primary-hover)",
+                        marginBottom: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "2px",
+                      }}
+                    >
+                      <span>📍 {program.location_name}</span>
+                      <MdChevronRight size={16} color="#94a3b8" />
+                    </div>
+                  )}
                 </article>
               );
             })}

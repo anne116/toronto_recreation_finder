@@ -750,19 +750,22 @@ def collect_registered_program_groups(
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
+    location_id: int | None = None,
 ) -> list[dict]:
     rows = fetch_all_datastore_rows(REGISTERED_DATASTORE_ID)
     locations = load_location_cache()
     grouped: dict[tuple, dict] = {}
 
     for row in rows:
-        location_id = parse_int(row.get("Location ID"))
+        row_location_id = parse_int(row.get("Location ID"))
         course_title = clean_optional_string(row.get("Course Title"))
         activity_title = clean_optional_string(row.get("Activity Title"))
-        if location_id is None or course_title is None:
+        if row_location_id is None or course_title is None:
+            continue
+        if location_id is not None and row_location_id != location_id:
             continue
 
-        location = locations.get(location_id)
+        location = locations.get(row_location_id)
         if not location:
             continue
 
@@ -793,7 +796,7 @@ def collect_registered_program_groups(
         start_time = format_time_hms(row.get("Start Hour"), row.get("Start Min"))
         end_time = format_time_hms(row.get("End Hour"), row.get("End Min"))
         group_key = (
-            location_id,
+            row_location_id,
             course_title,
             start_time,
             end_time,
@@ -803,7 +806,7 @@ def collect_registered_program_groups(
         )
 
         period = {
-            "id": f"{location_id}-{row.get('Course_ID')}-{start_time}-{end_time}-{start_date or 'na'}",
+            "id": f"{row_location_id}-{row.get('Course_ID')}-{start_time}-{end_time}-{start_date or 'na'}",
             "course_id": row.get("Course_ID"),
             "days_of_week": days_of_week,
             "start_date": start_date,
@@ -817,8 +820,8 @@ def collect_registered_program_groups(
 
         if group_key not in grouped:
             grouped[group_key] = {
-                "id": f"{location_id}|{course_title}|{start_time or ''}|{end_time or ''}|{age_min or ''}|{age_max or ''}|{normalized_category}",
-                "location_id": location_id,
+                "id": f"{row_location_id}|{course_title}|{start_time or ''}|{end_time or ''}|{age_min or ''}|{age_max or ''}|{normalized_category}",
+                "location_id": row_location_id,
                 "location_name": location_name(location) or "Unknown Location",
                 "district": normalized_district,
                 "category": normalized_category,
@@ -891,6 +894,7 @@ def build_registered_program_search_response(
     district: str | None = None,
     age: str | None = None,
     start_month: str | None = None,
+    location_id: int | None = None,
     limit: int = 2000,
 ) -> dict:
     programs = collect_registered_program_groups(
@@ -899,6 +903,7 @@ def build_registered_program_search_response(
         district=district,
         age=age,
         start_month=start_month,
+        location_id=location_id,
     )[:limit]
 
     return {
@@ -1001,6 +1006,7 @@ def build_program_search_response(
     age: str | None = None,
     time_of_day: str | None = None,
     weekday: str | None = None,
+    location_id: int | None = None,
     limit: int = 2000,
 ) -> dict:
     drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
@@ -1027,11 +1033,13 @@ def build_program_search_response(
         if not matches_time_of_day(row.get("Start Hour"), row_weekday_index, time_of_day):
             continue
 
-        location_id = parse_int(row.get("Location ID"))
-        if location_id is None:
+        row_location_id = parse_int(row.get("Location ID"))
+        if row_location_id is None:
+            continue
+        if location_id is not None and row_location_id != location_id:
             continue
 
-        location = locations.get(location_id)
+        location = locations.get(row_location_id)
         if not location:
             continue
 
@@ -1039,13 +1047,13 @@ def build_program_search_response(
         if district and normalized_district != district:
             continue
 
-        coord = coordinates.get(location_id, {})
+        coord = coordinates.get(row_location_id, {})
         start_date, end_date, date_range = normalize_date_fields(row)
 
         programs.append(
             {
                 "id": row.get("_id"),
-                "location_id": location_id,
+                "location_id": row_location_id,
                 "course_title": raw_title,
                 "activity": canonicalize_activity_title(raw_title),
                 "day_of_week": row_day_of_week,

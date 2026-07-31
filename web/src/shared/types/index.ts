@@ -44,15 +44,18 @@ export interface CentreDetail {
 export interface DropInProgram {
   id: string | number;
   centre_id?: string | number;
+  location_id: string | number;
+  location_name: string;
+  asset_name?: string | null;
   course_title: string;
-  activity?: string | null;      
+  activity?: string | null;
   day_of_week?: WeekdayName | null;
   start_time?: string | null;
   end_time?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   date_range?: string | null;
-  age_min?: number | null;   
+  age_min?: number | null;
   age_max?: number | null;
 }
 

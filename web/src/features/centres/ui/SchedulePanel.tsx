@@ -24,14 +24,16 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  scopedCentreId?: string | number | null;
+  selectedCentreName?: string | null;
 };
 
 
-function normalizeProgram(p: any): DropInProgram {
+function normalizeProgram(p: DropInProgram): DropInProgram {
     return {
       ...p,
       course_title: p.course_title ?? "",
-    } as DropInProgram;
+    };
   }
 
 export default function SchedulePanel({
@@ -47,10 +49,16 @@ export default function SchedulePanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  scopedCentreId,
+  selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [scopedPrograms, setScopedPrograms] = useState<DropInProgram[]>([]);
+  const [scopedLoading, setScopedLoading] = useState(false);
+  const [scopedError, setScopedError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
@@ -82,7 +90,7 @@ export default function SchedulePanel({
         if (!abortController.signal.aborted) {
           const raw = resp?.programs ?? [];
           const cleaned = raw
-            .filter((p: any) => p && p.course_title != null)
+            .filter((p) => p && p.course_title != null)
             .map(normalizeProgram);
           setPrograms(cleaned);
         }
@@ -100,7 +108,61 @@ export default function SchedulePanel({
     return () => abortController.abort();
   }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria]);
 
+  useEffect(() => {
+    if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
+      setScopedPrograms([]);
+      setScopedError(null);
+      setScopedLoading(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    (async () => {
+      try {
+        setScopedLoading(true);
+        setScopedError(null);
+
+        const resp = await searchProgramsAggregated({
+          category,
+          activity: activity ?? '',
+          activities,
+          age,
+          weekday: weekday ?? undefined,
+          district,
+          time_of_day,
+          location_id: scopedCentreId,
+          limit: 2000,
+          signal: abortController.signal,
+        });
+
+        if (!abortController.signal.aborted) {
+          const raw = resp?.programs ?? [];
+          const cleaned = raw
+            .filter((p) => p && p.course_title != null)
+            .map(normalizeProgram);
+          setScopedPrograms(cleaned);
+        }
+      } catch (e: any) {
+        if (!abortController.signal.aborted) {
+          console.error("Failed to load centre schedule:", e);
+          setScopedError("Failed to load sessions for this centre. Please try again.");
+          setScopedPrograms([]);
+        }
+      } finally {
+        if (!abortController.signal.aborted) setScopedLoading(false);
+      }
+    })();
+
+    return () => abortController.abort();
+  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, scopedCentreId]);
+
   if (!isVisible) return null;
+
+  const isScoped = scopedCentreId != null;
+  const displayedPrograms = isScoped ? scopedPrograms : programs;
+  const displayedLoading = isScoped ? scopedLoading : loading;
+  const displayedError = isScoped ? scopedError : error;
 
   return (
     <div 
@@ -123,32 +185,35 @@ export default function SchedulePanel({
           </div>
         )}
   
-        {hasSearchCriteria && loading && (
+        {hasSearchCriteria && displayedLoading && (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
             <Spinner label="Loading schedules" />
           </div>
         )}
-  
-        {hasSearchCriteria && !loading && error && (
+
+        {hasSearchCriteria && !displayedLoading && displayedError && (
           <div className="text-sm text-red-600" style={{ padding: '20px', background: '#fee2e2', borderRadius: '8px' }}>
-            {error}
+            {displayedError}
           </div>
         )}
-  
-        {hasSearchCriteria && !loading && !error && programs.length === 0 && (
+
+        {hasSearchCriteria && !displayedLoading && !displayedError && displayedPrograms.length === 0 && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
-            No sessions found for your search criteria
+            {selectedCentreName
+              ? `No matching sessions from ${selectedCentreName} for your search criteria`
+              : 'No sessions found for your search criteria'}
           </div>
         )}
-  
-        {hasSearchCriteria && !loading && !error && programs.length > 0 && (
+
+        {hasSearchCriteria && !displayedLoading && !displayedError && displayedPrograms.length > 0 && (
           <WeeklyScheduleGrid
-            programs={programs}
+            programs={displayedPrograms}
             onLocationClick={onLocationClick}
             initialDay={weekday ?? undefined}
             selectedActivity={activity}
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}
+            selectedCentreName={selectedCentreName}
           />
         )}
       </div>

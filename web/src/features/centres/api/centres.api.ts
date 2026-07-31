@@ -9,6 +9,7 @@ import type {
   CentreDetail,
   DistrictOption,
   DropInAgeFilter,
+  DropInProgram,
   FacilityTypeOption,
   ProgramAgeFilter,
   ProgramType,
@@ -40,6 +41,7 @@ export type SearchProgramsParams = {
   start_month?: string;
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
+  location_id?: string | number;
   limit?: number;
   signal?: AbortSignal;
 };
@@ -54,7 +56,7 @@ export type SearchProgramsResponse = {
     weekday?: WeekdayName;
     district?: string;
   };
-  programs: any[];
+  programs: DropInProgram[];
 };
 
 
@@ -80,9 +82,12 @@ export async function searchProgramsAggregated(
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "time_of_day", params.time_of_day);
+  appendIfPresent(qs, "location_id", params.location_id);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "weekday", params.weekday);
-  return get<SearchProgramsResponse>(`/api/toronto/drop-in-programs/search?${qs.toString()}`);
+  return get<SearchProgramsResponse>(`/api/toronto/drop-in-programs/search?${qs.toString()}`, {
+    signal: params.signal,
+  });
 }
 
 export async function searchRegisteredPrograms(
@@ -93,6 +98,7 @@ export async function searchRegisteredPrograms(
   appendActivityParams(qs, params.activity, params.activities);
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
+  appendIfPresent(qs, "location_id", params.location_id);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "start_month", params.start_month);
   return get<RegisteredProgramsResponse>(`/api/toronto/registered-programs/search?${qs.toString()}`, {
