@@ -23,6 +23,8 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  selectedLocationId?: string | number | null;
+  selectedCentreName?: string | null;
 };
 
 const MATCH_CARD_HIGHLIGHT = "#D8F3EE";
@@ -74,6 +76,8 @@ export default function RegisteredProgramsPanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  selectedLocationId,
+  selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
   const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
@@ -168,14 +172,19 @@ export default function RegisteredProgramsPanel({
     return () => abortController.abort();
   }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria]);
 
+  const visiblePrograms = useMemo(() => {
+    if (selectedLocationId == null) return programs;
+    return programs.filter((p) => String(p.location_id) === String(selectedLocationId));
+  }, [programs, selectedLocationId]);
+
   const sortedPrograms = useMemo(() => {
     if (!highlightedLocationIdStr) {
-      return programs;
+      return visiblePrograms;
     }
 
     const matches: RegisteredProgramGroup[] = [];
     const others: RegisteredProgramGroup[] = [];
-    programs.forEach((program) => {
+    visiblePrograms.forEach((program) => {
       if (String(program.location_id) === highlightedLocationIdStr) {
         matches.push(program);
       } else {
@@ -183,7 +192,7 @@ export default function RegisteredProgramsPanel({
       }
     });
     return [...matches, ...others];
-  }, [programs, highlightedLocationIdStr]);
+  }, [visiblePrograms, highlightedLocationIdStr]);
 
   useEffect(() => {
     if (!highlightedLocationIdStr) return;
@@ -230,7 +239,9 @@ export default function RegisteredProgramsPanel({
 
         {hasSearchCriteria && !loading && !error && sortedPrograms.length === 0 && (
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
-            No registered programs found for your search criteria
+            {selectedCentreName
+              ? `No matching programs from ${selectedCentreName} for your search criteria`
+              : "No registered programs found for your search criteria"}
           </div>
         )}
 
@@ -259,6 +270,7 @@ export default function RegisteredProgramsPanel({
                     start_time: collapsedStartTime
                   })}
                   style={{
+                    position: "relative",
                     border: "1px solid #e2e8f0",
                     borderRadius: "14px",
                     padding: "8px 10px",
@@ -372,20 +384,28 @@ export default function RegisteredProgramsPanel({
                   <div style={{ fontSize: "12px", color: "#334155", marginBottom: "1px" }}>
                     📅 {collapsedDateRange}
                   </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--color-primary-hover)",
-                      marginBottom: "1px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "2px",
-                    }}
-                  >
-                    <span>📍 {program.location_name}</span>
-                    <MdChevronRight size={16} color="#94a3b8" />
-                  </div>
+                  {selectedCentreName ? (
+                    <MdChevronRight
+                      size={16}
+                      color="#94a3b8"
+                      style={{ position: "absolute", bottom: "8px", right: "10px" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--color-primary-hover)",
+                        marginBottom: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "2px",
+                      }}
+                    >
+                      <span>📍 {program.location_name}</span>
+                      <MdChevronRight size={16} color="#94a3b8" />
+                    </div>
+                  )}
                 </article>
               );
             })}

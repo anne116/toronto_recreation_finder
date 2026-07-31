@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, type ReactNode, type MouseEvent as ReactMo
 type ResizablePanelProps = {
     title: string;
     pills?: string[];
+    centrePill?: { label: string; onRemove: () => void };
     initialWidth?: number;
     minWidth?: number;
     maxWidth?: number;
@@ -13,6 +14,7 @@ type ResizablePanelProps = {
 export default function ResizablePanel({
     title,
     pills = [],
+    centrePill,
     initialWidth = 400,
     minWidth = 280,
     maxWidth = 640,
@@ -84,13 +86,26 @@ export default function ResizablePanel({
                         ✕
                     </button>
                 </div>
-                {pills.length > 0 && (
+                {(pills.length > 0 || centrePill) && (
                     <div className="filter-pill-row">
                         {pills.map((pill) => (
                             <span key={pill} className="filter-pill">
                                 {pill}
                             </span>
                         ))}
+                        {centrePill && (
+                            <span className="filter-pill filter-pill--centre">
+                                📍 {centrePill.label}
+                                <button
+                                    type="button"
+                                    className="filter-pill-remove"
+                                    aria-label={`Clear selected centre: ${centrePill.label}`}
+                                    onClick={centrePill.onRemove}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

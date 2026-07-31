@@ -18,6 +18,7 @@ type Props = {
   selectedActivity?: string;
   highlightedLocationId?: string | number | null;
   focusToken?: number;
+  selectedCentreName?: string | null;
 };
 
 const MATCH_ROW_HIGHLIGHT = '#D8F3EE';
@@ -130,6 +131,7 @@ export default function WeeklyScheduleGrid({
   selectedActivity,
   highlightedLocationId,
   focusToken = 0,
+  selectedCentreName,
 }: Props) {
   const grouped = groupByDay(programs);
   const dayConfigs = [
@@ -310,6 +312,7 @@ export default function WeeklyScheduleGrid({
                   }
                 }}
                 style={{
+                  position: 'relative',
                   padding: '2px 8px 2px 12px',
                   borderBottom:
                     idx < dayPrograms.length - 1
@@ -380,22 +383,32 @@ export default function WeeklyScheduleGrid({
                 </div>
               )}
 
-              <div
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--color-primary)',
-                  marginBottom: '2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '4px',
-                }}
-              >
-                <span>📍{locationName}</span>
-                {onLocationClick && locationId && (
-                  <MdChevronRight size={16} color="#94a3b8" />
-                )}
-              </div>
+              {selectedCentreName ? (
+                onLocationClick && locationId && (
+                  <MdChevronRight
+                    size={16}
+                    color="#94a3b8"
+                    style={{ position: 'absolute', top: '10px', right: '8px' }}
+                  />
+                )
+              ) : (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--color-primary)',
+                    marginBottom: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '4px',
+                  }}
+                >
+                  <span>📍{locationName}</span>
+                  {onLocationClick && locationId && (
+                    <MdChevronRight size={16} color="#94a3b8" />
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -413,7 +426,9 @@ export default function WeeklyScheduleGrid({
           marginTop: 8,
         }}
       >
-        No programs scheduled for this day
+        {selectedCentreName
+          ? `No matching sessions from ${selectedCentreName} on this day.`
+          : 'No programs scheduled for this day'}
       </div>
     )}
   </div>

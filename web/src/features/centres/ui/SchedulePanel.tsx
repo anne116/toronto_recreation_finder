@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
 import type { AgeFilter, DropInProgram } from "../../../shared/types";
@@ -24,6 +24,8 @@ type Props = {
   focusToken?: number;
   isVisible: boolean;
   className?: string;
+  selectedLocationId?: string | number | null;
+  selectedCentreName?: string | null;
 };
 
 
@@ -47,10 +49,17 @@ export default function SchedulePanel({
   highlightedLocationId,
   focusToken = 0,
   isVisible,
+  selectedLocationId,
+  selectedCentreName,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const displayedPrograms = useMemo(() => {
+    if (selectedLocationId == null) return programs;
+    return programs.filter((p) => String(p.location_id) === String(selectedLocationId));
+  }, [programs, selectedLocationId]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
@@ -135,20 +144,21 @@ export default function SchedulePanel({
           </div>
         )}
   
-        {hasSearchCriteria && !loading && !error && programs.length === 0 && (
+        {hasSearchCriteria && !loading && !error && displayedPrograms.length === 0 && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             No sessions found for your search criteria
           </div>
         )}
-  
-        {hasSearchCriteria && !loading && !error && programs.length > 0 && (
+
+        {hasSearchCriteria && !loading && !error && displayedPrograms.length > 0 && (
           <WeeklyScheduleGrid
-            programs={programs}
+            programs={displayedPrograms}
             onLocationClick={onLocationClick}
             initialDay={weekday ?? undefined}
             selectedActivity={activity}
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}
+            selectedCentreName={selectedCentreName}
           />
         )}
       </div>

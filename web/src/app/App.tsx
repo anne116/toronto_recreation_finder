@@ -163,7 +163,10 @@ export default function App() {
   },
   { enabled: !!activeFilters }
 );
-  
+
+  const selectedCentreName = selectedLocationId != null
+    ? centres?.features?.find((f) => String(f.properties.id) === String(selectedLocationId))?.properties.name ?? null
+    : null;
 
   useEffect(() => {
     let mounted = true;
@@ -399,6 +402,7 @@ export default function App() {
                 <ResizablePanel
                   title={buildPanelTitle(programType, activeFilters)}
                   pills={filterPills}
+                  centrePill={selectedCentreName ? { label: selectedCentreName, onRemove: handleCentreClose } : undefined}
                   initialWidth={400}
                   minWidth={300}
                   maxWidth={640}
@@ -417,6 +421,8 @@ export default function App() {
                       onLocationClick={handleScheduleLocationClick}
                       highlightedLocationId={highlightedLocationId}
                       focusToken={scheduleFocusToken}
+                      selectedLocationId={selectedLocationId}
+                      selectedCentreName={selectedCentreName}
                     />
                   ) : (
                     <RegisteredProgramsPanel
@@ -431,6 +437,8 @@ export default function App() {
                       onLocationClick={handleScheduleLocationClick}
                       highlightedLocationId={highlightedLocationId}
                       focusToken={scheduleFocusToken}
+                      selectedLocationId={selectedLocationId}
+                      selectedCentreName={selectedCentreName}
                     />
                     )
                   }
@@ -442,13 +450,26 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {filterPills.length > 0 && (
+              {(filterPills.length > 0 || selectedCentreName) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
                       {pill}
                     </span>
                   ))}
+                  {selectedCentreName && (
+                    <span className="filter-pill filter-pill--centre">
+                      📍 {selectedCentreName}
+                      <button
+                        type="button"
+                        className="filter-pill-remove"
+                        aria-label={`Clear selected centre: ${selectedCentreName}`}
+                        onClick={handleCentreClose}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
               <div className="schedule-mobile-body">
@@ -465,6 +486,8 @@ export default function App() {
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
+                    selectedLocationId={selectedLocationId}
+                    selectedCentreName={selectedCentreName}
                   />
                 ) : (
                   <RegisteredProgramsPanel
@@ -479,6 +502,8 @@ export default function App() {
                     onLocationClick={handleScheduleLocationClick}
                     highlightedLocationId={highlightedLocationId}
                     focusToken={scheduleFocusToken}
+                    selectedLocationId={selectedLocationId}
+                    selectedCentreName={selectedCentreName}
                   />
                 )}
 
