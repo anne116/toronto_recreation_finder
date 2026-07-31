@@ -31,6 +31,12 @@ class handler(BaseHTTPRequestHandler):
             except (TypeError, ValueError):
                 limit = 2000
 
+            location_id_value = params.get("location_id", [None])[0]
+            try:
+                location_id = int(location_id_value) if location_id_value not in (None, "") else None
+            except (TypeError, ValueError):
+                location_id = None
+
             payload = build_program_search_response(
                 category=params.get("category", [None])[0],
                 activity=_parse_activity(params),
@@ -38,6 +44,7 @@ class handler(BaseHTTPRequestHandler):
                 age=params.get("age", [None])[0],
                 time_of_day=params.get("time_of_day", [None])[0],
                 weekday=weekday,
+                location_id=location_id,
                 limit=max(1, min(limit, 5000)),
             )
             send_json(self, payload)
