@@ -40,11 +40,14 @@ export default function FiltersPanel({
     (async () => {
       const { categories, activities, districts, startMonths } = await getFilterOptions(programType);
 
+      const sortedCategories = [...categories].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
       const sortedActivities = [...activities].sort((a, b) =>
         a.activity.localeCompare(b.activity)
       );
-      setCategories(categories);
-      setActivities(sortedActivities); 
+      setCategories(sortedCategories);
+      setActivities(sortedActivities);
       setDistricts(districts); 
       setStartMonths(startMonths ?? []);
     })();
