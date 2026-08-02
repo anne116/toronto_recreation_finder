@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
-import type { AgeFilter, DropInProgram } from "../../../shared/types";
+import { attachDistanceKm, buildLocationCoordinatesMap } from "../lib/distance";
+import type { AgeFilter, CentresFeatureCollection, DropInProgram } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import Spinner from "../../../shared/ui/Spinner";
 
@@ -27,6 +28,9 @@ type Props = {
   locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
+  centres?: CentresFeatureCollection | null;
+  userLocation?: { lat: number; lon: number } | null;
+  maxDistanceKm?: number;
 };
 
 
@@ -53,6 +57,9 @@ export default function SchedulePanel({
   locationId,
   scopedCentreId,
   selectedCentreName,
+  centres,
+  userLocation,
+  maxDistanceKm,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
   const [loading, setLoading] = useState(false);
@@ -160,15 +167,21 @@ export default function SchedulePanel({
     return () => abortController.abort();
   }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, scopedCentreId]);
 
-  if (!isVisible) return null;
-
   const isScoped = scopedCentreId != null;
-  const displayedPrograms = isScoped ? scopedPrograms : programs;
+  const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
   const displayedLoading = isScoped ? scopedLoading : loading;
   const displayedError = isScoped ? scopedError : error;
 
+  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
+  const displayedPrograms = useMemo(
+    () => attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null),
+    [rawDisplayedPrograms, coordinatesById, userLocation]
+  );
+
+  if (!isVisible) return null;
+
   return (
-    <div 
+    <div
       style={{
         width: '100%',
         height: '100%',
@@ -217,9 +230,10 @@ export default function SchedulePanel({
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}
             selectedCentreName={selectedCentreName}
+            maxDistanceKm={userLocation ? maxDistanceKm : undefined}
           />
         )}
       </div>
     </div>
-  );  
+  );
 }

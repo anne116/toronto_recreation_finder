@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MdOutlineDirectionsWalk, MdOutlineEventAvailable } from 'react-icons/md';
 import Spinner from '../../../shared/ui/Spinner';
-import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
+import type { ActivityOption, CategoryOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 import CentreSearchField from './CentreSearchField';
 
-type Filters = { category: string; activity: string; activities?: string[]; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string };
+type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number };
 
 type Props = {
   programType: ProgramType;
@@ -18,27 +18,36 @@ type Props = {
   isOpen: boolean;
   onToggle: () => void;
   isSearching?: boolean;
+  userLocation?: { lat: number; lon: number } | null;
+  locateMeLoading?: boolean;
+  locateMeError?: string | null;
+  onLocateMe: () => void;
+  onClearLocation: () => void;
 };
 
-export default function FiltersPanel({ 
+export default function FiltersPanel({
   programType,
   onProgramTypeChange,
-  value, 
-  onChange, 
+  value,
+  onChange,
   onSearch,
   onReset,
   isOpen,
   onToggle,
-  isSearching = false
+  isSearching = false,
+  userLocation,
+  locateMeLoading = false,
+  locateMeError,
+  onLocateMe,
+  onClearLocation,
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
-  const [districts, setDistricts]   = useState<DistrictOption[]>([]);
   const [startMonths, setStartMonths] = useState<StartMonthOption[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { categories, activities, districts, startMonths } = await getFilterOptions(programType);
+      const { categories, activities, startMonths } = await getFilterOptions(programType);
 
       const sortedCategories = [...categories].sort((a, b) =>
         a.name.localeCompare(b.name)
@@ -48,7 +57,6 @@ export default function FiltersPanel({
       );
       setCategories(sortedCategories);
       setActivities(sortedActivities);
-      setDistricts(districts); 
       setStartMonths(startMonths ?? []);
     })();
   }, [programType]);
@@ -156,17 +164,42 @@ export default function FiltersPanel({
       </div>
 
       <div className="filter-group">
-        <label>District</label>
-        <select 
-          value={value.district} 
-          onChange={e => update({ district: e.target.value })}
-        >
-          <option value="">All Districts</option>
-          {districts.map(d => <option key={d.district} value={d.district}>
-            {/* {d.district} ({d.location_count}) */}
-            {d.district}
-            </option>)}
-        </select>
+        <label>Distance</label>
+        {!userLocation ? (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onLocateMe}
+            disabled={locateMeLoading}
+          >
+            {locateMeLoading ? <Spinner size={16} label="Locating" /> : '📍 Locate Me'}
+          </button>
+        ) : (
+          <div className="distance-slider-wrap">
+            <div className="distance-slider-header">
+              <span>Within {value.maxDistanceKm ?? 5} km</span>
+              <button
+                type="button"
+                className="distance-slider-clear"
+                aria-label="Clear location"
+                onClick={onClearLocation}
+              >
+                ✕
+              </button>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={25}
+              step={1}
+              value={value.maxDistanceKm ?? 5}
+              onChange={(e) => update({ maxDistanceKm: Number(e.target.value) })}
+            />
+          </div>
+        )}
+        {locateMeError && (
+          <div className="locate-me-error">{locateMeError}</div>
+        )}
       </div>
 
       {programType === 'dropin' ? (

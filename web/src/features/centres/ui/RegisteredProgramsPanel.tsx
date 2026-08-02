@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchRegisteredPrograms } from "../api/centres.api";
-import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
+import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
+import type { CentresFeatureCollection, RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
 import Spinner from "../../../shared/ui/Spinner";
@@ -26,6 +27,9 @@ type Props = {
   locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
+  centres?: CentresFeatureCollection | null;
+  userLocation?: { lat: number; lon: number } | null;
+  maxDistanceKm?: number;
 };
 
 const MATCH_CARD_HIGHLIGHT = "#D8F3EE";
@@ -80,6 +84,9 @@ export default function RegisteredProgramsPanel({
   locationId,
   scopedCentreId,
   selectedCentreName,
+  centres,
+  userLocation,
+  maxDistanceKm,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
   const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
@@ -227,24 +234,50 @@ export default function RegisteredProgramsPanel({
   const isScoped = scopedCentreId != null;
   const displayedLoading = isScoped ? scopedLoading : loading;
   const displayedError = isScoped ? scopedError : error;
-  const displayedPrograms = isScoped ? scopedPrograms : programs;
+  const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
 
-  const sortedPrograms = useMemo(() => {
-    if (!highlightedLocationIdStr) {
-      return displayedPrograms;
+  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
+  const displayedPrograms = useMemo(
+    () => attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null),
+    [rawDisplayedPrograms, coordinatesById, userLocation]
+  );
+
+  const { sortedPrograms, withinDistanceCount } = useMemo(() => {
+    const sortByHighlight = (list: RegisteredProgramGroup[]) => {
+      if (!highlightedLocationIdStr) return list;
+      const matches: RegisteredProgramGroup[] = [];
+      const others: RegisteredProgramGroup[] = [];
+      list.forEach((program) => {
+        if (String(program.location_id) === highlightedLocationIdStr) {
+          matches.push(program);
+        } else {
+          others.push(program);
+        }
+      });
+      return [...matches, ...others];
+    };
+
+    const effectiveMaxDistanceKm = userLocation ? maxDistanceKm : undefined;
+    if (effectiveMaxDistanceKm == null) {
+      const sorted = sortByHighlight(displayedPrograms);
+      return { sortedPrograms: sorted, withinDistanceCount: sorted.length };
     }
 
-    const matches: RegisteredProgramGroup[] = [];
-    const others: RegisteredProgramGroup[] = [];
+    const within: RegisteredProgramGroup[] = [];
+    const beyond: RegisteredProgramGroup[] = [];
     displayedPrograms.forEach((program) => {
-      if (String(program.location_id) === highlightedLocationIdStr) {
-        matches.push(program);
+      if (isWithinDistance(program.distanceKm, effectiveMaxDistanceKm)) {
+        within.push(program);
       } else {
-        others.push(program);
+        beyond.push(program);
       }
     });
-    return [...matches, ...others];
-  }, [displayedPrograms, highlightedLocationIdStr]);
+
+    return {
+      sortedPrograms: [...sortByHighlight(within), ...sortByHighlight(beyond)],
+      withinDistanceCount: within.length,
+    };
+  }, [displayedPrograms, highlightedLocationIdStr, userLocation, maxDistanceKm]);
 
   useEffect(() => {
     if (!highlightedLocationIdStr) return;
@@ -299,7 +332,7 @@ export default function RegisteredProgramsPanel({
 
         {hasSearchCriteria && !displayedLoading && !displayedError && sortedPrograms.length > 0 && (
           <div style={{ display: "grid", gap: "6px" }}>
-            {sortedPrograms.map((program) => {
+            {sortedPrograms.map((program, index) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
               const primaryPeriod = program.periods[0];
               const collapsedDays = primaryPeriod?.days_of_week ?? program.days_of_week;
@@ -309,10 +342,14 @@ export default function RegisteredProgramsPanel({
               const collapsedStartTime = primaryPeriod?.start_time ?? program.start_time;
               const collapsedEndTime = primaryPeriod?.end_time ?? program.end_time;
               const primaryRegisterUrl = primaryPeriod?.activity_url;
+              const showBeyondDivider = index === withinDistanceCount && withinDistanceCount > 0 && withinDistanceCount < sortedPrograms.length;
 
               return (
+                <div key={program.id}>
+                {showBeyondDivider && (
+                  <div className="distance-group-divider">Also available further away</div>
+                )}
                 <article
-                  key={program.id}
                   ref={(node) => {
                     cardRefs.current.set(program.id, node);
                   }}
@@ -345,6 +382,17 @@ export default function RegisteredProgramsPanel({
                       <span style={{ fontWeight: 400, color: "#475569" }}>
                         (👥 {formatAgeRange(program.age_min, program.age_max)})
                       </span>
+                      {program.distanceKm != null && (
+                        <span
+                          className={
+                            isWithinDistance(program.distanceKm, userLocation ? maxDistanceKm : undefined)
+                              ? 'distance-pill distance-pill--within'
+                              : 'distance-pill distance-pill--beyond'
+                          }
+                        >
+                          📍 {program.distanceKm.toFixed(1)} km away
+                        </span>
+                      )}
                     </div>
 
                     {(primaryRegisterUrl || program.periods.length > 1) && (
@@ -459,6 +507,7 @@ export default function RegisteredProgramsPanel({
                     </div>
                   )}
                 </article>
+                </div>
               );
             })}
           </div>

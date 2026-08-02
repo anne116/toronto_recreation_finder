@@ -20,12 +20,12 @@ import Spinner from '../shared/ui/Spinner';
     category: string;
     activity: string;
     activities?: string[];
-    district: string;
     weekday: WeekdayName | null;
     startMonth?: string;
     age?: ProgramAgeFilter;
     locationId?: string | number;
     locationName?: string;
+    maxDistanceKm?: number;
   };
 
 function buildPanelTitle(programType: ProgramType, filters: Filters | null): string {
@@ -48,14 +48,14 @@ function buildFilterPills(filters: Filters | null): string[] {
   return pills;
 }
 
-function hasAnySelectedFilter(filters: Filters): boolean {
+function hasAnySelectedFilter(filters: Filters, hasLocation: boolean = false): boolean {
   return Boolean(
     filters.category ||
     filters.activity ||
     (filters.activities && filters.activities.length > 0) ||
-    filters.district ||
     filters.weekday ||
     filters.startMonth ||
+    hasLocation ||
     filters.age ||
     filters.locationId
   );
@@ -75,7 +75,6 @@ function buildPageMetadata(programType: ProgramType, activeFilters: Filters | nu
   const programTypeLabel = programType === 'dropin' ? 'Drop-in' : 'Registered';
   const activity = activeFilters.activity;
   const category = activeFilters.category;
-  const district = activeFilters.district;
   let titleParts: string[] = [];
   if (activity) {
     titleParts.push(activity);
@@ -84,15 +83,9 @@ function buildPageMetadata(programType: ProgramType, activeFilters: Filters | nu
   }
   titleParts.push(programTypeLabel);
 
-  if (district) {
-    titleParts.push(`in ${district}`);
-  }
   const title = `${titleParts.join(' ')} | Toronto Recreation Finder`;
 
   let description = `Find ${activity || category || programTypeLabel.toLowerCase()} programs`;
-  if (district) {
-    description += ` in ${district}`;
-  }
   description += ' at Toronto recreation centres. Filter by location, activity, age, and schedule.';
 
   return {
@@ -111,7 +104,6 @@ export default function App() {
     category: searchParams.get('category') || '',
     activity: activityParamsFromURL.length === 1 ? activityParamsFromURL[0] : '',
     activities: activityParamsFromURL.length > 1 ? activityParamsFromURL : undefined,
-    district: searchParams.get('district') || '',
     weekday: (searchParams.get('weekday') as WeekdayName) || null,
     startMonth: searchParams.get('startMonth') || undefined,
     age: (searchParams.get('age') as ProgramAgeFilter) || undefined,
@@ -125,6 +117,38 @@ export default function App() {
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | number | null>(null);
   const [scopedCentreId, setScopedCentreId] = useState<string | number | null>(null);
   const [scheduleFocusToken, setScheduleFocusToken] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [locateMeLoading, setLocateMeLoading] = useState(false);
+  const [locateMeError, setLocateMeError] = useState<string | null>(null);
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      setLocateMeError('Location is not supported by your browser.');
+      return;
+    }
+
+    setLocateMeLoading(true);
+    setLocateMeError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
+        setFilters((prev) => ({ ...prev, maxDistanceKm: prev.maxDistanceKm ?? 5 }));
+        setLocateMeLoading(false);
+      },
+      () => {
+        setLocateMeError('Could not access your location. You can still search without it.');
+        setLocateMeLoading(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }
+
+  function handleClearLocation() {
+    setUserLocation(null);
+    setLocateMeError(null);
+    setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
+  }
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
@@ -153,7 +177,7 @@ export default function App() {
     e.currentTarget.releasePointerCapture(e.pointerId);
   }
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId || (userLocation && activeFilters?.maxDistanceKm)
   );
   const filterPills = buildFilterPills(activeFilters);
   const { data: centres, loading: centresLoading } = useCentres({
@@ -161,7 +185,6 @@ export default function App() {
     category: activeFilters?.category ?? '',
     activity: activeFilters?.activity ?? '',
     activities: activeFilters?.activities,
-    district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? null,
     startMonth: activeFilters?.startMonth,
     age: activeFilters?.age,
@@ -214,7 +237,7 @@ export default function App() {
   }, []);
 
   function handleSearch() {
-    if (!hasAnySelectedFilter(filters)) {
+    if (!hasAnySelectedFilter(filters, Boolean(userLocation))) {
       setSearchNotice('Select at least one filter to search.');
       return;
     }
@@ -223,10 +246,10 @@ export default function App() {
       program_type: programType,
       category: filters.category || undefined,
       activity: filters.activity || undefined,
-      district: filters.district || undefined,
       weekday: filters.weekday || undefined,
       start_month: filters.startMonth || undefined,
       age: filters.age || undefined,
+      max_distance_km: userLocation ? filters.maxDistanceKm : undefined,
     })
 
     const params = new URLSearchParams();
@@ -237,7 +260,6 @@ export default function App() {
     } else if (filters.activities?.length) {
       filters.activities.forEach((item) => params.append('activity', item));
     }
-    if (filters.district) params.set('district', filters.district);
     if (filters.weekday) params.set('weekday', filters.weekday);
     if (filters.startMonth) params.set('startMonth', filters.startMonth);
     if (filters.age) params.set('age', filters.age);
@@ -262,7 +284,6 @@ export default function App() {
     setFilters({
       category: '',
       activity: '',
-      district: '',
       weekday: null,
       startMonth: undefined,
       age: undefined,
@@ -288,7 +309,6 @@ export default function App() {
     setFilters({
       category: '',
       activity: '',
-      district: '',
       weekday: null,
       startMonth: undefined,
       age: undefined,
@@ -410,6 +430,11 @@ export default function App() {
             isOpen={isFiltersOpen}
             onToggle={() => setIsFiltersOpen(prev => !prev)}
             isSearching={centresLoading}
+            userLocation={userLocation}
+            locateMeLoading={locateMeLoading}
+            locateMeError={locateMeError}
+            onLocateMe={handleLocateMe}
+            onClearLocation={handleClearLocation}
           />
         </aside>
 
@@ -433,7 +458,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                       age={activeFilters?.age as DropInAgeFilter | undefined}
                       weekday={activeFilters?.weekday}
-                      district={activeFilters?.district ?? ''}
                       locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
@@ -442,6 +466,9 @@ export default function App() {
                       focusToken={scheduleFocusToken}
                       scopedCentreId={scopedCentreId}
                       selectedCentreName={selectedCentreName}
+                      centres={centres}
+                      userLocation={userLocation}
+                      maxDistanceKm={activeFilters?.maxDistanceKm}
                     />
                   ) : (
                     <RegisteredProgramsPanel
@@ -450,7 +477,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                       age={activeFilters?.age as RegisteredAgeFilter | undefined}
                       startMonth={activeFilters?.startMonth}
-                      district={activeFilters?.district ?? ''}
                       locationId={activeFilters?.locationId}
                       hasSearchCriteria={hasScheduleFilters}
                       isVisible={isScheduleOpen}
@@ -459,6 +485,9 @@ export default function App() {
                       focusToken={scheduleFocusToken}
                       scopedCentreId={scopedCentreId}
                       selectedCentreName={selectedCentreName}
+                      centres={centres}
+                      userLocation={userLocation}
+                      maxDistanceKm={activeFilters?.maxDistanceKm}
                     />
                     )
                   }
@@ -500,7 +529,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                     age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
-                    district={activeFilters?.district ?? ''}
                     locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
@@ -509,6 +537,9 @@ export default function App() {
                     focusToken={scheduleFocusToken}
                     scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
                   />
                 ) : (
                   <RegisteredProgramsPanel
@@ -517,7 +548,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                     age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
-                    district={activeFilters?.district ?? ''}
                     locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
@@ -526,6 +556,9 @@ export default function App() {
                     focusToken={scheduleFocusToken}
                     scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
                   />
                 )}
 
@@ -567,6 +600,8 @@ export default function App() {
             onCentreClick = {handleCentreMarkerClick}
             onCentreClose = {handleCentreClose}
             selectedLocationId = {selectedLocationId}
+            userLocation = {userLocation}
+            maxDistanceKm = {filters.maxDistanceKm}
           />
         </main>
 
