@@ -120,11 +120,31 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locateMeLoading, setLocateMeLoading] = useState(false);
   const [locateMeError, setLocateMeError] = useState<string | null>(null);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [previewLocation, setPreviewLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  function handleLocateMe() {
+  const locationPickingEnabled = locationPermissionDenied && !userLocation;
+
+  useEffect(() => {
+    if (userLocation) setPreviewLocation(null);
+  }, [userLocation]);
+
+  async function handleRequestLocation() {
     if (!navigator.geolocation) {
-      setLocateMeError('Location is not supported by your browser.');
+      setLocationPermissionDenied(true);
       return;
+    }
+
+    if (navigator.permissions?.query) {
+      try {
+        const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        if (status.state === 'denied') {
+          setLocationPermissionDenied(true);
+          return;
+        }
+      } catch {
+        // Permissions API query unsupported here; fall through to the direct request below.
+      }
     }
 
     setLocateMeLoading(true);
@@ -134,10 +154,15 @@ export default function App() {
       (position) => {
         setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
         setFilters((prev) => ({ ...prev, maxDistanceKm: prev.maxDistanceKm ?? 5 }));
+        setLocationPermissionDenied(false);
         setLocateMeLoading(false);
       },
-      () => {
-        setLocateMeError('Could not access your location. You can still search without it.');
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationPermissionDenied(true);
+        } else {
+          setLocateMeError('Could not access your location. You can still search without it.');
+        }
         setLocateMeLoading(false);
       },
       { enableHighAccuracy: false, timeout: 10000 }
@@ -147,7 +172,22 @@ export default function App() {
   function handleClearLocation() {
     setUserLocation(null);
     setLocateMeError(null);
+    setLocationPermissionDenied(false);
+    setPreviewLocation(null);
     setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
+  }
+
+  function handleMapLocationPreview(coords: { lat: number; lon: number }) {
+    setPreviewLocation(coords);
+  }
+
+  function handleConfirmMapLocation() {
+    if (!previewLocation) return;
+    setUserLocation(previewLocation);
+    setFilters((prev) => ({ ...prev, maxDistanceKm: prev.maxDistanceKm ?? 5 }));
+    setLocationPermissionDenied(false);
+    setPreviewLocation(null);
+    setIsFiltersOpen(true);
   }
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
@@ -433,7 +473,8 @@ export default function App() {
             userLocation={userLocation}
             locateMeLoading={locateMeLoading}
             locateMeError={locateMeError}
-            onLocateMe={handleLocateMe}
+            locationPermissionDenied={locationPermissionDenied}
+            onRequestLocation={handleRequestLocation}
             onClearLocation={handleClearLocation}
           />
         </aside>
@@ -602,6 +643,10 @@ export default function App() {
             selectedLocationId = {selectedLocationId}
             userLocation = {userLocation}
             maxDistanceKm = {filters.maxDistanceKm}
+            locationPickingEnabled = {locationPickingEnabled}
+            previewLocation = {previewLocation}
+            onMapLocationPreview = {handleMapLocationPreview}
+            onConfirmMapLocation = {handleConfirmMapLocation}
           />
         </main>
 

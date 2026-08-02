@@ -53,7 +53,14 @@ type Props = {
   userLocation?: { lat: number; lon: number } | null;
   selectedLocationId?: string | number | null;
   maxDistanceKm?: number;
+  locationPickingEnabled?: boolean;
+  previewLocation?: { lat: number; lon: number } | null;
+  onMapLocationPreview?: (coords: { lat: number; lon: number }) => void;
+  onConfirmMapLocation?: () => void;
 };
+
+const DEFAULT_MAP_CENTER: [number, number] = [-79.3832, 43.6532];
+const DEFAULT_MAP_ZOOM = 11;
 
 export default function MapView({
   centres,
@@ -63,6 +70,10 @@ export default function MapView({
   userLocation,
   selectedLocationId,
   maxDistanceKm,
+  locationPickingEnabled = false,
+  previewLocation,
+  onMapLocationPreview,
+  onConfirmMapLocation,
 }: Props) {
   const { detail, loading: detailLoading } = useCentreDetails(selectedLocationId ?? null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -70,8 +81,13 @@ export default function MapView({
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedPopupRef = useRef<maplibregl.Popup | null>(null);
   const runnerMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const previewMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const previewPopupRef = useRef<maplibregl.Popup | null>(null);
   const onCentreClickRef = useRef(onCentreClick);
   const onCentreCloseRef = useRef(onCentreClose);
+  const locationPickingEnabledRef = useRef(locationPickingEnabled);
+  const onMapLocationPreviewRef = useRef(onMapLocationPreview);
+  const onConfirmMapLocationRef = useRef(onConfirmMapLocation);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -81,6 +97,18 @@ export default function MapView({
   useEffect(() => {
     onCentreCloseRef.current = onCentreClose;
   }, [onCentreClose]);
+
+  useEffect(() => {
+    locationPickingEnabledRef.current = locationPickingEnabled;
+  }, [locationPickingEnabled]);
+
+  useEffect(() => {
+    onMapLocationPreviewRef.current = onMapLocationPreview;
+  }, [onMapLocationPreview]);
+
+  useEffect(() => {
+    onConfirmMapLocationRef.current = onConfirmMapLocation;
+  }, [onConfirmMapLocation]);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -97,7 +125,7 @@ export default function MapView({
         },
         layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm-tiles', minzoom: 0, maxzoom: 19 }]
       },
-      center: [-79.3832, 43.6532], zoom: 11
+      center: DEFAULT_MAP_CENTER, zoom: DEFAULT_MAP_ZOOM
     });
     map.on('load', () => setMapReady(true));
     mapRef.current = map;
@@ -162,7 +190,11 @@ export default function MapView({
 
     map.on('click', (e) => {
       const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle'] });
-      if (hitPin.length === 0) onCentreCloseRef.current?.();
+      if (hitPin.length > 0) return;
+      onCentreCloseRef.current?.();
+      if (locationPickingEnabledRef.current) {
+        onMapLocationPreviewRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng });
+      }
     });
 
     map.on('mouseenter', 'centres-circle', () => {
@@ -170,7 +202,7 @@ export default function MapView({
     });
 
     map.on('mouseleave', 'centres-circle', () => {
-      map.getCanvas().style.cursor = '';
+      map.getCanvas().style.cursor = locationPickingEnabledRef.current ? 'crosshair' : '';
     });
   } else {
     source.setData(data);
@@ -389,6 +421,46 @@ export default function MapView({
       }, beforeLayerId);
     }
   }, [userLocation, maxDistanceKm, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    if (locationPickingEnabled) {
+      map.getCanvas().style.cursor = 'crosshair';
+      map.flyTo({ center: DEFAULT_MAP_CENTER, zoom: DEFAULT_MAP_ZOOM });
+    } else {
+      map.getCanvas().style.cursor = '';
+    }
+  }, [locationPickingEnabled, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !previewLocation) return;
+
+    const lngLat: [number, number] = [previewLocation.lon, previewLocation.lat];
+    previewMarkerRef.current = new maplibregl.Marker({ color: '#94a3b8' }).setLngLat(lngLat).addTo(map);
+
+    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 16 })
+      .setLngLat(lngLat)
+      .setHTML(`
+        <button id="confirm-map-location-btn" type="button" style="background: #2A9D8F; color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer;">
+          ✓ Use this spot
+        </button>
+      `)
+      .addTo(map);
+
+    popup
+      .getElement()
+      ?.querySelector('#confirm-map-location-btn')
+      ?.addEventListener('click', () => onConfirmMapLocationRef.current?.());
+
+    previewPopupRef.current = popup;
+
+    return () => {
+      if (previewMarkerRef.current) { previewMarkerRef.current.remove(); previewMarkerRef.current = null; }
+      if (previewPopupRef.current) { previewPopupRef.current.remove(); previewPopupRef.current = null; }
+    };
+  }, [previewLocation, mapReady]);
 
   useEffect(() => {
     if (!centres) {

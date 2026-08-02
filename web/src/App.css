@@ -451,18 +451,25 @@
   gap: 6px;
 }
 
-.distance-slider-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
+.distance-value {
+  font-weight: 700;
+}
+
+.distance-value--pending {
+  opacity: 0.4;
+  border-bottom: 1px dashed currentColor;
 }
 
 .distance-slider-wrap input[type="range"] {
   width: 100%;
   accent-color: var(--color-primary);
+}
+
+.distance-slider-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .distance-slider-clear {
