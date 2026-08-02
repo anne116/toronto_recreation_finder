@@ -1,7 +1,6 @@
 import type { DropInProgram } from '../../../shared/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MdChevronRight } from 'react-icons/md';
-import { isWithinDistance } from '../lib/distance';
 
 type ScheduleProgram = DropInProgram & {
   occurrence_count?: number;
@@ -20,7 +19,6 @@ type Props = {
   highlightedLocationId?: string | number | null;
   focusToken?: number;
   selectedCentreName?: string | null;
-  maxDistanceKm?: number;
 };
 
 const MATCH_ROW_HIGHLIGHT = '#D8F3EE';
@@ -53,13 +51,7 @@ function formatScheduleLine(program: ScheduleProgram): string {
   return dateDisplay;
 }
 
-function comparePrograms(a: DropInProgram, b: DropInProgram, maxDistanceKm?: number): number {
-  if (maxDistanceKm != null) {
-    const aWithin = isWithinDistance(a.distanceKm, maxDistanceKm);
-    const bWithin = isWithinDistance(b.distanceKm, maxDistanceKm);
-    if (aWithin !== bWithin) return aWithin ? -1 : 1;
-  }
-
+function comparePrograms(a: DropInProgram, b: DropInProgram): number {
   const dateCompare = (a.start_date || '').localeCompare(b.start_date || '');
   if (dateCompare !== 0) return dateCompare;
 
@@ -110,7 +102,7 @@ function groupRecurringPrograms(programs: DropInProgram[]): ScheduleProgram[] {
   });
 }
 
-function groupByDay(programs: DropInProgram[], maxDistanceKm?: number) {
+function groupByDay(programs: DropInProgram[]) {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const grouped = new Map<string, ScheduleProgram[]>();
 
@@ -126,7 +118,7 @@ function groupByDay(programs: DropInProgram[], maxDistanceKm?: number) {
   });
 
   grouped.forEach((dayPrograms, day) => {
-    grouped.set(day, [...dayPrograms].sort((a, b) => comparePrograms(a, b, maxDistanceKm)));
+    grouped.set(day, [...dayPrograms].sort(comparePrograms));
   });
 
   return grouped;
@@ -140,9 +132,8 @@ export default function WeeklyScheduleGrid({
   highlightedLocationId,
   focusToken = 0,
   selectedCentreName,
-  maxDistanceKm,
 }: Props) {
-  const grouped = groupByDay(programs, maxDistanceKm);
+  const grouped = groupByDay(programs);
   const dayConfigs = [
     { key: 'Monday', label: 'Mon' },
     { key: 'Tuesday', label: 'Tue' },
@@ -221,10 +212,7 @@ export default function WeeklyScheduleGrid({
     const locationId = program.location_id;
     return highlightedLocationIdStr !== null && locationId != null && String(locationId) === highlightedLocationIdStr;
   });
-  const withinDistanceCount = maxDistanceKm == null
-    ? dayPrograms.length
-    : dayPrograms.filter((program) => isWithinDistance(program.distanceKm, maxDistanceKm)).length;
-  
+
   return (
     <div style={{ padding: '0' }}>
       <div
@@ -315,16 +303,9 @@ export default function WeeklyScheduleGrid({
               locationId != null &&
               String(locationId) === highlightedLocationIdStr;
 
-            const showBeyondDivider = idx === withinDistanceCount
-              && withinDistanceCount > 0
-              && withinDistanceCount < dayPrograms.length;
-
             return (
-              <div key={`${selectedDay}-${idx}`}>
-              {showBeyondDivider && (
-                <div className="distance-group-divider">Also available further away</div>
-              )}
               <div
+                key={`${selectedDay}-${idx}`}
                 ref={(node) => {
                   if (idx === firstMatchingIndex) {
                     firstMatchingRowRef.current = node;
@@ -378,14 +359,8 @@ export default function WeeklyScheduleGrid({
                     </span>
                   )}
                   {program.distanceKm != null && (
-                    <span
-                      className={
-                        isWithinDistance(program.distanceKm, maxDistanceKm)
-                          ? 'distance-pill distance-pill--within'
-                          : 'distance-pill distance-pill--beyond'
-                      }
-                    >
-                      📍 {program.distanceKm.toFixed(1)} km away
+                    <span className="distance-pill">
+                      📏 {program.distanceKm.toFixed(1)} km away
                     </span>
                   )}
                 </div>
@@ -439,7 +414,6 @@ export default function WeeklyScheduleGrid({
                   )}
                 </div>
               )}
-              </div>
               </div>
           );
         })}

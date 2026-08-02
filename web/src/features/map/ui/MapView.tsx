@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
 import type { Map as MaplibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { CentresFeatureCollection, WardFeatureCollection } from '../../../shared/types';
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
-import { buildCircleRing } from '../../../shared/lib/geo';
+import { buildCircleRing, haversineDistanceKm } from '../../../shared/lib/geo';
 import '../../../shared/ui/Spinner.css';
 import '../../../shared/ui/RunnerMarker.css';
 
@@ -53,6 +53,7 @@ type Props = {
   userLocation?: { lat: number; lon: number } | null;
   selectedLocationId?: string | number | null;
   maxDistanceKm?: number;
+  activeMaxDistanceKm?: number;
   locationPickingEnabled?: boolean;
   previewLocation?: { lat: number; lon: number } | null;
   onMapLocationPreview?: (coords: { lat: number; lon: number }) => void;
@@ -70,6 +71,7 @@ export default function MapView({
   userLocation,
   selectedLocationId,
   maxDistanceKm,
+  activeMaxDistanceKm,
   locationPickingEnabled = false,
   previewLocation,
   onMapLocationPreview,
@@ -89,6 +91,15 @@ export default function MapView({
   const onMapLocationPreviewRef = useRef(onMapLocationPreview);
   const onConfirmMapLocationRef = useRef(onConfirmMapLocation);
   const [mapReady, setMapReady] = useState(false);
+
+  const displayedCentres = useMemo(() => {
+    if (!userLocation || !activeMaxDistanceKm || !centres) return centres;
+    const filteredFeatures = centres.features.filter((f) => {
+      const [lon, lat] = f.geometry.coordinates;
+      return haversineDistanceKm(userLocation, { lat, lon }) <= activeMaxDistanceKm;
+    });
+    return { ...centres, features: filteredFeatures };
+  }, [centres, userLocation, activeMaxDistanceKm]);
 
   useEffect(() => {
     onCentreClickRef.current = onCentreClick;
@@ -161,7 +172,7 @@ export default function MapView({
   const map = mapRef.current;
   if (!map || !mapReady) return;
 
-  const data = normalizeCentres(centres);
+  const data = normalizeCentres(displayedCentres);
   const features = (data as any).features ?? [];
 
   let source = map.getSource('centres') as GeoJSONSource | undefined;
@@ -225,7 +236,7 @@ export default function MapView({
     });
     map.fitBounds(b, { padding: 100, maxZoom: 13 });
   }
-}, [centres, mapReady]);
+}, [displayedCentres, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -269,9 +280,9 @@ export default function MapView({
       2,
     ]);
 
-    if (!centres || !centres.features?.length) return;
+    if (!displayedCentres || !displayedCentres.features?.length) return;
 
-    const selectedFeature = centres.features.find((f: any) => {
+    const selectedFeature = displayedCentres.features.find((f: any) => {
       const props = f.properties || {};
       const id = 
         props.id ??
@@ -368,7 +379,7 @@ export default function MapView({
     });
 
     selectedPopupRef.current = popup;
-  }, [selectedLocationId, mapReady, centres, detail, detailLoading, onCentreClose]);
+  }, [selectedLocationId, mapReady, displayedCentres, detail, detailLoading, onCentreClose]);
 
   useEffect(() => {
     const map = mapRef.current;

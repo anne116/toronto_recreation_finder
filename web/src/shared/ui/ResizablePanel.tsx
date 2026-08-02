@@ -4,6 +4,7 @@ type ResizablePanelProps = {
     title: string;
     pills?: string[];
     centrePill?: { label: string; onRemove: () => void };
+    distancePill?: { label: string; onRemove: () => void };
     initialWidth?: number;
     minWidth?: number;
     maxWidth?: number;
@@ -15,6 +16,7 @@ export default function ResizablePanel({
     title,
     pills = [],
     centrePill,
+    distancePill,
     initialWidth = 400,
     minWidth = 280,
     maxWidth = 640,
@@ -86,7 +88,7 @@ export default function ResizablePanel({
                         ✕
                     </button>
                 </div>
-                {(pills.length > 0 || centrePill) && (
+                {(pills.length > 0 || centrePill || distancePill) && (
                     <div className="filter-pill-row">
                         {pills.map((pill) => (
                             <span key={pill} className="filter-pill">
@@ -101,6 +103,19 @@ export default function ResizablePanel({
                                     className="filter-pill-remove"
                                     aria-label={`Clear selected centre: ${centrePill.label}`}
                                     onClick={centrePill.onRemove}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        )}
+                        {distancePill && (
+                            <span className="filter-pill filter-pill--distance">
+                                📏 {distancePill.label}
+                                <button
+                                    type="button"
+                                    className="filter-pill-remove"
+                                    aria-label={`Remove distance filter: ${distancePill.label}`}
+                                    onClick={distancePill.onRemove}
                                 >
                                     ✕
                                 </button>

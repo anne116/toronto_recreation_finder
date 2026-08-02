@@ -5,6 +5,8 @@ import type { ProgramType } from '../../../shared/types';
 export type CentreNameOption = {
   id: string | number;
   name: string;
+  lat?: number;
+  lon?: number;
 };
 
 const cache = new Map<ProgramType, CentreNameOption[]>();
@@ -32,7 +34,12 @@ export function useCentreNameFilter(programType: ProgramType) {
 
         if (!abortController.signal.aborted) {
           const names: CentreNameOption[] = (centres.features ?? [])
-            .map((f) => ({ id: f.properties.id, name: f.properties.name ?? '' }))
+            .map((f) => ({
+              id: f.properties.id,
+              name: f.properties.name ?? '',
+              lon: f.geometry?.coordinates?.[0],
+              lat: f.geometry?.coordinates?.[1],
+            }))
             .filter((option) => option.name);
 
           cache.set(programType, names);

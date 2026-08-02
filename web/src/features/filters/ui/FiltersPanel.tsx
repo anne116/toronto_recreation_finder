@@ -24,6 +24,7 @@ type Props = {
   locationPermissionDenied?: boolean;
   onRequestLocation: () => void;
   onClearLocation: () => void;
+  onDisableDistanceSearch: () => void;
 };
 
 export default function FiltersPanel({
@@ -42,10 +43,17 @@ export default function FiltersPanel({
   locationPermissionDenied = false,
   onRequestLocation,
   onClearLocation,
+  onDisableDistanceSearch,
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [startMonths, setStartMonths] = useState<StartMonthOption[]>([]);
+  const [lastDistanceValue, setLastDistanceValue] = useState(value.maxDistanceKm ?? 5);
+  const [centreOutsideRadiusWarning, setCentreOutsideRadiusWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCentreOutsideRadiusWarning(null);
+  }, [value.maxDistanceKm, userLocation]);
 
   useEffect(() => {
     (async () => {
@@ -124,7 +132,23 @@ export default function FiltersPanel({
         locationId={value.locationId}
         locationName={value.locationName}
         onChange={(centre) => update(centre)}
+        userLocation={userLocation}
+        maxDistanceKm={value.maxDistanceKm}
+        onOutsideRadiusWarning={setCentreOutsideRadiusWarning}
       />
+      {centreOutsideRadiusWarning && (
+        <div className="locate-me-error locate-me-error--dismissible">
+          <span>{centreOutsideRadiusWarning}</span>
+          <button
+            type="button"
+            className="filter-pill-remove"
+            aria-label="Dismiss"
+            onClick={() => setCentreOutsideRadiusWarning(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="filter-group">
         <label>Category</label>
@@ -166,45 +190,72 @@ export default function FiltersPanel({
       </div>
 
       <div className="filter-group">
-        <label>
-          Find near me: within{' '}
-          <span className={`distance-value${userLocation ? '' : ' distance-value--pending'}`}>
-            {value.maxDistanceKm ?? 5}
-          </span>{' '}
-          km
-        </label>
-        <div className="distance-slider-wrap">
-          <input
-            type="range"
-            min={1}
-            max={25}
-            step={1}
-            value={value.maxDistanceKm ?? 5}
-            onChange={(e) => update({ maxDistanceKm: Number(e.target.value) })}
-            onMouseUp={() => { if (!userLocation) onRequestLocation(); }}
-            onTouchEnd={() => { if (!userLocation) onRequestLocation(); }}
-          />
-          {(locateMeLoading || userLocation) && (
-            <div className="distance-slider-footer">
-              {locateMeLoading && <Spinner size={16} label="Locating" />}
-              {userLocation && (
-                <button
-                  type="button"
-                  className="distance-slider-clear"
-                  aria-label="Clear location"
-                  onClick={onClearLocation}
-                >
-                  ✕
-                </button>
+        <div className="distance-toggle-row">
+          <label htmlFor="distance-search-toggle">Find near me</label>
+          <label className="distance-toggle-switch">
+            <input
+              id="distance-search-toggle"
+              type="checkbox"
+              checked={value.maxDistanceKm != null}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  update({ maxDistanceKm: lastDistanceValue });
+                } else {
+                  onDisableDistanceSearch();
+                }
+              }}
+            />
+            <span className="distance-toggle-slider" aria-hidden="true" />
+          </label>
+        </div>
+
+        {value.maxDistanceKm != null && (
+          <>
+            <div className="distance-value-row">
+              within{' '}
+              <span className={`distance-value${userLocation ? '' : ' distance-value--pending'}`}>
+                {value.maxDistanceKm}
+              </span>{' '}
+              km
+            </div>
+            <div className="distance-slider-wrap">
+              <input
+                type="range"
+                min={1}
+                max={25}
+                step={1}
+                value={value.maxDistanceKm}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setLastDistanceValue(v);
+                  update({ maxDistanceKm: v });
+                }}
+                onMouseUp={() => { if (!userLocation) onRequestLocation(); }}
+                onTouchEnd={() => { if (!userLocation) onRequestLocation(); }}
+              />
+              {(locateMeLoading || userLocation) && (
+                <div className="distance-slider-footer">
+                  {locateMeLoading && <Spinner size={16} label="Locating" />}
+                  {userLocation && (
+                    <button
+                      type="button"
+                      className="distance-slider-clear"
+                      aria-label="Clear location"
+                      onClick={onClearLocation}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-        {locationPermissionDenied && (
-          <div className="locate-me-error">Location blocked — tap the map to set it yourself.</div>
-        )}
-        {!locationPermissionDenied && locateMeError && (
-          <div className="locate-me-error">{locateMeError}</div>
+            {locationPermissionDenied && (
+              <div className="locate-me-error">Location blocked — tap the map to set it yourself.</div>
+            )}
+            {!locationPermissionDenied && locateMeError && (
+              <div className="locate-me-error">{locateMeError}</div>
+            )}
+          </>
         )}
       </div>
 

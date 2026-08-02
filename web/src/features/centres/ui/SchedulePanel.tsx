@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
-import { attachDistanceKm, buildLocationCoordinatesMap } from "../lib/distance";
+import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
 import type { AgeFilter, CentresFeatureCollection, DropInProgram } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import Spinner from "../../../shared/ui/Spinner";
@@ -173,10 +173,11 @@ export default function SchedulePanel({
   const displayedError = isScoped ? scopedError : error;
 
   const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
-  const displayedPrograms = useMemo(
-    () => attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null),
-    [rawDisplayedPrograms, coordinatesById, userLocation]
-  );
+  const displayedPrograms = useMemo(() => {
+    const withDistance = attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null);
+    if (!userLocation || !maxDistanceKm) return withDistance;
+    return withDistance.filter((p) => isWithinDistance(p.distanceKm, maxDistanceKm));
+  }, [rawDisplayedPrograms, coordinatesById, userLocation, maxDistanceKm]);
 
   if (!isVisible) return null;
 
@@ -217,7 +218,9 @@ export default function SchedulePanel({
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             {selectedCentreName
               ? `No matching sessions from ${selectedCentreName} for your search criteria`
-              : 'No sessions found for your search criteria'}
+              : userLocation && maxDistanceKm
+                ? 'No sessions found for your search criteria. Try widening your search radius.'
+                : 'No sessions found for your search criteria'}
           </div>
         )}
 
@@ -230,7 +233,6 @@ export default function SchedulePanel({
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}
             selectedCentreName={selectedCentreName}
-            maxDistanceKm={userLocation ? maxDistanceKm : undefined}
           />
         )}
       </div>

@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useCentreNameFilter, type CentreNameOption } from '../../centres/hooks/useCentreNameFilter';
 import type { ProgramType } from '../../../shared/types';
+import { haversineDistanceKm } from '../../../shared/lib/geo';
 
 type Props = {
   programType: ProgramType;
   locationId?: string | number;
   locationName?: string;
   onChange: (centre: { locationId?: string | number; locationName?: string }) => void;
+  userLocation?: { lat: number; lon: number } | null;
+  maxDistanceKm?: number;
+  onOutsideRadiusWarning?: (message: string | null) => void;
 };
 
 function levenshteinDistance(a: string, b: string): number {
@@ -30,7 +34,15 @@ function levenshteinDistance(a: string, b: string): number {
   return row[n];
 }
 
-export default function CentreSearchField({ programType, locationId, locationName, onChange }: Props) {
+export default function CentreSearchField({
+  programType,
+  locationId,
+  locationName,
+  onChange,
+  userLocation,
+  maxDistanceKm,
+  onOutsideRadiusWarning,
+}: Props) {
   const { options, loading } = useCentreNameFilter(programType);
   const [draftText, setDraftText] = useState(locationName ?? '');
   const [isOpen, setIsOpen] = useState(false);
@@ -79,10 +91,23 @@ export default function CentreSearchField({ programType, locationId, locationNam
     return null;
   }, [options, normalizedQuery, matches.length]);
 
+  function checkRadius(option: CentreNameOption) {
+    if (!onOutsideRadiusWarning) return;
+    if (!userLocation || !maxDistanceKm || option.lat == null || option.lon == null) {
+      onOutsideRadiusWarning(null);
+      return;
+    }
+    const distanceKm = haversineDistanceKm(userLocation, { lat: option.lat, lon: option.lon });
+    onOutsideRadiusWarning(
+      distanceKm > maxDistanceKm ? `📏 ${option.name} is outside your ${maxDistanceKm} km radius.` : null
+    );
+  }
+
   function selectCentre(option: CentreNameOption) {
     setDraftText(option.name);
     onChange({ locationId: option.id, locationName: option.name });
     setIsOpen(false);
+    checkRadius(option);
   }
 
   function handleInputChange(text: string) {
@@ -93,14 +118,17 @@ export default function CentreSearchField({ programType, locationId, locationNam
     const exact = options.find((option) => option.name.toLowerCase() === normalized);
     if (exact) {
       onChange({ locationId: exact.id, locationName: exact.name });
+      checkRadius(exact);
     } else if (locationId != null) {
       onChange({ locationId: undefined, locationName: undefined });
+      onOutsideRadiusWarning?.(null);
     }
   }
 
   function handleClear() {
     setDraftText('');
     onChange({ locationId: undefined, locationName: undefined });
+    onOutsideRadiusWarning?.(null);
     setIsOpen(false);
   }
 

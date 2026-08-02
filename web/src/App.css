@@ -75,6 +75,21 @@
   color: var(--color-primary-hover);
 }
 
+.filter-pill--distance {
+  gap: 4px;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.resizable-panel__header .filter-pill--distance {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--color-primary-hover);
+}
+
+.resizable-panel__header .filter-pill--distance .filter-pill-remove {
+  background: var(--color-primary-light);
+}
+
 .filter-pill-remove {
   display: inline-flex;
   align-items: center;
@@ -108,24 +123,8 @@
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.distance-pill--within {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.distance-pill--beyond {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.distance-group-divider {
-  padding: 6px 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-align: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .registered-program-pill {
@@ -445,6 +444,61 @@
   background: #cbd5e1;
 }
 
+.distance-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.distance-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.distance-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.distance-toggle-slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: #cbd5e1;
+  border-radius: 20px;
+  transition: background 0.15s ease;
+}
+
+.distance-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.distance-toggle-switch input:checked + .distance-toggle-slider {
+  background: var(--color-primary);
+}
+
+.distance-toggle-switch input:checked + .distance-toggle-slider::before {
+  transform: translateX(16px);
+}
+
+.distance-value-row {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
 .distance-slider-wrap {
   display: flex;
   flex-direction: column;
@@ -495,6 +549,13 @@
   margin-top: 6px;
   font-size: 12px;
   color: #dc2626;
+}
+
+.locate-me-error--dismissible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .centre-search-dropdown {

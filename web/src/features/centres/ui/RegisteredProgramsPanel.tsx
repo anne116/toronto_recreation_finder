@@ -237,47 +237,25 @@ export default function RegisteredProgramsPanel({
   const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
 
   const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
-  const displayedPrograms = useMemo(
-    () => attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null),
-    [rawDisplayedPrograms, coordinatesById, userLocation]
-  );
+  const displayedPrograms = useMemo(() => {
+    const withDistance = attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null);
+    if (!userLocation || !maxDistanceKm) return withDistance;
+    return withDistance.filter((p) => isWithinDistance(p.distanceKm, maxDistanceKm));
+  }, [rawDisplayedPrograms, coordinatesById, userLocation, maxDistanceKm]);
 
-  const { sortedPrograms, withinDistanceCount } = useMemo(() => {
-    const sortByHighlight = (list: RegisteredProgramGroup[]) => {
-      if (!highlightedLocationIdStr) return list;
-      const matches: RegisteredProgramGroup[] = [];
-      const others: RegisteredProgramGroup[] = [];
-      list.forEach((program) => {
-        if (String(program.location_id) === highlightedLocationIdStr) {
-          matches.push(program);
-        } else {
-          others.push(program);
-        }
-      });
-      return [...matches, ...others];
-    };
-
-    const effectiveMaxDistanceKm = userLocation ? maxDistanceKm : undefined;
-    if (effectiveMaxDistanceKm == null) {
-      const sorted = sortByHighlight(displayedPrograms);
-      return { sortedPrograms: sorted, withinDistanceCount: sorted.length };
-    }
-
-    const within: RegisteredProgramGroup[] = [];
-    const beyond: RegisteredProgramGroup[] = [];
+  const sortedPrograms = useMemo(() => {
+    if (!highlightedLocationIdStr) return displayedPrograms;
+    const matches: RegisteredProgramGroup[] = [];
+    const others: RegisteredProgramGroup[] = [];
     displayedPrograms.forEach((program) => {
-      if (isWithinDistance(program.distanceKm, effectiveMaxDistanceKm)) {
-        within.push(program);
+      if (String(program.location_id) === highlightedLocationIdStr) {
+        matches.push(program);
       } else {
-        beyond.push(program);
+        others.push(program);
       }
     });
-
-    return {
-      sortedPrograms: [...sortByHighlight(within), ...sortByHighlight(beyond)],
-      withinDistanceCount: within.length,
-    };
-  }, [displayedPrograms, highlightedLocationIdStr, userLocation, maxDistanceKm]);
+    return [...matches, ...others];
+  }, [displayedPrograms, highlightedLocationIdStr]);
 
   useEffect(() => {
     if (!highlightedLocationIdStr) return;
@@ -326,13 +304,15 @@ export default function RegisteredProgramsPanel({
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             {selectedCentreName
               ? `No matching programs from ${selectedCentreName} for your search criteria`
-              : "No registered programs found for your search criteria"}
+              : userLocation && maxDistanceKm
+                ? "No registered programs found for your search criteria. Try widening your search radius."
+                : "No registered programs found for your search criteria"}
           </div>
         )}
 
         {hasSearchCriteria && !displayedLoading && !displayedError && sortedPrograms.length > 0 && (
           <div style={{ display: "grid", gap: "6px" }}>
-            {sortedPrograms.map((program, index) => {
+            {sortedPrograms.map((program) => {
               const isHighlighted = highlightedLocationIdStr !== null && String(program.location_id) === highlightedLocationIdStr;
               const primaryPeriod = program.periods[0];
               const collapsedDays = primaryPeriod?.days_of_week ?? program.days_of_week;
@@ -342,13 +322,9 @@ export default function RegisteredProgramsPanel({
               const collapsedStartTime = primaryPeriod?.start_time ?? program.start_time;
               const collapsedEndTime = primaryPeriod?.end_time ?? program.end_time;
               const primaryRegisterUrl = primaryPeriod?.activity_url;
-              const showBeyondDivider = index === withinDistanceCount && withinDistanceCount > 0 && withinDistanceCount < sortedPrograms.length;
 
               return (
                 <div key={program.id}>
-                {showBeyondDivider && (
-                  <div className="distance-group-divider">Also available further away</div>
-                )}
                 <article
                   ref={(node) => {
                     cardRefs.current.set(program.id, node);
@@ -383,14 +359,8 @@ export default function RegisteredProgramsPanel({
                         (👥 {formatAgeRange(program.age_min, program.age_max)})
                       </span>
                       {program.distanceKm != null && (
-                        <span
-                          className={
-                            isWithinDistance(program.distanceKm, userLocation ? maxDistanceKm : undefined)
-                              ? 'distance-pill distance-pill--within'
-                              : 'distance-pill distance-pill--beyond'
-                          }
-                        >
-                          📍 {program.distanceKm.toFixed(1)} km away
+                        <span className="distance-pill">
+                          📏 {program.distanceKm.toFixed(1)} km away
                         </span>
                       )}
                     </div>

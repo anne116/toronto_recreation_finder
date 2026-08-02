@@ -177,6 +177,12 @@ export default function App() {
     setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
   }
 
+  function handleDisableDistanceSearch() {
+    setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
+    setActiveFilters((prev) => (prev ? { ...prev, maxDistanceKm: undefined } : prev));
+    setLocationPermissionDenied(false);
+  }
+
   function handleMapLocationPreview(coords: { lat: number; lon: number }) {
     setPreviewLocation(coords);
   }
@@ -220,6 +226,9 @@ export default function App() {
     activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId || (userLocation && activeFilters?.maxDistanceKm)
   );
   const filterPills = buildFilterPills(activeFilters);
+  const distancePillLabel = userLocation && activeFilters?.maxDistanceKm
+    ? `< ${activeFilters.maxDistanceKm} km`
+    : null;
   const { data: centres, loading: centresLoading } = useCentres({
     programType,
     category: activeFilters?.category ?? '',
@@ -476,6 +485,7 @@ export default function App() {
             locationPermissionDenied={locationPermissionDenied}
             onRequestLocation={handleRequestLocation}
             onClearLocation={handleClearLocation}
+            onDisableDistanceSearch={handleDisableDistanceSearch}
           />
         </aside>
 
@@ -487,6 +497,7 @@ export default function App() {
                   title={buildPanelTitle(programType, activeFilters)}
                   pills={filterPills}
                   centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
+                  distancePill={distancePillLabel ? { label: distancePillLabel, onRemove: handleDisableDistanceSearch } : undefined}
                   initialWidth={400}
                   minWidth={300}
                   maxWidth={640}
@@ -540,7 +551,7 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {(filterPills.length > 0 || pinScopedCentreName) && (
+              {(filterPills.length > 0 || pinScopedCentreName || distancePillLabel) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
@@ -555,6 +566,19 @@ export default function App() {
                         className="filter-pill-remove"
                         aria-label={`Clear selected centre: ${pinScopedCentreName}`}
                         onClick={handleCentreClose}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
+                  {distancePillLabel && (
+                    <span className="filter-pill filter-pill--distance">
+                      📏 {distancePillLabel}
+                      <button
+                        type="button"
+                        className="filter-pill-remove"
+                        aria-label={`Remove distance filter: ${distancePillLabel}`}
+                        onClick={handleDisableDistanceSearch}
                       >
                         ✕
                       </button>
@@ -643,6 +667,7 @@ export default function App() {
             selectedLocationId = {selectedLocationId}
             userLocation = {userLocation}
             maxDistanceKm = {filters.maxDistanceKm}
+            activeMaxDistanceKm = {userLocation ? activeFilters?.maxDistanceKm : undefined}
             locationPickingEnabled = {locationPickingEnabled}
             previewLocation = {previewLocation}
             onMapLocationPreview = {handleMapLocationPreview}
