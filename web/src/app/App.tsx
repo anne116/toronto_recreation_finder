@@ -28,13 +28,6 @@ import Spinner from '../shared/ui/Spinner';
     maxDistanceKm?: number;
   };
 
-function buildPanelTitle(programType: ProgramType, filters: Filters | null): string {
-  const suffix = programType === 'dropin' ? 'Schedule' : 'Programs';
-  if (filters?.activity) return `${filters.activity} ${suffix}`;
-  if (filters?.category) return `${filters.category} ${suffix}`;
-  return suffix;
-}
-
 function buildFilterPills(filters: Filters | null): string[] {
   if (!filters) return [];
   const pills: string[] = [];
@@ -193,7 +186,6 @@ export default function App() {
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const [mobilePanelHeightPx, setMobilePanelHeightPx] = useState<number | null>(null);
   const panelDragRef = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
 
@@ -208,8 +200,8 @@ export default function App() {
     const drag = panelDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
     const deltaY = e.clientY - drag.startY;
-    const minHeight = window.innerHeight * 0.3;
-    const maxHeight = window.innerHeight * 0.7;
+    const minHeight = window.innerHeight * 0.25;
+    const maxHeight = window.innerHeight * 0.85;
     setMobilePanelHeightPx(Math.min(maxHeight, Math.max(minHeight, drag.startHeight + deltaY)));
   }
 
@@ -276,7 +268,6 @@ export default function App() {
       setActiveFilters(filters);
       setShowSchedulePanel(true);
       setHasSearched(true);
-      setIsScheduleOpen(true);
     }
   }, []);
 
@@ -317,7 +308,6 @@ export default function App() {
     setIsFiltersOpen(false);
 
     setShowSchedulePanel(true);
-    setIsScheduleOpen(true);
     setMobilePanelHeightPx(null);
   }
 
@@ -338,7 +328,6 @@ export default function App() {
     setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
-    setIsScheduleOpen(false);
     setMobilePanelHeightPx(null);
   }
 
@@ -362,7 +351,6 @@ export default function App() {
     setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
-    setIsScheduleOpen(false);
     setMobilePanelHeightPx(null);
   }
 
@@ -385,9 +373,6 @@ export default function App() {
       setScheduleFocusToken(prev => prev + 1);
     }
 
-    if (showSchedulePanel) {
-      setIsScheduleOpen(true);
-    }
   }
 
   const handleCentreClose = useCallback(() => {
@@ -485,61 +470,57 @@ export default function App() {
 
         {showSchedulePanel && (
           <>
-            {isScheduleOpen && (
-              <div className = "schedule-desktop">
-                <ResizablePanel
-                  title={buildPanelTitle(programType, activeFilters)}
-                  pills={filterPills}
-                  centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
-                  distancePill={distancePillLabel ? { label: distancePillLabel, onRemove: handleDisableDistanceSearch } : undefined}
-                  initialWidth={400}
-                  minWidth={300}
-                  maxWidth={640}
-                  onClose={() => setIsScheduleOpen(false)}
-                >
-                  {programType === 'dropin' ? (
-                    <SchedulePanel
-                      category={activeFilters?.category ?? ''}
-                      activity={activeFilters?.activity ?? ''}
-                      activities={activeFilters?.activities}
-                      age={activeFilters?.age as DropInAgeFilter | undefined}
-                      weekday={activeFilters?.weekday}
-                      locationId={activeFilters?.locationId}
-                      hasSearchCriteria={hasScheduleFilters}
-                      isVisible={isScheduleOpen}
-                      onLocationClick={handleScheduleLocationClick}
-                      highlightedLocationId={highlightedLocationId}
-                      focusToken={scheduleFocusToken}
-                      scopedCentreId={scopedCentreId}
-                      selectedCentreName={selectedCentreName}
-                      centres={centres}
-                      userLocation={userLocation}
-                      maxDistanceKm={activeFilters?.maxDistanceKm}
-                    />
-                  ) : (
-                    <RegisteredProgramsPanel
-                      category={activeFilters?.category ?? ''}
-                      activity={activeFilters?.activity ?? ''}
-                      activities={activeFilters?.activities}
-                      age={activeFilters?.age as RegisteredAgeFilter | undefined}
-                      startMonth={activeFilters?.startMonth}
-                      locationId={activeFilters?.locationId}
-                      hasSearchCriteria={hasScheduleFilters}
-                      isVisible={isScheduleOpen}
-                      onLocationClick={handleScheduleLocationClick}
-                      highlightedLocationId={highlightedLocationId}
-                      focusToken={scheduleFocusToken}
-                      scopedCentreId={scopedCentreId}
-                      selectedCentreName={selectedCentreName}
-                      centres={centres}
-                      userLocation={userLocation}
-                      maxDistanceKm={activeFilters?.maxDistanceKm}
-                    />
-                    )
-                  }
-                </ResizablePanel>
-              </div>
-            )}
+            <div className = "schedule-desktop">
+              <ResizablePanel
+                pills={filterPills}
+                centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
+                distancePill={distancePillLabel ? { label: distancePillLabel, onRemove: handleDisableDistanceSearch } : undefined}
+                initialWidth={400}
+                minWidth={300}
+                maxWidth={640}
+              >
+                {programType === 'dropin' ? (
+                  <SchedulePanel
+                    category={activeFilters?.category ?? ''}
+                    activity={activeFilters?.activity ?? ''}
+                    activities={activeFilters?.activities}
+                    age={activeFilters?.age as DropInAgeFilter | undefined}
+                    weekday={activeFilters?.weekday}
+                    locationId={activeFilters?.locationId}
+                    hasSearchCriteria={hasScheduleFilters}
+                    isVisible={true}
+                    onLocationClick={handleScheduleLocationClick}
+                    highlightedLocationId={highlightedLocationId}
+                    focusToken={scheduleFocusToken}
+                    scopedCentreId={scopedCentreId}
+                    selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
+                  />
+                ) : (
+                  <RegisteredProgramsPanel
+                    category={activeFilters?.category ?? ''}
+                    activity={activeFilters?.activity ?? ''}
+                    activities={activeFilters?.activities}
+                    age={activeFilters?.age as RegisteredAgeFilter | undefined}
+                    startMonth={activeFilters?.startMonth}
+                    locationId={activeFilters?.locationId}
+                    hasSearchCriteria={hasScheduleFilters}
+                    isVisible={true}
+                    onLocationClick={handleScheduleLocationClick}
+                    highlightedLocationId={highlightedLocationId}
+                    focusToken={scheduleFocusToken}
+                    scopedCentreId={scopedCentreId}
+                    selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
+                  />
+                  )
+                }
+              </ResizablePanel>
+            </div>
 
             <section
               className="schedule-mobile"
@@ -635,20 +616,6 @@ export default function App() {
                 <span className="schedule-mobile-handle-grip" aria-hidden="true" />
               </div>
             </section>
-
-            {!isScheduleOpen && (
-              <button
-                type="button"
-                className="schedule-toggle"
-                aria-label={programType === 'dropin' ? 'Open schedule' : 'Open programs'}
-                onClick={() => setIsScheduleOpen(true)}
-              >
-                <span className="schedule-toggle-icon">🗓️</span>
-                <span className="schedule-toggle-text">
-                  {programType === 'dropin' ? 'Schedule' : 'Programs'}
-                </span>
-              </button>
-            )}
           </>
         )}
 

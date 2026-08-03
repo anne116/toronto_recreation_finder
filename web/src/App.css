@@ -650,37 +650,6 @@
   display: none;
 }
 
-.schedule-toggle {
-  /* sits 44px below .filters-fab's own top (its height + a gap) so both
-     can be visible at once (closing both panels) without overlapping,
-     and clears the compact navbar the same way .filters-fab does */
-  position: fixed;
-  top: calc(var(--navbar-compact-height) + 12px + 44px);
-  left: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 183, 0.4);
-  background: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-  cursor: pointer;
-  z-index: 25;
-  transition: top 0.25s ease;
-}
-
-.schedule-toggle-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.schedule-toggle-text {
-  font-size: 12px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
 .map-panel {
   flex: 1;
   min-height: 0;
@@ -1026,42 +995,6 @@
   color: #ffffff;
 }
 
-.resizable-panel__header-row {
-  display: flex;
-  align-items: center;
-}
-
-.resizable-panel__title {
-  flex: 1;
-  font-weight: 600;
-  font-size: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-
-.resizable-panel__close {
-  flex-shrink: 0;
-  border: none;
-  background: var(--color-primary-light);
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--color-primary-hover);
-  margin-left: 8px;
-}
-
-.resizable-panel__close:hover {
-  background: #ffffff;
-}
-
 .resizable-panel__body {
   flex: 1;
   min-height: 0;
@@ -1131,10 +1064,6 @@
     height: 4px;
     border-radius: 2px;
     background: rgba(148, 163, 184, 0.7);
-  }
-
-  .schedule-toggle {
-    display: none;
   }
 
   .filters-panel {
