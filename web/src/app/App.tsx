@@ -169,18 +169,13 @@ export default function App() {
     );
   }
 
-  function handleClearLocation() {
+  function handleDisableDistanceSearch() {
     setUserLocation(null);
     setLocateMeError(null);
     setLocationPermissionDenied(false);
     setPreviewLocation(null);
     setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
-  }
-
-  function handleDisableDistanceSearch() {
-    setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
     setActiveFilters((prev) => (prev ? { ...prev, maxDistanceKm: undefined } : prev));
-    setLocationPermissionDenied(false);
   }
 
   function handleMapLocationPreview(coords: { lat: number; lon: number }) {
@@ -484,7 +479,6 @@ export default function App() {
             locateMeError={locateMeError}
             locationPermissionDenied={locationPermissionDenied}
             onRequestLocation={handleRequestLocation}
-            onClearLocation={handleClearLocation}
             onDisableDistanceSearch={handleDisableDistanceSearch}
           />
         </aside>

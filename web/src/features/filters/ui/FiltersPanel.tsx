@@ -23,7 +23,6 @@ type Props = {
   locateMeError?: string | null;
   locationPermissionDenied?: boolean;
   onRequestLocation: () => void;
-  onClearLocation: () => void;
   onDisableDistanceSearch: () => void;
 };
 
@@ -42,7 +41,6 @@ export default function FiltersPanel({
   locateMeError,
   locationPermissionDenied = false,
   onRequestLocation,
-  onClearLocation,
   onDisableDistanceSearch,
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -191,7 +189,10 @@ export default function FiltersPanel({
 
       <div className="filter-group">
         <div className="distance-toggle-row">
-          <label htmlFor="distance-search-toggle">Find near me</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label htmlFor="distance-search-toggle">Find near me</label>
+            {locateMeLoading && <Spinner size={16} label="Locating" />}
+          </div>
           <label className="distance-toggle-switch">
             <input
               id="distance-search-toggle"
@@ -200,6 +201,7 @@ export default function FiltersPanel({
               onChange={(e) => {
                 if (e.target.checked) {
                   update({ maxDistanceKm: lastDistanceValue });
+                  onRequestLocation();
                 } else {
                   onDisableDistanceSearch();
                 }
@@ -230,24 +232,7 @@ export default function FiltersPanel({
                   setLastDistanceValue(v);
                   update({ maxDistanceKm: v });
                 }}
-                onMouseUp={() => { if (!userLocation) onRequestLocation(); }}
-                onTouchEnd={() => { if (!userLocation) onRequestLocation(); }}
               />
-              {(locateMeLoading || userLocation) && (
-                <div className="distance-slider-footer">
-                  {locateMeLoading && <Spinner size={16} label="Locating" />}
-                  {userLocation && (
-                    <button
-                      type="button"
-                      className="distance-slider-clear"
-                      aria-label="Clear location"
-                      onClick={onClearLocation}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
             {locationPermissionDenied && (
               <div className="locate-me-error">Location blocked — tap the map to set it yourself.</div>
