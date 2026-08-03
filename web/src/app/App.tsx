@@ -20,20 +20,13 @@ import Spinner from '../shared/ui/Spinner';
     category: string;
     activity: string;
     activities?: string[];
-    district: string;
     weekday: WeekdayName | null;
     startMonth?: string;
     age?: ProgramAgeFilter;
     locationId?: string | number;
     locationName?: string;
+    maxDistanceKm?: number;
   };
-
-function buildPanelTitle(programType: ProgramType, filters: Filters | null): string {
-  const suffix = programType === 'dropin' ? 'Schedule' : 'Programs';
-  if (filters?.activity) return `${filters.activity} ${suffix}`;
-  if (filters?.category) return `${filters.category} ${suffix}`;
-  return suffix;
-}
 
 function buildFilterPills(filters: Filters | null): string[] {
   if (!filters) return [];
@@ -48,14 +41,14 @@ function buildFilterPills(filters: Filters | null): string[] {
   return pills;
 }
 
-function hasAnySelectedFilter(filters: Filters): boolean {
+function hasAnySelectedFilter(filters: Filters, hasLocation: boolean = false): boolean {
   return Boolean(
     filters.category ||
     filters.activity ||
     (filters.activities && filters.activities.length > 0) ||
-    filters.district ||
     filters.weekday ||
     filters.startMonth ||
+    hasLocation ||
     filters.age ||
     filters.locationId
   );
@@ -75,7 +68,6 @@ function buildPageMetadata(programType: ProgramType, activeFilters: Filters | nu
   const programTypeLabel = programType === 'dropin' ? 'Drop-in' : 'Registered';
   const activity = activeFilters.activity;
   const category = activeFilters.category;
-  const district = activeFilters.district;
   let titleParts: string[] = [];
   if (activity) {
     titleParts.push(activity);
@@ -84,15 +76,9 @@ function buildPageMetadata(programType: ProgramType, activeFilters: Filters | nu
   }
   titleParts.push(programTypeLabel);
 
-  if (district) {
-    titleParts.push(`in ${district}`);
-  }
   const title = `${titleParts.join(' ')} | Toronto Recreation Finder`;
 
   let description = `Find ${activity || category || programTypeLabel.toLowerCase()} programs`;
-  if (district) {
-    description += ` in ${district}`;
-  }
   description += ' at Toronto recreation centres. Filter by location, activity, age, and schedule.';
 
   return {
@@ -111,7 +97,6 @@ export default function App() {
     category: searchParams.get('category') || '',
     activity: activityParamsFromURL.length === 1 ? activityParamsFromURL[0] : '',
     activities: activityParamsFromURL.length > 1 ? activityParamsFromURL : undefined,
-    district: searchParams.get('district') || '',
     weekday: (searchParams.get('weekday') as WeekdayName) || null,
     startMonth: searchParams.get('startMonth') || undefined,
     age: (searchParams.get('age') as ProgramAgeFilter) || undefined,
@@ -125,10 +110,82 @@ export default function App() {
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | number | null>(null);
   const [scopedCentreId, setScopedCentreId] = useState<string | number | null>(null);
   const [scheduleFocusToken, setScheduleFocusToken] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [locateMeLoading, setLocateMeLoading] = useState(false);
+  const [locateMeError, setLocateMeError] = useState<string | null>(null);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [previewLocation, setPreviewLocation] = useState<{ lat: number; lon: number } | null>(null);
+
+  const locationPickingEnabled = locationPermissionDenied && !userLocation;
+
+  useEffect(() => {
+    if (userLocation) setPreviewLocation(null);
+  }, [userLocation]);
+
+  async function handleRequestLocation() {
+    if (!navigator.geolocation) {
+      setLocationPermissionDenied(true);
+      return;
+    }
+
+    if (navigator.permissions?.query) {
+      try {
+        const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        if (status.state === 'denied') {
+          setLocationPermissionDenied(true);
+          return;
+        }
+      } catch {
+        // Permissions API query unsupported here; fall through to the direct request below.
+      }
+    }
+
+    setLocateMeLoading(true);
+    setLocateMeError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
+        setFilters((prev) => ({ ...prev, maxDistanceKm: prev.maxDistanceKm ?? 5 }));
+        setLocationPermissionDenied(false);
+        setLocateMeLoading(false);
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationPermissionDenied(true);
+        } else {
+          setLocateMeError('Could not access your location. You can still search without it.');
+        }
+        setLocateMeLoading(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }
+
+  function handleDisableDistanceSearch() {
+    setUserLocation(null);
+    setLocateMeError(null);
+    setLocationPermissionDenied(false);
+    setPreviewLocation(null);
+    setFilters((prev) => ({ ...prev, maxDistanceKm: undefined }));
+    setActiveFilters((prev) => (prev ? { ...prev, maxDistanceKm: undefined } : prev));
+  }
+
+  function handleMapLocationPreview(coords: { lat: number; lon: number }) {
+    setPreviewLocation(coords);
+  }
+
+  function handleConfirmMapLocation() {
+    if (!previewLocation) return;
+    setUserLocation(previewLocation);
+    setFilters((prev) => ({ ...prev, maxDistanceKm: prev.maxDistanceKm ?? 5 }));
+    setLocationPermissionDenied(false);
+    setPreviewLocation(null);
+    setIsFiltersOpen(true);
+  }
 
   const [activeFilters, setActiveFilters] = useState<Filters | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const [mobilePanelHeightPx, setMobilePanelHeightPx] = useState<number | null>(null);
   const panelDragRef = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
 
@@ -143,8 +200,8 @@ export default function App() {
     const drag = panelDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
     const deltaY = e.clientY - drag.startY;
-    const minHeight = window.innerHeight * 0.3;
-    const maxHeight = window.innerHeight * 0.7;
+    const minHeight = window.innerHeight * 0.25;
+    const maxHeight = window.innerHeight * 0.85;
     setMobilePanelHeightPx(Math.min(maxHeight, Math.max(minHeight, drag.startHeight + deltaY)));
   }
 
@@ -153,19 +210,22 @@ export default function App() {
     e.currentTarget.releasePointerCapture(e.pointerId);
   }
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.district || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId || (userLocation && activeFilters?.maxDistanceKm)
   );
   const filterPills = buildFilterPills(activeFilters);
+  const distancePillLabel = userLocation && activeFilters?.maxDistanceKm
+    ? `< ${activeFilters.maxDistanceKm} km`
+    : null;
   const { data: centres, loading: centresLoading } = useCentres({
     programType,
     category: activeFilters?.category ?? '',
     activity: activeFilters?.activity ?? '',
     activities: activeFilters?.activities,
-    district: activeFilters?.district ?? '',
     weekday: activeFilters?.weekday ?? null,
     startMonth: activeFilters?.startMonth,
     age: activeFilters?.age,
     locationId: activeFilters?.locationId,
+    hasDistanceFilter: Boolean(userLocation && activeFilters?.maxDistanceKm),
   },
   { enabled: !!activeFilters }
 );
@@ -209,12 +269,11 @@ export default function App() {
       setActiveFilters(filters);
       setShowSchedulePanel(true);
       setHasSearched(true);
-      setIsScheduleOpen(true);
     }
   }, []);
 
   function handleSearch() {
-    if (!hasAnySelectedFilter(filters)) {
+    if (!hasAnySelectedFilter(filters, Boolean(userLocation))) {
       setSearchNotice('Select at least one filter to search.');
       return;
     }
@@ -223,10 +282,10 @@ export default function App() {
       program_type: programType,
       category: filters.category || undefined,
       activity: filters.activity || undefined,
-      district: filters.district || undefined,
       weekday: filters.weekday || undefined,
       start_month: filters.startMonth || undefined,
       age: filters.age || undefined,
+      max_distance_km: userLocation ? filters.maxDistanceKm : undefined,
     })
 
     const params = new URLSearchParams();
@@ -237,7 +296,6 @@ export default function App() {
     } else if (filters.activities?.length) {
       filters.activities.forEach((item) => params.append('activity', item));
     }
-    if (filters.district) params.set('district', filters.district);
     if (filters.weekday) params.set('weekday', filters.weekday);
     if (filters.startMonth) params.set('startMonth', filters.startMonth);
     if (filters.age) params.set('age', filters.age);
@@ -251,7 +309,6 @@ export default function App() {
     setIsFiltersOpen(false);
 
     setShowSchedulePanel(true);
-    setIsScheduleOpen(true);
     setMobilePanelHeightPx(null);
   }
 
@@ -262,7 +319,6 @@ export default function App() {
     setFilters({
       category: '',
       activity: '',
-      district: '',
       weekday: null,
       startMonth: undefined,
       age: undefined,
@@ -273,7 +329,6 @@ export default function App() {
     setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
-    setIsScheduleOpen(false);
     setMobilePanelHeightPx(null);
   }
 
@@ -288,7 +343,6 @@ export default function App() {
     setFilters({
       category: '',
       activity: '',
-      district: '',
       weekday: null,
       startMonth: undefined,
       age: undefined,
@@ -298,7 +352,6 @@ export default function App() {
     setScopedCentreId(null);
     setHasSearched(false);
     setActiveFilters(null);
-    setIsScheduleOpen(false);
     setMobilePanelHeightPx(null);
   }
 
@@ -321,9 +374,6 @@ export default function App() {
       setScheduleFocusToken(prev => prev + 1);
     }
 
-    if (showSchedulePanel) {
-      setIsScheduleOpen(true);
-    }
   }
 
   const handleCentreClose = useCallback(() => {
@@ -410,67 +460,74 @@ export default function App() {
             isOpen={isFiltersOpen}
             onToggle={() => setIsFiltersOpen(prev => !prev)}
             isSearching={centresLoading}
+            userLocation={userLocation}
+            locateMeLoading={locateMeLoading}
+            locateMeError={locateMeError}
+            locationPermissionDenied={locationPermissionDenied}
+            onRequestLocation={handleRequestLocation}
+            onDisableDistanceSearch={handleDisableDistanceSearch}
           />
         </aside>
 
         {showSchedulePanel && (
           <>
-            {isScheduleOpen && (
-              <div className = "schedule-desktop">
-                <ResizablePanel
-                  title={buildPanelTitle(programType, activeFilters)}
-                  pills={filterPills}
-                  centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
-                  initialWidth={400}
-                  minWidth={300}
-                  maxWidth={640}
-                  onClose={() => setIsScheduleOpen(false)}
-                >
-                  {programType === 'dropin' ? (
-                    <SchedulePanel
-                      category={activeFilters?.category ?? ''}
-                      activity={activeFilters?.activity ?? ''}
-                      activities={activeFilters?.activities}
-                      age={activeFilters?.age as DropInAgeFilter | undefined}
-                      weekday={activeFilters?.weekday}
-                      district={activeFilters?.district ?? ''}
-                      locationId={activeFilters?.locationId}
-                      hasSearchCriteria={hasScheduleFilters}
-                      isVisible={isScheduleOpen}
-                      onLocationClick={handleScheduleLocationClick}
-                      highlightedLocationId={highlightedLocationId}
-                      focusToken={scheduleFocusToken}
-                      scopedCentreId={scopedCentreId}
-                      selectedCentreName={selectedCentreName}
-                    />
-                  ) : (
-                    <RegisteredProgramsPanel
-                      category={activeFilters?.category ?? ''}
-                      activity={activeFilters?.activity ?? ''}
-                      activities={activeFilters?.activities}
-                      age={activeFilters?.age as RegisteredAgeFilter | undefined}
-                      startMonth={activeFilters?.startMonth}
-                      district={activeFilters?.district ?? ''}
-                      locationId={activeFilters?.locationId}
-                      hasSearchCriteria={hasScheduleFilters}
-                      isVisible={isScheduleOpen}
-                      onLocationClick={handleScheduleLocationClick}
-                      highlightedLocationId={highlightedLocationId}
-                      focusToken={scheduleFocusToken}
-                      scopedCentreId={scopedCentreId}
-                      selectedCentreName={selectedCentreName}
-                    />
-                    )
-                  }
-                </ResizablePanel>
-              </div>
-            )}
+            <div className = "schedule-desktop">
+              <ResizablePanel
+                pills={filterPills}
+                centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
+                distancePill={distancePillLabel ? { label: distancePillLabel, onRemove: handleDisableDistanceSearch } : undefined}
+                initialWidth={400}
+                minWidth={300}
+                maxWidth={640}
+              >
+                {programType === 'dropin' ? (
+                  <SchedulePanel
+                    category={activeFilters?.category ?? ''}
+                    activity={activeFilters?.activity ?? ''}
+                    activities={activeFilters?.activities}
+                    age={activeFilters?.age as DropInAgeFilter | undefined}
+                    weekday={activeFilters?.weekday}
+                    locationId={activeFilters?.locationId}
+                    hasSearchCriteria={hasScheduleFilters}
+                    isVisible={true}
+                    onLocationClick={handleScheduleLocationClick}
+                    highlightedLocationId={highlightedLocationId}
+                    focusToken={scheduleFocusToken}
+                    scopedCentreId={scopedCentreId}
+                    selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
+                  />
+                ) : (
+                  <RegisteredProgramsPanel
+                    category={activeFilters?.category ?? ''}
+                    activity={activeFilters?.activity ?? ''}
+                    activities={activeFilters?.activities}
+                    age={activeFilters?.age as RegisteredAgeFilter | undefined}
+                    startMonth={activeFilters?.startMonth}
+                    locationId={activeFilters?.locationId}
+                    hasSearchCriteria={hasScheduleFilters}
+                    isVisible={true}
+                    onLocationClick={handleScheduleLocationClick}
+                    highlightedLocationId={highlightedLocationId}
+                    focusToken={scheduleFocusToken}
+                    scopedCentreId={scopedCentreId}
+                    selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
+                  />
+                  )
+                }
+              </ResizablePanel>
+            </div>
 
             <section
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {(filterPills.length > 0 || pinScopedCentreName) && (
+              {(filterPills.length > 0 || pinScopedCentreName || distancePillLabel) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
@@ -490,6 +547,19 @@ export default function App() {
                       </button>
                     </span>
                   )}
+                  {distancePillLabel && (
+                    <span className="filter-pill filter-pill--distance">
+                      📏 {distancePillLabel}
+                      <button
+                        type="button"
+                        className="filter-pill-remove"
+                        aria-label={`Remove distance filter: ${distancePillLabel}`}
+                        onClick={handleDisableDistanceSearch}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
               <div className="schedule-mobile-body">
@@ -500,7 +570,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                     age={activeFilters?.age as DropInAgeFilter}
                     weekday={activeFilters?.weekday}
-                    district={activeFilters?.district ?? ''}
                     locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
@@ -509,6 +578,9 @@ export default function App() {
                     focusToken={scheduleFocusToken}
                     scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
                   />
                 ) : (
                   <RegisteredProgramsPanel
@@ -517,7 +589,6 @@ export default function App() {
                       activities={activeFilters?.activities}
                     age={activeFilters?.age as RegisteredAgeFilter}
                     startMonth={activeFilters?.startMonth}
-                    district={activeFilters?.district ?? ''}
                     locationId={activeFilters?.locationId}
                     hasSearchCriteria={hasScheduleFilters}
                     isVisible={true}
@@ -526,6 +597,9 @@ export default function App() {
                     focusToken={scheduleFocusToken}
                     scopedCentreId={scopedCentreId}
                     selectedCentreName={selectedCentreName}
+                    centres={centres}
+                    userLocation={userLocation}
+                    maxDistanceKm={activeFilters?.maxDistanceKm}
                   />
                 )}
 
@@ -543,20 +617,6 @@ export default function App() {
                 <span className="schedule-mobile-handle-grip" aria-hidden="true" />
               </div>
             </section>
-
-            {!isScheduleOpen && (
-              <button
-                type="button"
-                className="schedule-toggle"
-                aria-label={programType === 'dropin' ? 'Open schedule' : 'Open programs'}
-                onClick={() => setIsScheduleOpen(true)}
-              >
-                <span className="schedule-toggle-icon">🗓️</span>
-                <span className="schedule-toggle-text">
-                  {programType === 'dropin' ? 'Schedule' : 'Programs'}
-                </span>
-              </button>
-            )}
           </>
         )}
 
@@ -567,6 +627,13 @@ export default function App() {
             onCentreClick = {handleCentreMarkerClick}
             onCentreClose = {handleCentreClose}
             selectedLocationId = {selectedLocationId}
+            userLocation = {userLocation}
+            maxDistanceKm = {filters.maxDistanceKm}
+            activeMaxDistanceKm = {userLocation ? activeFilters?.maxDistanceKm : undefined}
+            locationPickingEnabled = {locationPickingEnabled}
+            previewLocation = {previewLocation}
+            onMapLocationPreview = {handleMapLocationPreview}
+            onConfirmMapLocation = {handleConfirmMapLocation}
           />
         </main>
 

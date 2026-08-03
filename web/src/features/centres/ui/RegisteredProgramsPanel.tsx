@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchRegisteredPrograms } from "../api/centres.api";
-import type { RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
+import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
+import { haversineDistanceKm } from "../../../shared/lib/geo";
+import type { CentresFeatureCollection, RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
 import Spinner from "../../../shared/ui/Spinner";
@@ -26,6 +28,9 @@ type Props = {
   locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
+  centres?: CentresFeatureCollection | null;
+  userLocation?: { lat: number; lon: number } | null;
+  maxDistanceKm?: number;
 };
 
 const MATCH_CARD_HIGHLIGHT = "#D8F3EE";
@@ -80,6 +85,9 @@ export default function RegisteredProgramsPanel({
   locationId,
   scopedCentreId,
   selectedCentreName,
+  centres,
+  userLocation,
+  maxDistanceKm,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
   const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
@@ -130,8 +138,30 @@ export default function RegisteredProgramsPanel({
     };
   }, [sessionsModalProgramId]);
 
+  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
+
+  const withinRadiusLocationIds = useMemo(() => {
+    if (!userLocation || !maxDistanceKm) return null;
+    if (!centres) return undefined;
+    const ids: (string | number)[] = [];
+    coordinatesById.forEach((coord, id) => {
+      if (isWithinDistance(haversineDistanceKm(userLocation, coord), maxDistanceKm)) {
+        ids.push(id);
+      }
+    });
+    return ids;
+  }, [userLocation, maxDistanceKm, centres, coordinatesById]);
+
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
+      setPrograms([]);
+      setSessionsModalProgramId(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    if (withinRadiusLocationIds === undefined) return;
+    if (withinRadiusLocationIds !== null && withinRadiusLocationIds.length === 0) {
       setPrograms([]);
       setSessionsModalProgramId(null);
       setError(null);
@@ -154,6 +184,7 @@ export default function RegisteredProgramsPanel({
           start_month: startMonth,
           district,
           location_id: locationId,
+          location_ids: locationId == null ? withinRadiusLocationIds ?? undefined : undefined,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -176,7 +207,7 @@ export default function RegisteredProgramsPanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId]);
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId, withinRadiusLocationIds]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
@@ -227,13 +258,16 @@ export default function RegisteredProgramsPanel({
   const isScoped = scopedCentreId != null;
   const displayedLoading = isScoped ? scopedLoading : loading;
   const displayedError = isScoped ? scopedError : error;
-  const displayedPrograms = isScoped ? scopedPrograms : programs;
+  const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
+
+  const displayedPrograms = useMemo(() => {
+    const withDistance = attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null);
+    if (!userLocation || !maxDistanceKm) return withDistance;
+    return withDistance.filter((p) => isWithinDistance(p.distanceKm, maxDistanceKm));
+  }, [rawDisplayedPrograms, coordinatesById, userLocation, maxDistanceKm]);
 
   const sortedPrograms = useMemo(() => {
-    if (!highlightedLocationIdStr) {
-      return displayedPrograms;
-    }
-
+    if (!highlightedLocationIdStr) return displayedPrograms;
     const matches: RegisteredProgramGroup[] = [];
     const others: RegisteredProgramGroup[] = [];
     displayedPrograms.forEach((program) => {
@@ -293,7 +327,9 @@ export default function RegisteredProgramsPanel({
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             {selectedCentreName
               ? `No matching programs from ${selectedCentreName} for your search criteria`
-              : "No registered programs found for your search criteria"}
+              : userLocation && maxDistanceKm
+                ? "No registered programs found for your search criteria. Try widening your search radius."
+                : "No registered programs found for your search criteria"}
           </div>
         )}
 
@@ -311,8 +347,8 @@ export default function RegisteredProgramsPanel({
               const primaryRegisterUrl = primaryPeriod?.activity_url;
 
               return (
+                <div key={program.id}>
                 <article
-                  key={program.id}
                   ref={(node) => {
                     cardRefs.current.set(program.id, node);
                   }}
@@ -345,6 +381,11 @@ export default function RegisteredProgramsPanel({
                       <span style={{ fontWeight: 400, color: "#475569" }}>
                         (👥 {formatAgeRange(program.age_min, program.age_max)})
                       </span>
+                      {program.distanceKm != null && (
+                        <span className="distance-pill">
+                          📏 {program.distanceKm.toFixed(1)} km away
+                        </span>
+                      )}
                     </div>
 
                     {(primaryRegisterUrl || program.periods.length > 1) && (
@@ -459,6 +500,7 @@ export default function RegisteredProgramsPanel({
                     </div>
                   )}
                 </article>
+                </div>
               );
             })}
           </div>

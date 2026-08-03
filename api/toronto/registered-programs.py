@@ -16,6 +16,22 @@ def _parse_activity(params: dict) -> str | list[str] | None:
     return activity_values[0] if len(activity_values) == 1 else (activity_values or None)
 
 
+def _parse_location_ids(params: dict) -> set[int] | None:
+    raw = params.get("location_ids", [None])[0]
+    if not raw:
+        return None
+    ids: set[int] = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            ids.add(int(part))
+        except (TypeError, ValueError):
+            continue
+    return ids or None
+
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -42,6 +58,7 @@ class handler(BaseHTTPRequestHandler):
                 age=params.get("age", [None])[0],
                 start_month=params.get("start_month", [None])[0] or None,
                 location_id=location_id,
+                location_ids=_parse_location_ids(params),
                 limit=max(1, min(limit, 5000)),
             )
             send_json(self, payload)

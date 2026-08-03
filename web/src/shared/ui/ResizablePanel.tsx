@@ -1,24 +1,22 @@
 import { useState, useEffect, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
 
 type ResizablePanelProps = {
-    title: string;
     pills?: string[];
     centrePill?: { label: string; onRemove: () => void };
+    distancePill?: { label: string; onRemove: () => void };
     initialWidth?: number;
     minWidth?: number;
     maxWidth?: number;
-    onClose: () => void;
     children: ReactNode;
 };
 
 export default function ResizablePanel({
-    title,
     pills = [],
     centrePill,
+    distancePill,
     initialWidth = 400,
     minWidth = 280,
     maxWidth = 640,
-    onClose,
     children,
 }: ResizablePanelProps ) {
     const [width, setWidth] = useState(initialWidth);
@@ -70,23 +68,8 @@ export default function ResizablePanel({
             className="resizable-panel"
             style={{ width }}
         >
-            <div
-              className="resizable-panel__header"
-              style={{ cursor: isDragging ? "col-resize" : "default"}}
-            >
-                <div className="resizable-panel__header-row">
-                    <div className="resizable-panel__title">
-                        {title}
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="resizable-panel__close"
-                        aria-label="Close panel"
-                    >
-                        ✕
-                    </button>
-                </div>
-                {(pills.length > 0 || centrePill) && (
+            {(pills.length > 0 || centrePill || distancePill) && (
+                <div className="resizable-panel__header">
                     <div className="filter-pill-row">
                         {pills.map((pill) => (
                             <span key={pill} className="filter-pill">
@@ -106,9 +89,22 @@ export default function ResizablePanel({
                                 </button>
                             </span>
                         )}
+                        {distancePill && (
+                            <span className="filter-pill filter-pill--distance">
+                                📏 {distancePill.label}
+                                <button
+                                    type="button"
+                                    className="filter-pill-remove"
+                                    aria-label={`Remove distance filter: ${distancePill.label}`}
+                                    onClick={distancePill.onRemove}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        )}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             <div className="resizable-panel__body">
                 {children}

@@ -105,9 +105,9 @@ function groupRecurringPrograms(programs: DropInProgram[]): ScheduleProgram[] {
 function groupByDay(programs: DropInProgram[]) {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const grouped = new Map<string, ScheduleProgram[]>();
-  
-  days.forEach(day => grouped.set(day, []));  
-  
+
+  days.forEach(day => grouped.set(day, []));
+
   groupRecurringPrograms(programs).forEach(p => {
     const day = p.day_of_week || 'Unknown';
     if (grouped.has(day)) {
@@ -120,7 +120,7 @@ function groupByDay(programs: DropInProgram[]) {
   grouped.forEach((dayPrograms, day) => {
     grouped.set(day, [...dayPrograms].sort(comparePrograms));
   });
-  
+
   return grouped;
 }
 
@@ -212,7 +212,7 @@ export default function WeeklyScheduleGrid({
     const locationId = program.location_id;
     return highlightedLocationIdStr !== null && locationId != null && String(locationId) === highlightedLocationIdStr;
   });
-  
+
   return (
     <div style={{ padding: '0' }}>
       <div
@@ -358,6 +358,11 @@ export default function WeeklyScheduleGrid({
                       👥 {formatAgeRange(program.age_min, program.age_max)}
                     </span>
                   )}
+                  {program.distanceKm != null && (
+                    <span className="distance-pill">
+                      📏 {program.distanceKm.toFixed(1)} km away
+                    </span>
+                  )}
                 </div>
 
                 <div
@@ -409,7 +414,7 @@ export default function WeeklyScheduleGrid({
                   )}
                 </div>
               )}
-            </div>
+              </div>
           );
         })}
       </div>

@@ -31,6 +31,11 @@ function appendActivityParams(qs: URLSearchParams, activity?: string, activities
   appendIfPresent(qs, "activity", activity);
 }
 
+function appendLocationIds(qs: URLSearchParams, locationIds?: (string | number)[]) {
+  if (!locationIds || locationIds.length === 0) return;
+  qs.append("location_ids", locationIds.join(","));
+}
+
 
 export type SearchProgramsParams = {
   category?: string;
@@ -42,6 +47,7 @@ export type SearchProgramsParams = {
   district?: string;
   time_of_day?: "morning" | "afternoon" | "evening" | "weekend";
   location_id?: string | number;
+  location_ids?: (string | number)[];
   limit?: number;
   signal?: AbortSignal;
 };
@@ -83,6 +89,7 @@ export async function searchProgramsAggregated(
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "time_of_day", params.time_of_day);
   appendIfPresent(qs, "location_id", params.location_id);
+  appendLocationIds(qs, params.location_ids);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "weekday", params.weekday);
   return get<SearchProgramsResponse>(`/api/toronto/drop-in-programs/search?${qs.toString()}`, {
@@ -99,6 +106,7 @@ export async function searchRegisteredPrograms(
   appendIfPresent(qs, "age", params.age);
   appendIfPresent(qs, "district", params.district);
   appendIfPresent(qs, "location_id", params.location_id);
+  appendLocationIds(qs, params.location_ids);
   appendIfPresent(qs, "limit", params.limit);
   appendIfPresent(qs, "start_month", params.start_month);
   return get<RegisteredProgramsResponse>(`/api/toronto/registered-programs/search?${qs.toString()}`, {

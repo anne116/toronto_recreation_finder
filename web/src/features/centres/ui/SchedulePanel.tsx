@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
-import type { AgeFilter, DropInProgram } from "../../../shared/types";
+import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
+import { haversineDistanceKm } from "../../../shared/lib/geo";
+import type { AgeFilter, CentresFeatureCollection, DropInProgram } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import Spinner from "../../../shared/ui/Spinner";
 
@@ -27,6 +29,9 @@ type Props = {
   locationId?: string | number;
   scopedCentreId?: string | number | null;
   selectedCentreName?: string | null;
+  centres?: CentresFeatureCollection | null;
+  userLocation?: { lat: number; lon: number } | null;
+  maxDistanceKm?: number;
 };
 
 
@@ -53,6 +58,9 @@ export default function SchedulePanel({
   locationId,
   scopedCentreId,
   selectedCentreName,
+  centres,
+  userLocation,
+  maxDistanceKm,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,8 +70,29 @@ export default function SchedulePanel({
   const [scopedLoading, setScopedLoading] = useState(false);
   const [scopedError, setScopedError] = useState<string | null>(null);
 
+  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
+
+  const withinRadiusLocationIds = useMemo(() => {
+    if (!userLocation || !maxDistanceKm) return null;
+    if (!centres) return undefined;
+    const ids: (string | number)[] = [];
+    coordinatesById.forEach((coord, id) => {
+      if (isWithinDistance(haversineDistanceKm(userLocation, coord), maxDistanceKm)) {
+        ids.push(id);
+      }
+    });
+    return ids;
+  }, [userLocation, maxDistanceKm, centres, coordinatesById]);
+
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
+      setPrograms([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    if (withinRadiusLocationIds === undefined) return;
+    if (withinRadiusLocationIds !== null && withinRadiusLocationIds.length === 0) {
       setPrograms([]);
       setError(null);
       setLoading(false);
@@ -86,6 +115,7 @@ export default function SchedulePanel({
           district,
           time_of_day,
           location_id: locationId,
+          location_ids: locationId == null ? withinRadiusLocationIds ?? undefined : undefined,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -109,7 +139,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, locationId]);
+  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, locationId, withinRadiusLocationIds]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
@@ -160,15 +190,21 @@ export default function SchedulePanel({
     return () => abortController.abort();
   }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, scopedCentreId]);
 
-  if (!isVisible) return null;
-
   const isScoped = scopedCentreId != null;
-  const displayedPrograms = isScoped ? scopedPrograms : programs;
+  const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
   const displayedLoading = isScoped ? scopedLoading : loading;
   const displayedError = isScoped ? scopedError : error;
 
+  const displayedPrograms = useMemo(() => {
+    const withDistance = attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null);
+    if (!userLocation || !maxDistanceKm) return withDistance;
+    return withDistance.filter((p) => isWithinDistance(p.distanceKm, maxDistanceKm));
+  }, [rawDisplayedPrograms, coordinatesById, userLocation, maxDistanceKm]);
+
+  if (!isVisible) return null;
+
   return (
-    <div 
+    <div
       style={{
         width: '100%',
         height: '100%',
@@ -204,7 +240,9 @@ export default function SchedulePanel({
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             {selectedCentreName
               ? `No matching sessions from ${selectedCentreName} for your search criteria`
-              : 'No sessions found for your search criteria'}
+              : userLocation && maxDistanceKm
+                ? 'No sessions found for your search criteria. Try widening your search radius.'
+                : 'No sessions found for your search criteria'}
           </div>
         )}
 
@@ -221,5 +259,5 @@ export default function SchedulePanel({
         )}
       </div>
     </div>
-  );  
+  );
 }

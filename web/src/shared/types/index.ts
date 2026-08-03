@@ -57,6 +57,7 @@ export interface DropInProgram {
   date_range?: string | null;
   age_min?: number | null;
   age_max?: number | null;
+  distanceKm?: number;
 }
 
 export interface RegisteredProgramPeriod {
@@ -81,6 +82,7 @@ export interface RegisteredProgramGroup {
   course_title: string;
   age_min?: number | null;
   age_max?: number | null;
+  distanceKm?: number;
   start_date?: string | null;
   end_date?: string | null;
   date_range?: string | null;

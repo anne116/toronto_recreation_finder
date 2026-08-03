@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MdOutlineDirectionsWalk, MdOutlineEventAvailable } from 'react-icons/md';
 import Spinner from '../../../shared/ui/Spinner';
-import type { ActivityOption, CategoryOption, DistrictOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
+import type { ActivityOption, CategoryOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 import CentreSearchField from './CentreSearchField';
 
-type Filters = { category: string; activity: string; activities?: string[]; district: string; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string };
+type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number };
 
 type Props = {
   programType: ProgramType;
@@ -18,27 +18,44 @@ type Props = {
   isOpen: boolean;
   onToggle: () => void;
   isSearching?: boolean;
+  userLocation?: { lat: number; lon: number } | null;
+  locateMeLoading?: boolean;
+  locateMeError?: string | null;
+  locationPermissionDenied?: boolean;
+  onRequestLocation: () => void;
+  onDisableDistanceSearch: () => void;
 };
 
-export default function FiltersPanel({ 
+export default function FiltersPanel({
   programType,
   onProgramTypeChange,
-  value, 
-  onChange, 
+  value,
+  onChange,
   onSearch,
   onReset,
   isOpen,
   onToggle,
-  isSearching = false
+  isSearching = false,
+  userLocation,
+  locateMeLoading = false,
+  locateMeError,
+  locationPermissionDenied = false,
+  onRequestLocation,
+  onDisableDistanceSearch,
 }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
-  const [districts, setDistricts]   = useState<DistrictOption[]>([]);
   const [startMonths, setStartMonths] = useState<StartMonthOption[]>([]);
+  const [lastDistanceValue, setLastDistanceValue] = useState(value.maxDistanceKm ?? 5);
+  const [centreOutsideRadiusWarning, setCentreOutsideRadiusWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCentreOutsideRadiusWarning(null);
+  }, [value.maxDistanceKm, userLocation]);
 
   useEffect(() => {
     (async () => {
-      const { categories, activities, districts, startMonths } = await getFilterOptions(programType);
+      const { categories, activities, startMonths } = await getFilterOptions(programType);
 
       const sortedCategories = [...categories].sort((a, b) =>
         a.name.localeCompare(b.name)
@@ -48,7 +65,6 @@ export default function FiltersPanel({
       );
       setCategories(sortedCategories);
       setActivities(sortedActivities);
-      setDistricts(districts); 
       setStartMonths(startMonths ?? []);
     })();
   }, [programType]);
@@ -114,7 +130,23 @@ export default function FiltersPanel({
         locationId={value.locationId}
         locationName={value.locationName}
         onChange={(centre) => update(centre)}
+        userLocation={userLocation}
+        maxDistanceKm={value.maxDistanceKm}
+        onOutsideRadiusWarning={setCentreOutsideRadiusWarning}
       />
+      {centreOutsideRadiusWarning && (
+        <div className="locate-me-error locate-me-error--dismissible">
+          <span>{centreOutsideRadiusWarning}</span>
+          <button
+            type="button"
+            className="filter-pill-remove"
+            aria-label="Dismiss"
+            onClick={() => setCentreOutsideRadiusWarning(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="filter-group">
         <label>Category</label>
@@ -156,17 +188,60 @@ export default function FiltersPanel({
       </div>
 
       <div className="filter-group">
-        <label>District</label>
-        <select 
-          value={value.district} 
-          onChange={e => update({ district: e.target.value })}
-        >
-          <option value="">All Districts</option>
-          {districts.map(d => <option key={d.district} value={d.district}>
-            {/* {d.district} ({d.location_count}) */}
-            {d.district}
-            </option>)}
-        </select>
+        <div className="distance-toggle-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label htmlFor="distance-search-toggle">Find near me</label>
+            {locateMeLoading && <Spinner size={16} label="Locating" />}
+          </div>
+          <label className="distance-toggle-switch">
+            <input
+              id="distance-search-toggle"
+              type="checkbox"
+              checked={value.maxDistanceKm != null}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  update({ maxDistanceKm: lastDistanceValue });
+                  onRequestLocation();
+                } else {
+                  onDisableDistanceSearch();
+                }
+              }}
+            />
+            <span className="distance-toggle-slider" aria-hidden="true" />
+          </label>
+        </div>
+
+        {value.maxDistanceKm != null && (
+          <>
+            <div className="distance-value-row">
+              within{' '}
+              <span className={`distance-value${userLocation ? '' : ' distance-value--pending'}`}>
+                {value.maxDistanceKm}
+              </span>{' '}
+              km
+            </div>
+            <div className="distance-slider-wrap">
+              <input
+                type="range"
+                min={1}
+                max={25}
+                step={1}
+                value={value.maxDistanceKm}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setLastDistanceValue(v);
+                  update({ maxDistanceKm: v });
+                }}
+              />
+            </div>
+            {locationPermissionDenied && (
+              <div className="locate-me-error">Location blocked — tap the map to set it yourself.</div>
+            )}
+            {!locationPermissionDenied && locateMeError && (
+              <div className="locate-me-error">{locateMeError}</div>
+            )}
+          </>
+        )}
       </div>
 
       {programType === 'dropin' ? (
