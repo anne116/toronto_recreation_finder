@@ -751,6 +751,7 @@ def collect_registered_program_groups(
     age: str | None = None,
     start_month: str | None = None,
     location_id: int | None = None,
+    location_ids: set[int] | None = None,
 ) -> list[dict]:
     rows = fetch_all_datastore_rows(REGISTERED_DATASTORE_ID)
     locations = load_location_cache()
@@ -762,7 +763,10 @@ def collect_registered_program_groups(
         activity_title = clean_optional_string(row.get("Activity Title"))
         if row_location_id is None or course_title is None:
             continue
-        if location_id is not None and row_location_id != location_id:
+        if location_id is not None:
+            if row_location_id != location_id:
+                continue
+        elif location_ids is not None and row_location_id not in location_ids:
             continue
 
         location = locations.get(row_location_id)
@@ -895,6 +899,7 @@ def build_registered_program_search_response(
     age: str | None = None,
     start_month: str | None = None,
     location_id: int | None = None,
+    location_ids: set[int] | None = None,
     limit: int = 2000,
 ) -> dict:
     programs = collect_registered_program_groups(
@@ -904,6 +909,7 @@ def build_registered_program_search_response(
         age=age,
         start_month=start_month,
         location_id=location_id,
+        location_ids=location_ids,
     )[:limit]
 
     return {
@@ -1009,6 +1015,7 @@ def build_program_search_response(
     time_of_day: str | None = None,
     weekday: str | None = None,
     location_id: int | None = None,
+    location_ids: set[int] | None = None,
     limit: int = 2000,
 ) -> dict:
     drop_in_rows = fetch_all_datastore_rows(DROP_IN_DATASTORE_ID)
@@ -1038,7 +1045,10 @@ def build_program_search_response(
         row_location_id = parse_int(row.get("Location ID"))
         if row_location_id is None:
             continue
-        if location_id is not None and row_location_id != location_id:
+        if location_id is not None:
+            if row_location_id != location_id:
+                continue
+        elif location_ids is not None and row_location_id not in location_ids:
             continue
 
         location = locations.get(row_location_id)

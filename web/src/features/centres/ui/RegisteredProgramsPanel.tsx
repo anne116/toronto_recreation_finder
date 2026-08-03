@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchRegisteredPrograms } from "../api/centres.api";
 import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
+import { haversineDistanceKm } from "../../../shared/lib/geo";
 import type { CentresFeatureCollection, RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
@@ -137,8 +138,30 @@ export default function RegisteredProgramsPanel({
     };
   }, [sessionsModalProgramId]);
 
+  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
+
+  const withinRadiusLocationIds = useMemo(() => {
+    if (!userLocation || !maxDistanceKm) return null;
+    if (!centres) return undefined;
+    const ids: (string | number)[] = [];
+    coordinatesById.forEach((coord, id) => {
+      if (isWithinDistance(haversineDistanceKm(userLocation, coord), maxDistanceKm)) {
+        ids.push(id);
+      }
+    });
+    return ids;
+  }, [userLocation, maxDistanceKm, centres, coordinatesById]);
+
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
+      setPrograms([]);
+      setSessionsModalProgramId(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    if (withinRadiusLocationIds === undefined) return;
+    if (withinRadiusLocationIds !== null && withinRadiusLocationIds.length === 0) {
       setPrograms([]);
       setSessionsModalProgramId(null);
       setError(null);
@@ -161,6 +184,7 @@ export default function RegisteredProgramsPanel({
           start_month: startMonth,
           district,
           location_id: locationId,
+          location_ids: locationId == null ? withinRadiusLocationIds ?? undefined : undefined,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -183,7 +207,7 @@ export default function RegisteredProgramsPanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId]);
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId, withinRadiusLocationIds]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
@@ -236,7 +260,6 @@ export default function RegisteredProgramsPanel({
   const displayedError = isScoped ? scopedError : error;
   const rawDisplayedPrograms = isScoped ? scopedPrograms : programs;
 
-  const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
   const displayedPrograms = useMemo(() => {
     const withDistance = attachDistanceKm(rawDisplayedPrograms, coordinatesById, userLocation ?? null);
     if (!userLocation || !maxDistanceKm) return withDistance;
