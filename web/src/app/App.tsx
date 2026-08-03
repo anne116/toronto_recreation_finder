@@ -225,6 +225,7 @@ export default function App() {
     startMonth: activeFilters?.startMonth,
     age: activeFilters?.age,
     locationId: activeFilters?.locationId,
+    hasDistanceFilter: Boolean(userLocation && activeFilters?.maxDistanceKm),
   },
   { enabled: !!activeFilters }
 );
