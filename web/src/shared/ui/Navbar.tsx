@@ -79,9 +79,12 @@ export default function Navbar({ variant, city }: NavbarProps) {
             <div className="navbar__content">
                 <Link to='/' className="navbar__logo-link" onClick={handleLogoClick}>
                     <img
-                        src="/logo.png"
+                        src="/logo.jpeg"
                         alt="City Recreation Finder"
                         className="navbar__logo"
+                        width={385}
+                        height={210}
+                        fetchPriority="high"
                     />
                 </Link>
 
