@@ -82,8 +82,8 @@ export default function Navbar({ variant, city }: NavbarProps) {
                         src="/logo.jpeg"
                         alt="City Recreation Finder"
                         className="navbar__logo"
-                        width={385}
-                        height={210}
+                        width={264}
+                        height={144}
                         fetchPriority="high"
                     />
                 </Link>
