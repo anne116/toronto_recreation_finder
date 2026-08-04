@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
+import './styles/fonts.css'
 import './styles/index.css'
 
 const CitySelectorPage = lazy(() => import('./pages/CitySelectorPage.tsx'))
