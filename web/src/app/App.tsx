@@ -13,6 +13,7 @@ import '../App.css';
 import type { WeekdayName } from '../shared/lib/weekday';
 import RegisteredProgramsPanel from '../features/centres/ui/RegisteredProgramsPanel';
 import { trackEvent } from '../shared/lib/analytics';
+import { scheduleWhenIdle } from '../shared/lib/idle';
 import Spinner from '../shared/ui/Spinner';
 
 
@@ -237,20 +238,23 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      try {
-        const wardsData = await getWards();
-        if (mounted) {
-          setWards(wardsData);
+    const cancelIdle = scheduleWhenIdle(() => {
+      (async () => {
+        try {
+          const wardsData = await getWards();
+          if (mounted) {
+            setWards(wardsData);
+          }
+        } catch (error) {
+          if (mounted) {
+            console.error('Failed to load wards:', error);
+          }
         }
-      } catch (error) {
-        if (mounted) {
-          console.error('Failed to load wards:', error);
-        }
-      }
-    })();
+      })();
+    });
     return () => {
       mounted = false;
+      cancelIdle();
     };
   }, []);
 
