@@ -237,6 +237,18 @@ export default function App() {
     : null;
   const selectedCentreName = pinScopedCentreName ?? activeFilters?.locationName ?? null;
 
+  const wasCentresLoadingRef = useRef(false);
+  useEffect(() => {
+    if (wasCentresLoadingRef.current && !centresLoading && hasSearched) {
+      const resultsCount = centres?.features?.length ?? 0;
+      trackEvent('search_results_returned', {
+        results_count: resultsCount,
+        has_results: resultsCount > 0,
+      });
+    }
+    wasCentresLoadingRef.current = centresLoading;
+  }, [centresLoading, hasSearched, centres]);
+
   useEffect(() => {
     let mounted = true;
     const cancelIdle = scheduleWhenIdle(() => {
