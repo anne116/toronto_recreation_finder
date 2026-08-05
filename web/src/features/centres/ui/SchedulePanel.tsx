@@ -216,7 +216,9 @@ export default function SchedulePanel({
   
       <div style={{
         flex: 1,
+        minHeight: 0,
         padding: '16px',
+        overflowY: 'auto',
       }}>
         {!hasSearchCriteria && (
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
