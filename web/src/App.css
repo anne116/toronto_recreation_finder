@@ -976,8 +976,8 @@
 
 .resizable-panel {
   flex-shrink: 0;
-  height: 100vh;
-  height: 100dvh;
+  height: calc(100vh - var(--navbar-compact-height));
+  height: calc(100dvh - var(--navbar-compact-height));
   display: flex;
   flex-direction: column;
   border-left: 1px solid #e2e8f0;
@@ -1138,7 +1138,7 @@
 
   .map-panel {
     flex: 1;
-    height: 100vh;
-    height: 100dvh;
+    height: calc(100vh - var(--navbar-compact-height));
+    height: calc(100dvh - var(--navbar-compact-height));
   }
 }

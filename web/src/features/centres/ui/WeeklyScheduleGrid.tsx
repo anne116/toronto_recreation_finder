@@ -287,7 +287,6 @@ export default function WeeklyScheduleGrid({
           style={{
             border: '1px solid #e2e8f0',
             borderRadius: 6,
-            overflow: 'hidden',
             marginTop: 4,
           }}
         >
@@ -302,6 +301,8 @@ export default function WeeklyScheduleGrid({
               highlightedLocationIdStr !== null &&
               locationId != null &&
               String(locationId) === highlightedLocationIdStr;
+            const isFirstRow = idx === 0;
+            const isLastRow = idx === dayPrograms.length - 1;
 
             return (
               <div
@@ -314,6 +315,13 @@ export default function WeeklyScheduleGrid({
                 style={{
                   position: 'relative',
                   padding: '2px 8px 2px 12px',
+                  borderRadius: isFirstRow && isLastRow
+                    ? 5
+                    : isFirstRow
+                    ? '5px 5px 0 0'
+                    : isLastRow
+                    ? '0 0 5px 5px'
+                    : 0,
                   borderBottom:
                     idx < dayPrograms.length - 1
                       ? '1px solid #f1f5f9'

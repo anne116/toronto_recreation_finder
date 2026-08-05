@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import { getWards } from '../features/centres/api/centres.api';
 import { useCentres } from '../features/centres/hooks/useCentres';
+import { generateWebApplicationSchema } from '../shared/lib/schema';
 import type { WardFeatureCollection, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter } from '../shared/types';
 import FiltersPanel from '../features/filters/ui/FiltersPanel';
 import MapView from '../features/map/ui/MapView';
@@ -236,6 +237,18 @@ export default function App() {
     : null;
   const selectedCentreName = pinScopedCentreName ?? activeFilters?.locationName ?? null;
 
+  const wasCentresLoadingRef = useRef(false);
+  useEffect(() => {
+    if (wasCentresLoadingRef.current && !centresLoading && hasSearched) {
+      const resultsCount = centres?.features?.length ?? 0;
+      trackEvent('search_results_returned', {
+        results_count: resultsCount,
+        has_results: resultsCount > 0,
+      });
+    }
+    wasCentresLoadingRef.current = centresLoading;
+  }, [centresLoading, hasSearched, centres]);
+
   useEffect(() => {
     let mounted = true;
     const cancelIdle = scheduleWhenIdle(() => {
@@ -411,6 +424,11 @@ export default function App() {
   }
  
   const pageMetadata = buildPageMetadata(programType, activeFilters);
+  const webAppSchema = generateWebApplicationSchema({
+    name: pageMetadata.title,
+    url: pageMetadata.canonicalUrl,
+    description: pageMetadata.description,
+  });
 
   return (
     <>
@@ -423,6 +441,9 @@ export default function App() {
         <meta property="og:description" content={pageMetadata.description} />
         <meta property="og:url" content={pageMetadata.canonicalUrl} />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify(webAppSchema)}
+        </script>
       </Helmet>
 
       <div className={`app-shell${isFiltersOpen ? '' : ' navbar-collapsed'}`}>

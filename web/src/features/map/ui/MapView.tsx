@@ -180,6 +180,20 @@ export default function MapView({
   if (!source) {
     map.addSource('centres', { type: 'geojson', data });
 
+    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const hitAreaRadius = isCoarsePointer ? 24 : 12;
+
+    map.addLayer({
+      id: 'centres-circle-hitarea',
+      type: 'circle',
+      source: 'centres',
+      paint: {
+        'circle-radius': hitAreaRadius,
+        'circle-opacity': 0,
+        'circle-stroke-opacity': 0,
+      },
+    });
+
     map.addLayer({
       id: 'centres-circle',
       type: 'circle',
@@ -193,14 +207,14 @@ export default function MapView({
       },
     });
 
-    map.on('click', 'centres-circle', (e) => {
+    map.on('click', 'centres-circle-hitarea', (e) => {
       const feature = e.features?.[0];
       const id = feature?.properties?.id;
       if (id != null) onCentreClickRef.current(id);
     });
 
     map.on('click', (e) => {
-      const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle'] });
+      const hitPin = map.queryRenderedFeatures(e.point, { layers: ['centres-circle-hitarea'] });
       if (hitPin.length > 0) return;
       onCentreCloseRef.current?.();
       if (locationPickingEnabledRef.current) {
@@ -208,11 +222,11 @@ export default function MapView({
       }
     });
 
-    map.on('mouseenter', 'centres-circle', () => {
+    map.on('mouseenter', 'centres-circle-hitarea', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
 
-    map.on('mouseleave', 'centres-circle', () => {
+    map.on('mouseleave', 'centres-circle-hitarea', () => {
       map.getCanvas().style.cursor = locationPickingEnabledRef.current ? 'crosshair' : '';
     });
   } else {
@@ -224,6 +238,13 @@ export default function MapView({
   if (map.getLayer('centres-circle')) {
     map.setLayoutProperty(
       'centres-circle',
+      'visibility',
+      hasData ? 'visible' : 'none'
+    );
+  }
+  if (map.getLayer('centres-circle-hitarea')) {
+    map.setLayoutProperty(
+      'centres-circle-hitarea',
       'visibility',
       hasData ? 'visible' : 'none'
     );
