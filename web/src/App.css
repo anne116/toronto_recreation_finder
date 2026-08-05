@@ -999,6 +999,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  padding-bottom: 24px;
 }
 
 .resizable-panel__handle {
@@ -1045,6 +1046,7 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
+    padding-bottom: 24px;
   }
 
   .schedule-mobile-handle {
