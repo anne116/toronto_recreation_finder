@@ -3,6 +3,7 @@ import WeeklyScheduleGrid from "./WeeklyScheduleGrid";
 import { searchProgramsAggregated } from "../api/centres.api";
 import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
 import { haversineDistanceKm } from "../../../shared/lib/geo";
+import { FREE_CENTRE_LOCATION_IDS, isFreeCentreLocation } from "../../../shared/data/freeCentres";
 import type { AgeFilter, CentresFeatureCollection, DropInProgram } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import Spinner from "../../../shared/ui/Spinner";
@@ -32,6 +33,7 @@ type Props = {
   centres?: CentresFeatureCollection | null;
   userLocation?: { lat: number; lon: number } | null;
   maxDistanceKm?: number;
+  freeCentresOnly?: boolean;
 };
 
 
@@ -61,6 +63,7 @@ export default function SchedulePanel({
   centres,
   userLocation,
   maxDistanceKm,
+  freeCentresOnly = false,
 }: Props) {
   const [programs, setPrograms] = useState<DropInProgram[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,17 +75,25 @@ export default function SchedulePanel({
 
   const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
 
-  const withinRadiusLocationIds = useMemo(() => {
-    if (!userLocation || !maxDistanceKm) return null;
-    if (!centres) return undefined;
-    const ids: (string | number)[] = [];
+  const scopedLocationIds = useMemo(() => {
+    const distanceActive = Boolean(userLocation && maxDistanceKm);
+    if (!distanceActive && !freeCentresOnly) return null;
+    if (distanceActive && !centres) return undefined;
+
+    if (!distanceActive) {
+      // Free Centres Only, no distance filter - use the static list directly,
+      // no need to wait on `centres` to be loaded.
+      return Array.from(FREE_CENTRE_LOCATION_IDS);
+    }
+
+    const withinRadius: (string | number)[] = [];
     coordinatesById.forEach((coord, id) => {
-      if (isWithinDistance(haversineDistanceKm(userLocation, coord), maxDistanceKm)) {
-        ids.push(id);
+      if (isWithinDistance(haversineDistanceKm(userLocation!, coord), maxDistanceKm!)) {
+        withinRadius.push(id);
       }
     });
-    return ids;
-  }, [userLocation, maxDistanceKm, centres, coordinatesById]);
+    return freeCentresOnly ? withinRadius.filter((id) => isFreeCentreLocation(id)) : withinRadius;
+  }, [userLocation, maxDistanceKm, centres, coordinatesById, freeCentresOnly]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
@@ -91,8 +102,8 @@ export default function SchedulePanel({
       setLoading(false);
       return;
     }
-    if (withinRadiusLocationIds === undefined) return;
-    if (withinRadiusLocationIds !== null && withinRadiusLocationIds.length === 0) {
+    if (scopedLocationIds === undefined) return;
+    if (scopedLocationIds !== null && scopedLocationIds.length === 0) {
       setPrograms([]);
       setError(null);
       setLoading(false);
@@ -115,7 +126,7 @@ export default function SchedulePanel({
           district,
           time_of_day,
           location_id: locationId,
-          location_ids: locationId == null ? withinRadiusLocationIds ?? undefined : undefined,
+          location_ids: locationId == null ? scopedLocationIds ?? undefined : undefined,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -139,7 +150,7 @@ export default function SchedulePanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, locationId, withinRadiusLocationIds]);
+  }, [category, activity, activities, age, district, time_of_day, weekday, isVisible, hasSearchCriteria, locationId, scopedLocationIds]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
@@ -242,9 +253,13 @@ export default function SchedulePanel({
           <div className="text-sm text-gray-500" style={{ padding: '40px 20px', textAlign: 'center' }}>
             {selectedCentreName
               ? `No matching sessions from ${selectedCentreName} for your search criteria`
-              : userLocation && maxDistanceKm
-                ? 'No sessions found for your search criteria. Try widening your search radius.'
-                : 'No sessions found for your search criteria'}
+              : freeCentresOnly
+                ? userLocation && maxDistanceKm
+                  ? 'No sessions found at Free Centres within your search radius. Try widening your radius or turning off "Free Centres Only".'
+                  : 'No sessions found at Free Centres for your search criteria. Try turning off "Free Centres Only" to see more results.'
+                : userLocation && maxDistanceKm
+                  ? 'No sessions found for your search criteria. Try widening your search radius.'
+                  : 'No sessions found for your search criteria'}
           </div>
         )}
 

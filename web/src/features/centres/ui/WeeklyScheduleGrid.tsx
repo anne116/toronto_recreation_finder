@@ -1,6 +1,7 @@
 import type { DropInProgram } from '../../../shared/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MdChevronRight } from 'react-icons/md';
+import { isFreeCentreLocation } from '../../../shared/data/freeCentres';
 
 type ScheduleProgram = DropInProgram & {
   occurrence_count?: number;
@@ -369,6 +370,11 @@ export default function WeeklyScheduleGrid({
                   {program.distanceKm != null && (
                     <span className="distance-pill">
                       📏 {program.distanceKm.toFixed(1)} km away
+                    </span>
+                  )}
+                  {isFreeCentreLocation(locationId) && (
+                    <span className="free-centre-badge">
+                      🆓 Free Centre
                     </span>
                   )}
                 </div>
