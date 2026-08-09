@@ -272,6 +272,7 @@ export default function SchedulePanel({
             highlightedLocationId={highlightedLocationId}
             focusToken={focusToken}
             selectedCentreName={selectedCentreName}
+            hideFreeCentreBadge={freeCentresOnly}
           />
         )}
       </div>

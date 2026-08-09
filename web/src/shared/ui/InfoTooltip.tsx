@@ -46,6 +46,7 @@ export default function InfoTooltip({ text, label = 'More info', learnMoreUrl, l
       </button>
       <div className="info-tooltip-bubble" role="tooltip">
         {text}
+        {learnMoreUrl && ' '}
         {learnMoreUrl && (
           <a
             href={learnMoreUrl}

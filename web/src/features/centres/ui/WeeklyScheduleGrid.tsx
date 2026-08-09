@@ -20,6 +20,7 @@ type Props = {
   highlightedLocationId?: string | number | null;
   focusToken?: number;
   selectedCentreName?: string | null;
+  hideFreeCentreBadge?: boolean;
 };
 
 const MATCH_ROW_HIGHLIGHT = '#D8F3EE';
@@ -133,6 +134,7 @@ export default function WeeklyScheduleGrid({
   highlightedLocationId,
   focusToken = 0,
   selectedCentreName,
+  hideFreeCentreBadge = false,
 }: Props) {
   const grouped = groupByDay(programs);
   const dayConfigs = [
@@ -372,7 +374,7 @@ export default function WeeklyScheduleGrid({
                       📏 {program.distanceKm.toFixed(1)} km away
                     </span>
                   )}
-                  {isFreeCentreLocation(locationId) && (
+                  {!hideFreeCentreBadge && isFreeCentreLocation(locationId) && (
                     <span className="free-centre-badge">
                       🆓 Free Centre
                     </span>

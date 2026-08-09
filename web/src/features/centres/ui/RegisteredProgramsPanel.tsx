@@ -401,7 +401,7 @@ export default function RegisteredProgramsPanel({
                           📏 {program.distanceKm.toFixed(1)} km away
                         </span>
                       )}
-                      {isFreeCentreLocation(program.location_id) && (
+                      {!freeCentresOnly && isFreeCentreLocation(program.location_id) && (
                         <span className="free-centre-badge">
                           🆓 Free Centre
                         </span>
