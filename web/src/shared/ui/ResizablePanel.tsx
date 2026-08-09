@@ -4,6 +4,7 @@ type ResizablePanelProps = {
     pills?: string[];
     centrePill?: { label: string; onRemove: () => void };
     distancePill?: { label: string; onRemove: () => void };
+    freeCentresPill?: { label: string; onRemove: () => void };
     initialWidth?: number;
     minWidth?: number;
     maxWidth?: number;
@@ -14,6 +15,7 @@ export default function ResizablePanel({
     pills = [],
     centrePill,
     distancePill,
+    freeCentresPill,
     initialWidth = 400,
     minWidth = 280,
     maxWidth = 640,
@@ -68,7 +70,7 @@ export default function ResizablePanel({
             className="resizable-panel"
             style={{ width }}
         >
-            {(pills.length > 0 || centrePill || distancePill) && (
+            {(pills.length > 0 || centrePill || distancePill || freeCentresPill) && (
                 <div className="resizable-panel__header">
                     <div className="filter-pill-row">
                         {pills.map((pill) => (
@@ -97,6 +99,19 @@ export default function ResizablePanel({
                                     className="filter-pill-remove"
                                     aria-label={`Remove distance filter: ${distancePill.label}`}
                                     onClick={distancePill.onRemove}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        )}
+                        {freeCentresPill && (
+                            <span className="filter-pill filter-pill--free">
+                                🆓 {freeCentresPill.label}
+                                <button
+                                    type="button"
+                                    className="filter-pill-remove"
+                                    aria-label={`Remove free centres filter: ${freeCentresPill.label}`}
+                                    onClick={freeCentresPill.onRemove}
                                 >
                                     ✕
                                 </button>
