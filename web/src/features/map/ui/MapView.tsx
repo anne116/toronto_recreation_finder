@@ -6,11 +6,15 @@ import type { CentresFeatureCollection, WardFeatureCollection } from '../../../s
 import { useCentreDetails } from '../../centres/hooks/useCentreDetails';
 import { trackEvent } from '../../../shared/lib/analytics';
 import { buildCircleRing, haversineDistanceKm } from '../../../shared/lib/geo';
+import { FREE_CENTRE_LOCATION_IDS, isFreeCentreLocation } from '../../../shared/data/freeCentres';
 import '../../../shared/ui/Spinner.css';
 import '../../../shared/ui/RunnerMarker.css';
 
 const PIN_COLOR = '#2A9D8F';
 const SELECTED_PIN_COLOR = '#1F7A6E';
+const FREE_CENTRE_PIN_COLOR = '#F59E0B';
+const FREE_CENTRE_ID_STRINGS = Array.from(FREE_CENTRE_LOCATION_IDS, String);
+const IS_FREE_CENTRE_EXPR = ['in', ['to-string', ['get', 'id']], ['literal', FREE_CENTRE_ID_STRINGS]];
 
 function createRunnerElement(): HTMLDivElement {
   const el = document.createElement('div');
@@ -54,6 +58,7 @@ type Props = {
   selectedLocationId?: string | number | null;
   maxDistanceKm?: number;
   activeMaxDistanceKm?: number;
+  activeFreeCentresOnly?: boolean;
   locationPickingEnabled?: boolean;
   previewLocation?: { lat: number; lon: number } | null;
   onMapLocationPreview?: (coords: { lat: number; lon: number }) => void;
@@ -72,6 +77,7 @@ export default function MapView({
   selectedLocationId,
   maxDistanceKm,
   activeMaxDistanceKm,
+  activeFreeCentresOnly = false,
   locationPickingEnabled = false,
   previewLocation,
   onMapLocationPreview,
@@ -93,13 +99,20 @@ export default function MapView({
   const [mapReady, setMapReady] = useState(false);
 
   const displayedCentres = useMemo(() => {
-    if (!userLocation || !activeMaxDistanceKm || !centres) return centres;
+    const distanceActive = Boolean(userLocation && activeMaxDistanceKm);
+    if (!distanceActive && !activeFreeCentresOnly) return centres;
+    if (!centres) return centres;
+
     const filteredFeatures = centres.features.filter((f) => {
-      const [lon, lat] = f.geometry.coordinates;
-      return haversineDistanceKm(userLocation, { lat, lon }) <= activeMaxDistanceKm;
+      if (activeFreeCentresOnly && !isFreeCentreLocation(f.properties.id)) return false;
+      if (distanceActive) {
+        const [lon, lat] = f.geometry.coordinates;
+        if (haversineDistanceKm(userLocation!, { lat, lon }) > activeMaxDistanceKm!) return false;
+      }
+      return true;
     });
     return { ...centres, features: filteredFeatures };
-  }, [centres, userLocation, activeMaxDistanceKm]);
+  }, [centres, userLocation, activeMaxDistanceKm, activeFreeCentresOnly]);
 
   useEffect(() => {
     onCentreClickRef.current = onCentreClick;
@@ -200,7 +213,7 @@ export default function MapView({
       source: 'centres',
       paint: {
         'circle-radius': 7,
-        'circle-color': PIN_COLOR,
+        'circle-color': ['case', IS_FREE_CENTRE_EXPR, FREE_CENTRE_PIN_COLOR, PIN_COLOR],
         'circle-opacity': 0.9,
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
@@ -266,7 +279,12 @@ export default function MapView({
     if (!map.getLayer('centres-circle')) return;
 
     if (!selectedLocationId) {
-      map.setPaintProperty('centres-circle', 'circle-color', PIN_COLOR);
+      map.setPaintProperty('centres-circle', 'circle-color', [
+        'case',
+        IS_FREE_CENTRE_EXPR,
+        FREE_CENTRE_PIN_COLOR,
+        PIN_COLOR,
+      ]);
       map.setPaintProperty('centres-circle', 'circle-radius', 7);
       map.setPaintProperty('centres-circle', 'circle-stroke-width', 2);
       if (selectedPopupRef.current) {
@@ -286,6 +304,8 @@ export default function MapView({
       'case',
       isSelected,
       SELECTED_PIN_COLOR,
+      IS_FREE_CENTRE_EXPR,
+      FREE_CENTRE_PIN_COLOR,
       PIN_COLOR,
     ]);
     map.setPaintProperty('centres-circle', 'circle-radius', [
