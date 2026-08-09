@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { searchRegisteredPrograms } from "../api/centres.api";
 import { attachDistanceKm, buildLocationCoordinatesMap, isWithinDistance } from "../lib/distance";
 import { haversineDistanceKm } from "../../../shared/lib/geo";
+import { FREE_CENTRE_LOCATION_IDS, isFreeCentreLocation } from "../../../shared/data/freeCentres";
 import type { CentresFeatureCollection, RegisteredAgeFilter, RegisteredProgramGroup } from "../../../shared/types";
 import type { WeekdayName } from "../../../shared/lib/weekday";
 import { trackEvent } from "../../../shared/lib/analytics";
@@ -31,6 +32,7 @@ type Props = {
   centres?: CentresFeatureCollection | null;
   userLocation?: { lat: number; lon: number } | null;
   maxDistanceKm?: number;
+  freeCentresOnly?: boolean;
 };
 
 const MATCH_CARD_HIGHLIGHT = "#D8F3EE";
@@ -88,6 +90,7 @@ export default function RegisteredProgramsPanel({
   centres,
   userLocation,
   maxDistanceKm,
+  freeCentresOnly = false,
 }: Props) {
   const [programs, setPrograms] = useState<RegisteredProgramGroup[]>([]);
   const [sessionsModalProgramId, setSessionsModalProgramId] = useState<string | null>(null);
@@ -140,17 +143,25 @@ export default function RegisteredProgramsPanel({
 
   const coordinatesById = useMemo(() => buildLocationCoordinatesMap(centres), [centres]);
 
-  const withinRadiusLocationIds = useMemo(() => {
-    if (!userLocation || !maxDistanceKm) return null;
-    if (!centres) return undefined;
-    const ids: (string | number)[] = [];
+  const scopedLocationIds = useMemo(() => {
+    const distanceActive = Boolean(userLocation && maxDistanceKm);
+    if (!distanceActive && !freeCentresOnly) return null;
+    if (distanceActive && !centres) return undefined;
+
+    if (!distanceActive) {
+      // Free Centres Only, no distance filter - use the static list directly,
+      // no need to wait on `centres` to be loaded.
+      return Array.from(FREE_CENTRE_LOCATION_IDS);
+    }
+
+    const withinRadius: (string | number)[] = [];
     coordinatesById.forEach((coord, id) => {
-      if (isWithinDistance(haversineDistanceKm(userLocation, coord), maxDistanceKm)) {
-        ids.push(id);
+      if (isWithinDistance(haversineDistanceKm(userLocation!, coord), maxDistanceKm!)) {
+        withinRadius.push(id);
       }
     });
-    return ids;
-  }, [userLocation, maxDistanceKm, centres, coordinatesById]);
+    return freeCentresOnly ? withinRadius.filter((id) => isFreeCentreLocation(id)) : withinRadius;
+  }, [userLocation, maxDistanceKm, centres, coordinatesById, freeCentresOnly]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria) {
@@ -160,8 +171,8 @@ export default function RegisteredProgramsPanel({
       setLoading(false);
       return;
     }
-    if (withinRadiusLocationIds === undefined) return;
-    if (withinRadiusLocationIds !== null && withinRadiusLocationIds.length === 0) {
+    if (scopedLocationIds === undefined) return;
+    if (scopedLocationIds !== null && scopedLocationIds.length === 0) {
       setPrograms([]);
       setSessionsModalProgramId(null);
       setError(null);
@@ -184,7 +195,7 @@ export default function RegisteredProgramsPanel({
           start_month: startMonth,
           district,
           location_id: locationId,
-          location_ids: locationId == null ? withinRadiusLocationIds ?? undefined : undefined,
+          location_ids: locationId == null ? scopedLocationIds ?? undefined : undefined,
           limit: 2000,
           signal: abortController.signal,
         });
@@ -207,7 +218,7 @@ export default function RegisteredProgramsPanel({
     })();
 
     return () => abortController.abort();
-  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId, withinRadiusLocationIds]);
+  }, [category, activity, activities, age, startMonth, district, isVisible, hasSearchCriteria, locationId, scopedLocationIds]);
 
   useEffect(() => {
     if (!isVisible || !hasSearchCriteria || scopedCentreId == null) {
@@ -327,9 +338,13 @@ export default function RegisteredProgramsPanel({
           <div className="text-sm text-gray-500" style={{ padding: "40px 20px", textAlign: "center" }}>
             {selectedCentreName
               ? `No matching programs from ${selectedCentreName} for your search criteria`
-              : userLocation && maxDistanceKm
-                ? "No registered programs found for your search criteria. Try widening your search radius."
-                : "No registered programs found for your search criteria"}
+              : freeCentresOnly
+                ? userLocation && maxDistanceKm
+                  ? 'No registered programs found at Free Centres within your search radius. Try widening your radius or turning off "Free Centres Only".'
+                  : 'No registered programs found at Free Centres for your search criteria. Try turning off "Free Centres Only" to see more results.'
+                : userLocation && maxDistanceKm
+                  ? "No registered programs found for your search criteria. Try widening your search radius."
+                  : "No registered programs found for your search criteria"}
           </div>
         )}
 
@@ -384,6 +399,11 @@ export default function RegisteredProgramsPanel({
                       {program.distanceKm != null && (
                         <span className="distance-pill">
                           📏 {program.distanceKm.toFixed(1)} km away
+                        </span>
+                      )}
+                      {!freeCentresOnly && isFreeCentreLocation(program.location_id) && (
+                        <span className="free-centre-badge">
+                          🆓 Free Centre
                         </span>
                       )}
                     </div>

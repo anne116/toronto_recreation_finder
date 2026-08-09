@@ -127,6 +127,34 @@
   color: var(--color-primary);
 }
 
+.filter-pill--free {
+  gap: 4px;
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.resizable-panel__header .filter-pill--free {
+  background: rgba(255, 255, 255, 0.85);
+  color: #92400e;
+}
+
+.resizable-panel__header .filter-pill--free .filter-pill-remove {
+  background: #fef3c7;
+}
+
+.free-centre-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .registered-program-pill {
   display: inline-flex;
   align-items: center;
