@@ -4,9 +4,10 @@ import Spinner from '../../../shared/ui/Spinner';
 import type { ActivityOption, CategoryOption, DropInAgeFilter, ProgramAgeFilter, ProgramType, RegisteredAgeFilter, StartMonthOption } from '../../../shared/types/index.ts';
 import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
+import { isFreeCentreLocation } from '../../../shared/data/freeCentres';
 import CentreSearchField from './CentreSearchField';
 
-type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number };
+type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number; freeCentresOnly?: boolean };
 
 type Props = {
   programType: ProgramType;
@@ -48,10 +49,19 @@ export default function FiltersPanel({
   const [startMonths, setStartMonths] = useState<StartMonthOption[]>([]);
   const [lastDistanceValue, setLastDistanceValue] = useState(value.maxDistanceKm ?? 5);
   const [centreOutsideRadiusWarning, setCentreOutsideRadiusWarning] = useState<string | null>(null);
+  const [freeCentreMismatchWarning, setFreeCentreMismatchWarning] = useState<string | null>(null);
 
   useEffect(() => {
     setCentreOutsideRadiusWarning(null);
   }, [value.maxDistanceKm, userLocation]);
+
+  useEffect(() => {
+    if (value.freeCentresOnly && value.locationId != null && !isFreeCentreLocation(value.locationId)) {
+      setFreeCentreMismatchWarning(`🆓 ${value.locationName ?? 'This centre'} is not a Free Centre — showing results for it anyway.`);
+    } else {
+      setFreeCentreMismatchWarning(null);
+    }
+  }, [value.freeCentresOnly, value.locationId, value.locationName]);
 
   useEffect(() => {
     (async () => {
@@ -142,6 +152,19 @@ export default function FiltersPanel({
             className="filter-pill-remove"
             aria-label="Dismiss"
             onClick={() => setCentreOutsideRadiusWarning(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {freeCentreMismatchWarning && (
+        <div className="locate-me-error locate-me-error--dismissible">
+          <span>{freeCentreMismatchWarning}</span>
+          <button
+            type="button"
+            className="filter-pill-remove"
+            aria-label="Dismiss"
+            onClick={() => setFreeCentreMismatchWarning(null)}
           >
             ✕
           </button>
@@ -242,6 +265,30 @@ export default function FiltersPanel({
             )}
           </>
         )}
+      </div>
+
+      <div className="filter-group">
+        <div className="distance-toggle-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label htmlFor="free-centres-toggle">Free Centres Only</label>
+            <span
+              aria-hidden="true"
+              title="At designated Free Centres, Toronto residents can join City-run drop-in and registered programs at no cost. Registration may still be required, and some services (third-party programs, rentals, specialized facilities) may still have fees."
+              style={{ cursor: 'help', color: '#94a3b8', fontSize: '13px' }}
+            >
+              ⓘ
+            </span>
+          </div>
+          <label className="distance-toggle-switch">
+            <input
+              id="free-centres-toggle"
+              type="checkbox"
+              checked={Boolean(value.freeCentresOnly)}
+              onChange={(e) => update({ freeCentresOnly: e.target.checked || undefined })}
+            />
+            <span className="distance-toggle-slider" aria-hidden="true" />
+          </label>
+        </div>
       </div>
 
       {programType === 'dropin' ? (

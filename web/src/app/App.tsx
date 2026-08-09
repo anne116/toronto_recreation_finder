@@ -28,6 +28,7 @@ import Spinner from '../shared/ui/Spinner';
     locationId?: string | number;
     locationName?: string;
     maxDistanceKm?: number;
+    freeCentresOnly?: boolean;
   };
 
 function buildFilterPills(filters: Filters | null): string[] {
@@ -52,7 +53,8 @@ function hasAnySelectedFilter(filters: Filters, hasLocation: boolean = false): b
     filters.startMonth ||
     hasLocation ||
     filters.age ||
-    filters.locationId
+    filters.locationId ||
+    filters.freeCentresOnly
   );
 }
 
@@ -102,6 +104,7 @@ export default function App() {
     weekday: (searchParams.get('weekday') as WeekdayName) || null,
     startMonth: searchParams.get('startMonth') || undefined,
     age: (searchParams.get('age') as ProgramAgeFilter) || undefined,
+    freeCentresOnly: searchParams.get('freeCentresOnly') === '1',
   });
 
   const [wards, setWards] = useState<WardFeatureCollection | null>(null);
@@ -173,6 +176,11 @@ export default function App() {
     setActiveFilters((prev) => (prev ? { ...prev, maxDistanceKm: undefined } : prev));
   }
 
+  function handleDisableFreeCentresOnly() {
+    setFilters((prev) => ({ ...prev, freeCentresOnly: false }));
+    setActiveFilters((prev) => (prev ? { ...prev, freeCentresOnly: false } : prev));
+  }
+
   function handleMapLocationPreview(coords: { lat: number; lon: number }) {
     setPreviewLocation(coords);
   }
@@ -212,12 +220,13 @@ export default function App() {
     e.currentTarget.releasePointerCapture(e.pointerId);
   }
   const hasScheduleFilters = Boolean(
-    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId || (userLocation && activeFilters?.maxDistanceKm)
+    activeFilters?.category || activeFilters?.activity || activeFilters?.activities?.length || activeFilters?.weekday || activeFilters?.startMonth || activeFilters?.age || activeFilters?.locationId || (userLocation && activeFilters?.maxDistanceKm) || activeFilters?.freeCentresOnly
   );
   const filterPills = buildFilterPills(activeFilters);
   const distancePillLabel = userLocation && activeFilters?.maxDistanceKm
     ? `< ${activeFilters.maxDistanceKm} km`
     : null;
+  const freeCentresPillLabel = activeFilters?.freeCentresOnly ? 'Free Centres Only' : null;
   const { data: centres, loading: centresLoading } = useCentres({
     programType,
     category: activeFilters?.category ?? '',
@@ -228,6 +237,7 @@ export default function App() {
     age: activeFilters?.age,
     locationId: activeFilters?.locationId,
     hasDistanceFilter: Boolean(userLocation && activeFilters?.maxDistanceKm),
+    hasFreeCentresFilter: Boolean(activeFilters?.freeCentresOnly),
   },
   { enabled: !!activeFilters }
 );
@@ -303,6 +313,7 @@ export default function App() {
       start_month: filters.startMonth || undefined,
       age: filters.age || undefined,
       max_distance_km: userLocation ? filters.maxDistanceKm : undefined,
+      free_centres_only: filters.freeCentresOnly || undefined,
     })
 
     const params = new URLSearchParams();
@@ -316,6 +327,7 @@ export default function App() {
     if (filters.weekday) params.set('weekday', filters.weekday);
     if (filters.startMonth) params.set('startMonth', filters.startMonth);
     if (filters.age) params.set('age', filters.age);
+    if (filters.freeCentresOnly) params.set('freeCentresOnly', '1');
     setSearchParams(params);
 
     setHasSearched(true);
@@ -501,6 +513,7 @@ export default function App() {
                 pills={filterPills}
                 centrePill={pinScopedCentreName ? { label: pinScopedCentreName, onRemove: handleCentreClose } : undefined}
                 distancePill={distancePillLabel ? { label: distancePillLabel, onRemove: handleDisableDistanceSearch } : undefined}
+                freeCentresPill={freeCentresPillLabel ? { label: freeCentresPillLabel, onRemove: handleDisableFreeCentresOnly } : undefined}
                 initialWidth={400}
                 minWidth={300}
                 maxWidth={640}
@@ -523,6 +536,7 @@ export default function App() {
                     centres={centres}
                     userLocation={userLocation}
                     maxDistanceKm={activeFilters?.maxDistanceKm}
+                    freeCentresOnly={Boolean(activeFilters?.freeCentresOnly)}
                   />
                 ) : (
                   <RegisteredProgramsPanel
@@ -542,6 +556,7 @@ export default function App() {
                     centres={centres}
                     userLocation={userLocation}
                     maxDistanceKm={activeFilters?.maxDistanceKm}
+                    freeCentresOnly={Boolean(activeFilters?.freeCentresOnly)}
                   />
                   )
                 }
@@ -552,7 +567,7 @@ export default function App() {
               className="schedule-mobile"
               style={mobilePanelHeightPx != null ? { height: mobilePanelHeightPx, maxHeight: mobilePanelHeightPx } : undefined}
             >
-              {(filterPills.length > 0 || pinScopedCentreName || distancePillLabel) && (
+              {(filterPills.length > 0 || pinScopedCentreName || distancePillLabel || freeCentresPillLabel) && (
                 <div className="schedule-mobile-pills filter-pill-row">
                   {filterPills.map((pill) => (
                     <span key={pill} className="filter-pill">
@@ -585,6 +600,19 @@ export default function App() {
                       </button>
                     </span>
                   )}
+                  {freeCentresPillLabel && (
+                    <span className="filter-pill filter-pill--free">
+                      🆓 {freeCentresPillLabel}
+                      <button
+                        type="button"
+                        className="filter-pill-remove"
+                        aria-label={`Remove free centres filter: ${freeCentresPillLabel}`}
+                        onClick={handleDisableFreeCentresOnly}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
               <div className="schedule-mobile-body">
@@ -606,6 +634,7 @@ export default function App() {
                     centres={centres}
                     userLocation={userLocation}
                     maxDistanceKm={activeFilters?.maxDistanceKm}
+                    freeCentresOnly={Boolean(activeFilters?.freeCentresOnly)}
                   />
                 ) : (
                   <RegisteredProgramsPanel
@@ -625,6 +654,7 @@ export default function App() {
                     centres={centres}
                     userLocation={userLocation}
                     maxDistanceKm={activeFilters?.maxDistanceKm}
+                    freeCentresOnly={Boolean(activeFilters?.freeCentresOnly)}
                   />
                 )}
 
@@ -655,6 +685,7 @@ export default function App() {
             userLocation = {userLocation}
             maxDistanceKm = {filters.maxDistanceKm}
             activeMaxDistanceKm = {userLocation ? activeFilters?.maxDistanceKm : undefined}
+            activeFreeCentresOnly = {Boolean(activeFilters?.freeCentresOnly)}
             locationPickingEnabled = {locationPickingEnabled}
             previewLocation = {previewLocation}
             onMapLocationPreview = {handleMapLocationPreview}

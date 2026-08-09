@@ -14,6 +14,7 @@ type CentresFilters = {
   age?: ProgramAgeFilter;
   locationId?: string | number;
   hasDistanceFilter?: boolean;
+  hasFreeCentresFilter?: boolean;
 };
 
 type UseCentresOptions = {
@@ -35,7 +36,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     }
 
     const hasActivities = Boolean(filters.activities && filters.activities.length > 0);
-    if (!filters.category && !filters.activity && !hasActivities && !filters.district && !filters.weekday && !filters.age && !filters.startMonth && !filters.locationId && !filters.hasDistanceFilter) {
+    if (!filters.category && !filters.activity && !hasActivities && !filters.district && !filters.weekday && !filters.age && !filters.startMonth && !filters.locationId && !filters.hasDistanceFilter && !filters.hasFreeCentresFilter) {
       setData(null);
       return;
     }
@@ -86,7 +87,7 @@ export function useCentres(filters: CentresFilters, options: UseCentresOptions =
     })();
 
     return () => abortController.abort();
-  }, [enabled, filters.programType, filters.category, filters.activity, filters.activities, filters.district, filters.weekday, filters.startMonth, filters.age, filters.locationId, filters.hasDistanceFilter]);
+  }, [enabled, filters.programType, filters.category, filters.activity, filters.activities, filters.district, filters.weekday, filters.startMonth, filters.age, filters.locationId, filters.hasDistanceFilter, filters.hasFreeCentresFilter]);
 
   return { data, loading, error };
 }
