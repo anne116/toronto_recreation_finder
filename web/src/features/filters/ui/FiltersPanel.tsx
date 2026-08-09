@@ -6,6 +6,7 @@ import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 import { isFreeCentreLocation } from '../../../shared/data/freeCentres';
 import CentreSearchField from './CentreSearchField';
+import InfoTooltip from '../../../shared/ui/InfoTooltip';
 
 type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number; freeCentresOnly?: boolean };
 
@@ -271,13 +272,12 @@ export default function FiltersPanel({
         <div className="distance-toggle-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label htmlFor="free-centres-toggle">Free Centres Only</label>
-            <span
-              aria-hidden="true"
-              title="At designated Free Centres, Toronto residents can join City-run drop-in and registered programs at no cost. Registration may still be required, and some services (third-party programs, rentals, specialized facilities) may still have fees."
-              style={{ cursor: 'help', color: '#94a3b8', fontSize: '13px' }}
-            >
-              ⓘ
-            </span>
+            <InfoTooltip
+              label="About Free Centres"
+              text="Drop-in and registered programs are free for Toronto residents at these Free Centres. Registration may still be required. Club memberships and facility rentals are not included."
+              learnMoreUrl="https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/"
+              learnMoreLinkType="free_centres_info"
+            />
           </div>
           <label className="distance-toggle-switch">
             <input
