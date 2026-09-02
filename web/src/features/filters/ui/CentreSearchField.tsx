@@ -103,11 +103,23 @@ export default function CentreSearchField({
     );
   }
 
+  useEffect(() => {
+    if (locationId == null) {
+      onOutsideRadiusWarning?.(null);
+      return;
+    }
+    const selected = options.find((option) => String(option.id) === String(locationId));
+    if (!selected) {
+      onOutsideRadiusWarning?.(null);
+      return;
+    }
+    checkRadius(selected);
+  }, [locationId, userLocation, maxDistanceKm, options]);
+
   function selectCentre(option: CentreNameOption) {
     setDraftText(option.name);
     onChange({ locationId: option.id, locationName: option.name });
     setIsOpen(false);
-    checkRadius(option);
   }
 
   function handleInputChange(text: string) {
@@ -118,17 +130,14 @@ export default function CentreSearchField({
     const exact = options.find((option) => option.name.toLowerCase() === normalized);
     if (exact) {
       onChange({ locationId: exact.id, locationName: exact.name });
-      checkRadius(exact);
     } else if (locationId != null) {
       onChange({ locationId: undefined, locationName: undefined });
-      onOutsideRadiusWarning?.(null);
     }
   }
 
   function handleClear() {
     setDraftText('');
     onChange({ locationId: undefined, locationName: undefined });
-    onOutsideRadiusWarning?.(null);
     setIsOpen(false);
   }
 

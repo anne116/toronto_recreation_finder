@@ -53,10 +53,6 @@ export default function FiltersPanel({
   const [freeCentreMismatchWarning, setFreeCentreMismatchWarning] = useState<string | null>(null);
 
   useEffect(() => {
-    setCentreOutsideRadiusWarning(null);
-  }, [value.maxDistanceKm, userLocation]);
-
-  useEffect(() => {
     if (value.freeCentresOnly && value.locationId != null && !isFreeCentreLocation(value.locationId)) {
       setFreeCentreMismatchWarning(`🆓 ${value.locationName ?? 'This centre'} is not a Free Centre — showing results for it anyway.`);
     } else {
