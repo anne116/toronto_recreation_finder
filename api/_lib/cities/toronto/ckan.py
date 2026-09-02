@@ -11,6 +11,7 @@ from api._lib.cities.toronto.drop_in_taxonomy import ACTIVITY_TAXONOMY, RAW_TO_C
 from api._lib.cities.toronto.registered_taxonomy import (
     REGISTERED_CATEGORY_TO_TITLES,
     REGISTERED_TITLE_TO_CATEGORY,
+    RAW_TO_CANONICAL_REGISTERED_ACTIVITY,
     OTHER_REGISTERED_CATEGORY,
 )
 
@@ -404,7 +405,8 @@ def derive_registered_category(course_title: object) -> str:
     cleaned = clean_optional_string(course_title)
     if cleaned is None:
         return OTHER_REGISTERED_CATEGORY
-    return REGISTERED_TITLE_TO_CATEGORY.get(cleaned, OTHER_REGISTERED_CATEGORY)
+    canonical = RAW_TO_CANONICAL_REGISTERED_ACTIVITY.get(cleaned, cleaned)
+    return REGISTERED_TITLE_TO_CATEGORY.get(canonical, OTHER_REGISTERED_CATEGORY)
 
 
 def is_registered_current(end_date_value: str | None) -> bool:
