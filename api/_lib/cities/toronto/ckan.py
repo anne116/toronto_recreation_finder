@@ -401,11 +401,27 @@ def months_to_years(value: object) -> int | None:
     return months // 12
 
 
-def derive_registered_category(course_title: object) -> str:
-    cleaned = clean_optional_string(course_title)
+def canonicalize_registered_activity_title(value: object) -> str | None:
+    cleaned = clean_optional_string(value)
     if cleaned is None:
+        return None
+    return RAW_TO_CANONICAL_REGISTERED_ACTIVITY.get(cleaned, cleaned)
+
+
+def raw_titles_for_registered_activity(activity: str) -> set[str]:
+    matches = {
+        raw_title
+        for raw_title, canonical_title in RAW_TO_CANONICAL_REGISTERED_ACTIVITY.items()
+        if canonical_title == activity
+    }
+    matches.add(activity)
+    return matches
+
+
+def derive_registered_category(course_title: object) -> str:
+    canonical = canonicalize_registered_activity_title(course_title)
+    if canonical is None:
         return OTHER_REGISTERED_CATEGORY
-    canonical = RAW_TO_CANONICAL_REGISTERED_ACTIVITY.get(cleaned, cleaned)
     return REGISTERED_TITLE_TO_CATEGORY.get(canonical, OTHER_REGISTERED_CATEGORY)
 
 
@@ -422,9 +438,11 @@ def is_registered_current(end_date_value: str | None) -> bool:
 def registered_row_matches_activity(course_title: str | None, activity: str | list[str] | None) -> bool:
     if not activity:
         return True
-    if isinstance(activity, str):
-        return activity == course_title
-    return course_title in activity
+    activities = [activity] if isinstance(activity, str) else activity
+    allowed_raw_titles: set[str] = set()
+    for name in activities:
+        allowed_raw_titles |= raw_titles_for_registered_activity(name)
+    return course_title in allowed_raw_titles
 
 def load_location_cache() -> dict[int, dict]:
     global LOCATION_CACHE
@@ -675,12 +693,13 @@ def build_registered_filter_options_response() -> dict:
         if not location:
             continue
 
+        canonical_title = canonicalize_registered_activity_title(course_title) or course_title
         category = derive_registered_category(course_title)
-        categories.setdefault(category, set()).add(course_title)
+        categories.setdefault(category, set()).add(canonical_title)
 
         activity_entry = activity_counts.setdefault(
-            course_title,
-            {"activity": course_title, "count": 0, "locations": set()},
+            canonical_title,
+            {"activity": canonical_title, "count": 0, "locations": set()},
         )
         activity_entry["count"] = int(activity_entry["count"]) + 1
         cast_locations = activity_entry["locations"]
