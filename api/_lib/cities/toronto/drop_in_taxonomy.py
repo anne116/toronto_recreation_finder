@@ -329,7 +329,7 @@ ACTIVITY_TAXONOMY = {
     ]
 }
 
-RAW_TO_CANONICAL_ACTIVITY = {
+RAW_TO_CANONICAL_DROP_IN_ACTIVITY = {
     "Open Gym with Family": "Open Gym with Family",
     "Open Gym With Family": "Open Gym with Family",
     "Multi Arts with Family": "Multi Arts with Family",

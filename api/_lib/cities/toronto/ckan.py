@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime
 
-from api._lib.cities.toronto.drop_in_taxonomy import ACTIVITY_TAXONOMY, RAW_TO_CANONICAL_ACTIVITY
+from api._lib.cities.toronto.drop_in_taxonomy import ACTIVITY_TAXONOMY, RAW_TO_CANONICAL_DROP_IN_ACTIVITY
 from api._lib.cities.toronto.registered_taxonomy import (
     REGISTERED_CATEGORY_TO_TITLES,
     REGISTERED_TITLE_TO_CATEGORY,
@@ -97,16 +97,16 @@ def clean_optional_string(value: object) -> str | None:
         return None
     return str(value).strip()
 
-def canonicalize_activity_title(value: object) -> str | None:
+def canonicalize_drop_in_activity_title(value: object) -> str | None:
     cleaned = clean_optional_string(value)
     if cleaned is None:
         return None
-    return RAW_TO_CANONICAL_ACTIVITY.get(cleaned, cleaned)
+    return RAW_TO_CANONICAL_DROP_IN_ACTIVITY.get(cleaned, cleaned)
 
-def raw_titles_for_activity(activity: str) -> set[str]:
+def raw_titles_for_drop_in_activity(activity: str) -> set[str]:
     matches = {
         raw_title
-        for raw_title, canonical_title in RAW_TO_CANONICAL_ACTIVITY.items()
+        for raw_title, canonical_title in RAW_TO_CANONICAL_DROP_IN_ACTIVITY.items()
         if canonical_title == activity
     }
     matches.add(activity)
@@ -183,13 +183,13 @@ def normalize_category(value: object) -> str | None:
     return None
 
 
-def activity_matches_filters(
+def drop_in_activity_matches_filters(
     raw_title: str,
     *,
     category: str | None = None,
     activity: str | list[str] | None = None,
 ) -> bool:
-    canonical_title = canonicalize_activity_title(raw_title)
+    canonical_title = canonicalize_drop_in_activity_title(raw_title)
     if canonical_title is None:
         return False
 
@@ -197,7 +197,7 @@ def activity_matches_filters(
     if activities:
         allowed_raw_titles: set[str] = set()
         for name in activities:
-            allowed_raw_titles |= raw_titles_for_activity(name)
+            allowed_raw_titles |= raw_titles_for_drop_in_activity(name)
         if raw_title not in allowed_raw_titles:
             return False
 
@@ -599,7 +599,7 @@ def build_activity_options(*, program_type: str | None = None, limit: int = 50) 
         raw_title = row.get("Course Title")
         if is_missing(raw_title):
             continue
-        activity = canonicalize_activity_title(raw_title)
+        activity = canonicalize_drop_in_activity_title(raw_title)
         if activity is None:
             continue
 
@@ -1051,7 +1051,7 @@ def build_program_search_response(
             continue
         if not is_current(row.get("Last Date")):
             continue
-        if not activity_matches_filters(raw_title, category=category, activity=activity):
+        if not drop_in_activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
         row_day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
@@ -1088,7 +1088,7 @@ def build_program_search_response(
                 "id": row.get("_id"),
                 "location_id": row_location_id,
                 "course_title": raw_title,
-                "activity": canonicalize_activity_title(raw_title),
+                "activity": canonicalize_drop_in_activity_title(raw_title),
                 "day_of_week": row_day_of_week,
                 "start_time": format_time_hms(row.get("Start Hour"), row.get("Start Minute")),
                 "end_time": format_time_hms(row.get("End Hour"), row.get("End Min")),
@@ -1159,7 +1159,7 @@ def build_centres_geojson_response(
             continue
         if not is_current(row.get("Last Date")):
             continue
-        if not activity_matches_filters(raw_title, category=category, activity=activity):
+        if not drop_in_activity_matches_filters(raw_title, category=category, activity=activity):
             continue
 
         row_day_of_week = normalize_weekday_name(row.get("DayOftheWeek"))
