@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useCentreNameFilter, type CentreNameOption } from '../../centres/hooks/useCentreNameFilter';
 import type { ProgramType } from '../../../shared/types';
 import { haversineDistanceKm } from '../../../shared/lib/geo';
+import { levenshteinDistance } from '../../../shared/lib/textMatch';
 
 type Props = {
   programType: ProgramType;
@@ -12,27 +13,6 @@ type Props = {
   maxDistanceKm?: number;
   onOutsideRadiusWarning?: (message: string | null) => void;
 };
-
-function levenshteinDistance(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-
-  const row = new Array(n + 1);
-  for (let j = 0; j <= n; j++) row[j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    let prev = row[0];
-    row[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const temp = row[j];
-      row[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, row[j], row[j - 1]);
-      prev = temp;
-    }
-  }
-  return row[n];
-}
 
 export default function CentreSearchField({
   programType,
@@ -103,11 +83,23 @@ export default function CentreSearchField({
     );
   }
 
+  useEffect(() => {
+    if (locationId == null) {
+      onOutsideRadiusWarning?.(null);
+      return;
+    }
+    const selected = options.find((option) => String(option.id) === String(locationId));
+    if (!selected) {
+      onOutsideRadiusWarning?.(null);
+      return;
+    }
+    checkRadius(selected);
+  }, [locationId, userLocation, maxDistanceKm, options]);
+
   function selectCentre(option: CentreNameOption) {
     setDraftText(option.name);
     onChange({ locationId: option.id, locationName: option.name });
     setIsOpen(false);
-    checkRadius(option);
   }
 
   function handleInputChange(text: string) {
@@ -118,17 +110,14 @@ export default function CentreSearchField({
     const exact = options.find((option) => option.name.toLowerCase() === normalized);
     if (exact) {
       onChange({ locationId: exact.id, locationName: exact.name });
-      checkRadius(exact);
     } else if (locationId != null) {
       onChange({ locationId: undefined, locationName: undefined });
-      onOutsideRadiusWarning?.(null);
     }
   }
 
   function handleClear() {
     setDraftText('');
     onChange({ locationId: undefined, locationName: undefined });
-    onOutsideRadiusWarning?.(null);
     setIsOpen(false);
   }
 
@@ -149,7 +138,7 @@ export default function CentreSearchField({
   return (
     <div className="filter-group" ref={containerRef} style={{ position: 'relative' }}>
       <label>Recreation Centre</label>
-      <div className="centre-search-input-wrap">
+      <div className="search-combobox-input-wrap">
         <input
           type="text"
           value={draftText}
@@ -164,7 +153,7 @@ export default function CentreSearchField({
         {draftText && (
           <button
             type="button"
-            className="centre-search-clear"
+            className="search-combobox-clear"
             aria-label="Clear centre search"
             onClick={handleClear}
           >
@@ -174,16 +163,16 @@ export default function CentreSearchField({
       </div>
 
       {showDropdown && (
-        <div className="centre-search-dropdown" role="listbox">
+        <div className="search-combobox-dropdown" role="listbox">
           {loading && options.length === 0 && (
-            <div className="centre-search-dropdown-status">Loading centres…</div>
+            <div className="search-combobox-dropdown-status">Loading centres…</div>
           )}
           {didYouMean && matches.length === 0 && (
             <button
               type="button"
               role="option"
               aria-selected={false}
-              className="centre-search-dropdown-item centre-search-dropdown-item--suggestion"
+              className="search-combobox-dropdown-item search-combobox-dropdown-item--suggestion"
               onClick={() => selectCentre(didYouMean)}
             >
               Did you mean <strong>{didYouMean.name}</strong>?
@@ -195,7 +184,7 @@ export default function CentreSearchField({
               type="button"
               role="option"
               aria-selected={String(option.id) === String(locationId)}
-              className="centre-search-dropdown-item"
+              className="search-combobox-dropdown-item"
               onClick={() => selectCentre(option)}
             >
               {option.name}
