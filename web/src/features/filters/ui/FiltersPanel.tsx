@@ -6,6 +6,7 @@ import { getFilterOptions } from '../../centres/api/centres.api.ts';
 import { WEEKDAY_OPTIONS, type WeekdayName } from '../../../shared/lib/weekday.ts';
 import { isFreeCentreLocation } from '../../../shared/data/freeCentres';
 import CentreSearchField from './CentreSearchField';
+import ActivitySearchField from './ActivitySearchField';
 import InfoTooltip from '../../../shared/ui/InfoTooltip';
 
 type Filters = { category: string; activity: string; activities?: string[]; weekday: WeekdayName | null ; startMonth?: string; age?: ProgramAgeFilter; locationId?: string | number; locationName?: string; maxDistanceKm?: number; freeCentresOnly?: boolean };
@@ -183,29 +184,19 @@ export default function FiltersPanel({
         </select>
       </div>
 
-      <div className="filter-group">
-        <label>Activity</label>
-        <select
-          value={value.activity}
-          onChange={e => update({ activity: e.target.value })}
+      <ActivitySearchField
+        activities={visibleActivities}
+        value={value.activity}
+        onChange={(activity) => update({ activity })}
+      />
+      {value.activities && value.activities.length > 0 && (
+        <div
+          className="filter-multi-activity-note"
+          title={value.activities.join(', ')}
         >
-          <option value="">
-            All Activities
-          </option>
-          {visibleActivities.map(a =>
-            <option key={a.activity} value={a.activity}>
-              {a.activity}
-            </option>)}
-        </select>
-        {value.activities && value.activities.length > 0 && (
-          <div
-            className="filter-multi-activity-note"
-            title={value.activities.join(', ')}
-          >
-            Showing {value.activities.length} related activities
-          </div>
-        )}
-      </div>
+          Showing {value.activities.length} related activities
+        </div>
+      )}
 
       <div className="filter-group">
         <div className="distance-toggle-row">
